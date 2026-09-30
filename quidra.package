@@ -1,0 +1,8 @@
+name = math
+version = 0.5.0
+repository = https://github.com/quidra-lang/math
+native.source.cpu = native/math_native.cpp
+native.source.cuda_driver = native/math_cuda.cpp
+native.source.macos-arm64.metal = native/math_metal.mm
+native.source.macos-x86_64.metal = native/math_metal.mm
+requires.quidra = >=0.5.0 <0.6.0

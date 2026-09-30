@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  core-develop:
+    name: Quidra develop compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: quidra-lang/quidra
+          ref: develop
+          path: quidra
+      - name: Enforce synchronized first-party version
+        run: |
+          python3 - <<'PY'
+          import tomllib
+          from pathlib import Path
+          package = tomllib.loads(Path("project.toml").read_text())["package"]["version"]
+          core = tomllib.loads(Path("quidra/project.toml").read_text())["project"]["version"]
+          if package != core:
+              raise SystemExit(f"Math version {package} must match Core version {core}")
+          PY
+      - name: Enforce Core native ABI boundary
+        run: python3 quidra/tests/package_native_boundary_tests.py .
+      - name: Install Quidra dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang llvm libcurl4-openssl-dev
+      - name: Build Quidra develop
+        run: cmake -S quidra -B quidra/build -DCMAKE_BUILD_TYPE=Release -DQUIDRA_ENABLE_TEST_GPU_BACKEND=ON && cmake --build quidra/build --parallel
+      - name: Validate package metadata with Core
+        run: quidra/build/quidra package validate "$GITHUB_WORKSPACE"
+      - name: Math integration
+        run: bash tests/integration.sh "$GITHUB_WORKSPACE/quidra/build/quidra"
+      - name: Math AOT package-native contract
+        run: bash tests/aot.sh "$GITHUB_WORKSPACE/quidra/build/quidra"
+      - name: Math fake-GPU contract
+        run: bash tests/device.sh "$GITHUB_WORKSPACE/quidra/build/quidra"
+
+  metal-real-gpu:
+    name: Metal real GPU integration
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: quidra-lang/quidra
+          ref: develop
+          path: quidra
+      - name: Install Quidra dependencies
+        run: brew install ccache curl
+      - name: Build Quidra develop
+        run: cmake -S quidra -B quidra/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$(brew --prefix curl)" -DCMAKE_CXX_COMPILER_LAUNCHER=ccache && cmake --build quidra/build --parallel
+      - name: Real Metal GPU numerical integration
+        env:
+          QUIDRA_REQUIRE_REAL_GPU: "1"
+          QUIDRA_REQUIRE_GPU_BACKEND: "Metal"
+        run: bash tests/real_gpu_integration.sh "$GITHUB_WORKSPACE/quidra/build/quidra"

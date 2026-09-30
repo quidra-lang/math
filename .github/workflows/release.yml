@@ -1,0 +1,107 @@
+name: release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read package metadata from project.toml
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          import tomllib
+          from pathlib import Path
+
+          project = tomllib.loads(Path("project.toml").read_text(encoding="utf-8"))
+          package = project["package"]
+          if package["import"] != "math":
+              raise SystemExit("project.toml package.import must be math")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              print(f"version={package['version']}", file=output)
+          PY
+
+      - name: Ensure release tag is new
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v${{ steps.package.outputs.version }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "release tag $tag already exists" >&2
+            exit 1
+          fi
+
+      - name: Require same-version released Core
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="v${{ steps.package.outputs.version }}"
+          if ! git ls-remote --exit-code --tags https://github.com/quidra-lang/quidra.git "refs/tags/$version" >/dev/null 2>&1; then
+            echo "Math release is blocked until Core $version exists" >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          repository: quidra-lang/quidra
+          ref: v${{ steps.package.outputs.version }}
+          path: quidra
+
+      - name: Restore Quidra compiler cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-quidra-${{ hashFiles('quidra/CMakeLists.txt', 'quidra/src/**', 'quidra/include/**') }}
+          restore-keys: |
+            ccache-${{ runner.os }}-quidra-
+
+      - name: Install Quidra dependencies
+        run: sudo apt-get update && sudo apt-get install -y ccache clang llvm libcurl4-openssl-dev
+
+      - name: Enforce Core native ABI boundary
+        run: python3 quidra/tests/package_native_boundary_tests.py .
+
+      - name: Build released Quidra baseline
+        run: cmake -S quidra -B quidra/build -DCMAKE_BUILD_TYPE=Release -DQUIDRA_ENABLE_TEST_GPU_BACKEND=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache && cmake --build quidra/build --parallel
+
+      - name: Validate package metadata with released Core
+        run: quidra/build/quidra package validate "$GITHUB_WORKSPACE"
+
+      - name: Integration tests
+        run: bash tests/integration.sh "$GITHUB_WORKSPACE/quidra/build/quidra"
+
+      - name: Math AOT package-native contract
+        run: bash tests/aot.sh "$GITHUB_WORKSPACE/quidra/build/quidra"
+
+      - name: Fake-GPU contracts
+        run: bash tests/device.sh "$GITHUB_WORKSPACE/quidra/build/quidra"
+
+      - name: Real GPU numerical integration when available
+        run: bash tests/real_gpu_integration.sh "$GITHUB_WORKSPACE/quidra/build/quidra"
+
+      - name: Create immutable tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v${{ steps.package.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" "$GITHUB_SHA" -m "math $tag"
+          git push origin "$tag"
+          gh release create "$tag" --target "$GITHUB_SHA" --title "math $tag" --generate-notes

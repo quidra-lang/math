@@ -1,0 +1,508 @@
+import native = "./native.qui"
+
+// Private implementation helpers for math.main.qui.
+
+// Math owns these unary semantics. Core supplies tensor storage/device
+// mechanisms and the generic package-native/custom-autograd ABI; Math keeps the
+// computation on the input device and owns each backend implementation.
+tensor<T> unary_output<T: floating>(int[] shape, int device)
+    if device >= 0
+        return tensor.zeros<T>(shape, gpu = device)
+    return tensor.zeros<T>(shape)
+
+tensor<T> tensor_unary<T: floating>(tensor<T> value, int32 operation)
+    int device = value.device()
+    tensor<T> source = value
+    if not source.is_contiguous()
+        int[] source_shape = source.shape()
+        int count = 1
+        for extent in source_shape
+            if extent < 0
+                error("math tensor unary encountered an invalid extent")
+            if extent != 0 and count > 9223372036854775807 / extent
+                error("math tensor unary element count overflows int")
+            count = count * extent
+        int[] identity = array(count, fill = 0)
+        for index in range(count)
+            identity[index] = index
+        source = source.gather(identity, source_shape)
+
+    tensor<T> output = unary_output<T>(source.shape(), device)
+    int32 status = native.tensor_unary<T>(&source, &output, operation)
+    if status != int32(0)
+        if operation == int32(2) and status == int32(4)
+            error("math.sqrt requires nonnegative tensor elements")
+        if operation == int32(3) and status == int32(4)
+            error("math.log requires positive tensor elements")
+        if status == int32(6)
+            error("math tensor unary is not implemented for this device backend")
+        if status == int32(7)
+            error("math tensor unary is not implemented for this device dtype")
+        error("math tensor unary native execution failed")
+    return output
+
+int last_axis_width(int[] shape, string operation)
+    if len(shape) == 0
+        error("math." + operation + " requires rank >= 1")
+    int width = shape[len(shape) - 1]
+    if width <= 0
+        error("math." + operation + " requires a non-empty last axis")
+    return width
+
+int logical_count(int[] shape, string operation)
+    int count = 1
+    for extent in shape
+        if extent < 0
+            error("math." + operation + " encountered an invalid extent")
+        if extent != 0 and count > 9223372036854775807 / extent
+            error("math." + operation + " element count overflows int")
+        count = count * extent
+    return count
+
+tensor<T> zeros_scalar_on<T: numeric>(int device)
+    if device >= 0
+        return tensor.zeros<T>([], gpu = device)
+    return tensor.zeros<T>([])
+
+tensor<T> ones_scalar_on<T: numeric>(int device)
+    if device >= 0
+        return tensor.ones<T>([], gpu = device)
+    return tensor.ones<T>([])
+
+tensor<T> ones_vector_on<T: numeric>(int length, int device)
+    if device >= 0
+        return tensor.ones<T>([length], gpu = device)
+    return tensor.ones<T>([length])
+
+tensor<T> sum_all_nonempty<T: numeric>(
+    tensor<T> value,
+    int count,
+    int device
+)
+    int[] identity = array(count, fill = 0)
+    for index in range(count)
+        identity[index] = index
+    tensor<T> current = value.gather(identity, [count])
+    int length = count
+
+    while length > 1
+        int pairs = (length + 1) / 2
+        int[] left_indices = array(pairs, fill = 0)
+        int[] right_indices = array(pairs, fill = 0)
+        for pair in range(pairs)
+            int left_index = pair * 2
+            int right_index = left_index + 1
+            if right_index >= length
+                right_index = left_index
+            left_indices[pair] = left_index
+            right_indices[pair] = right_index
+
+        tensor<T> left = current.gather(left_indices, [pairs])
+        tensor<T> right = current.gather(right_indices, [pairs])
+        if length % 2 == 1
+            tensor<T> mask = ones_vector_on<T>(pairs, device)
+            T zero = zeros_scalar_on<T>(device).item()
+            mask[pairs - 1] = zero
+            current = left + right * mask
+        else
+            current = left + right
+        length = pairs
+
+    return current.gather([0], [])
+
+tensor<T> sum_all<T: integer>(tensor<T> value)
+    int count = logical_count(value.shape(), "sum")
+    int device = value.device()
+    if count == 0
+        return zeros_scalar_on<T>(device)
+    return sum_all_nonempty<T>(value, count, device)
+
+tensor<T> sum_all<T: floating>(tensor<T> value)
+    int count = logical_count(value.shape(), "sum")
+    int device = value.device()
+    if count == 0
+        tensor<T> zero = zeros_scalar_on<T>(device)
+        if value.is_tracked()
+            if native.attach_empty_sum<T>(&value, &zero) != int32(0)
+                error("math.sum failed to attach empty-tensor autograd")
+        return zero
+    return sum_all_nonempty<T>(value, count, device)
+
+tensor<T> positive_count_scalar<T: floating>(int count, int device)
+    tensor<T> result = zeros_scalar_on<T>(device)
+    tensor<T> power = ones_scalar_on<T>(device)
+    int remaining = count
+    while remaining > 0
+        if remaining % 2 == 1
+            result = result + power
+        remaining = remaining / 2
+        if remaining > 0
+            power = power + power
+    return result
+
+tensor<T> mean_all<T: floating>(tensor<T> value)
+    int count = logical_count(value.shape(), "mean")
+    if count == 0
+        error("math.mean requires at least one element")
+    tensor<T> denominator = positive_count_scalar<T>(count, value.device())
+    return sum_all<T>(value) / denominator
+
+tensor<T> sum_last<T: floating>(tensor<T> value)
+    int[] shape = value.shape()
+    int width = last_axis_width(shape, "sum_last")
+    int count = logical_count(shape, "sum_last")
+    if count == 0
+        return value
+
+    int[] selected = array(count, fill = 0)
+    for index in range(count)
+        selected[index] = (index / width) * width
+    tensor<T> output = value.gather(selected, shape)
+
+    for offset in range(1, width)
+        for index in range(count)
+            selected[index] = (index / width) * width + offset
+        output = output + value.gather(selected, shape)
+    return output
+
+tensor<T> extrema_last_selected<T: numeric>(
+    tensor<T> value,
+    tensor<T> selector,
+    bool maximum,
+    string operation
+)
+    int[] shape = value.shape()
+    int width = last_axis_width(shape, operation)
+    int count = logical_count(shape, operation)
+    if count == 0
+        return value
+
+    int[] selected = array(count, fill = 0)
+    int rows = count / width
+    for row_index in range(rows)
+        int base = row_index * width
+        int best_index = base
+        T best = selector.gather([base], []).item()
+        for offset in range(1, width)
+            int candidate_index = base + offset
+            T candidate = selector.gather([candidate_index], []).item()
+            bool better = candidate > best
+            if not maximum
+                better = candidate < best
+            if better
+                best = candidate
+                best_index = candidate_index
+        for offset in range(width)
+            selected[base + offset] = best_index
+    return value.gather(selected, shape)
+
+tensor<T> max_last<T: integer>(tensor<T> value)
+    return extrema_last_selected<T>(value, value, true, "max_last")
+
+tensor<T> min_last<T: integer>(tensor<T> value)
+    return extrema_last_selected<T>(value, value, false, "min_last")
+
+tensor<T> max_last<T: floating>(tensor<T> value)
+    tensor<T> selector = value
+    if selector.is_tracked()
+        selector = selector.untrack()
+    return extrema_last_selected<T>(value, selector, true, "max_last")
+
+tensor<T> min_last<T: floating>(tensor<T> value)
+    tensor<T> selector = value
+    if selector.is_tracked()
+        selector = selector.untrack()
+    return extrema_last_selected<T>(value, selector, false, "min_last")
+
+tensor<T> extrema_all_selected<T: numeric>(
+    tensor<T> value,
+    tensor<T> selector,
+    bool maximum,
+    string operation
+)
+    int count = logical_count(value.shape(), operation)
+    if count == 0
+        error("math." + operation + " requires at least one element")
+
+    int best_index = 0
+    T best = selector.gather([0], []).item()
+    for index in range(1, count)
+        T candidate = selector.gather([index], []).item()
+        bool better = candidate > best
+        if not maximum
+            better = candidate < best
+        if better
+            best = candidate
+            best_index = index
+    return value.gather([best_index], [])
+
+tensor<T> max_all<T: integer>(tensor<T> value)
+    return extrema_all_selected<T>(value, value, true, "max")
+
+tensor<T> min_all<T: integer>(tensor<T> value)
+    return extrema_all_selected<T>(value, value, false, "min")
+
+tensor<T> max_all<T: floating>(tensor<T> value)
+    tensor<T> selector = value
+    if selector.is_tracked()
+        selector = selector.untrack()
+    return extrema_all_selected<T>(value, selector, true, "max")
+
+tensor<T> min_all<T: floating>(tensor<T> value)
+    tensor<T> selector = value
+    if selector.is_tracked()
+        selector = selector.untrack()
+    return extrema_all_selected<T>(value, selector, false, "min")
+
+tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
+    if a.is_tracked() or b.is_tracked()
+        error("math.matmul tracked tensors require float32 or float")
+
+    int[] a_shape = a.shape()
+    int[] b_shape = b.shape()
+    int a_rank = len(a_shape)
+    int b_rank = len(b_shape)
+
+    if a_rank < 1 or (b_rank != 1 and b_rank != 2)
+        error("math.matmul requires left rank >= 1 and right rank 1 or 2")
+
+    int inner = a_shape[a_rank - 1]
+    if inner <= 0 or b_shape[0] != inner
+        error("math.matmul inner dimensions do not match")
+
+    int columns = 1
+    if b_rank == 2
+        columns = b_shape[1]
+        if columns <= 0
+            error("math.matmul requires a positive output width")
+
+    int rows = 1
+    for axis in range(a_rank - 1)
+        int dimension = a_shape[axis]
+        if dimension <= 0
+            error("math.matmul requires positive tensor extents")
+        if rows > 9223372036854775807 / dimension
+            error("math.matmul row count overflows int")
+        rows = rows * dimension
+
+    int output_rank = a_rank
+    if b_rank == 1
+        output_rank = a_rank - 1
+    int[] output_shape = array(output_rank, fill = 1)
+    for axis in range(a_rank - 1)
+        output_shape[axis] = a_shape[axis]
+    if b_rank == 2
+        output_shape[a_rank - 1] = columns
+
+    if rows > 9223372036854775807 / columns
+        error("math.matmul output size overflows int")
+    int output_count = rows * columns
+
+    int[] expanded_shape = array(a_rank + 1, fill = 1)
+    for axis in range(a_rank - 1)
+        expanded_shape[axis] = a_shape[axis]
+    expanded_shape[a_rank - 1] = 1
+    expanded_shape[a_rank] = inner
+
+    tensor<T> expanded
+    if a.is_contiguous()
+        expanded = a.reshape(expanded_shape)
+    else
+        expanded = a.contiguous().reshape(expanded_shape)
+
+    int[] right_shape = array(a_rank + 1, fill = 1)
+    right_shape[a_rank - 1] = columns
+    right_shape[a_rank] = inner
+    int right_count = columns * inner
+    int[] right_indices = array(right_count, fill = 0)
+    for output_index in range(right_count)
+        int column = output_index / inner
+        int inner_index = output_index % inner
+        if b_rank == 1
+            right_indices[output_index] = inner_index
+        else
+            right_indices[output_index] = inner_index * columns + column
+    tensor<T> right_rows = b.gather(right_indices, right_shape)
+
+    tensor<T> products = expanded * right_rows
+    int[] selected = array(output_count, fill = 0)
+    for index in range(output_count)
+        selected[index] = index * inner
+    tensor<T> output = products.gather(selected, output_shape)
+
+    for inner_index in range(1, inner)
+        for index in range(output_count)
+            selected[index] = index * inner + inner_index
+        output = output + products.gather(selected, output_shape)
+    return output
+
+tensor<float32> matmul(tensor<float32> a, tensor<float32> b)
+    int[] a_shape = a.shape()
+    int[] b_shape = b.shape()
+    int a_rank = len(a_shape)
+    int b_rank = len(b_shape)
+
+    if a_rank < 1 or (b_rank != 1 and b_rank != 2)
+        error("math.matmul requires left rank >= 1 and right rank 1 or 2")
+
+    int inner = a_shape[a_rank - 1]
+    if inner <= 0 or b_shape[0] != inner
+        error("math.matmul inner dimensions do not match")
+
+    int columns = 1
+    if b_rank == 2
+        columns = b_shape[1]
+        if columns <= 0
+            error("math.matmul requires a positive output width")
+
+    int rows = 1
+    for axis in range(a_rank - 1)
+        int dimension = a_shape[axis]
+        if dimension <= 0
+            error("math.matmul requires positive tensor extents")
+        if rows > 9223372036854775807 / dimension
+            error("math.matmul row count overflows int")
+        rows = rows * dimension
+
+    int output_rank = a_rank
+    if b_rank == 1
+        output_rank = a_rank - 1
+    int[] output_shape = array(output_rank, fill = 1)
+    for axis in range(a_rank - 1)
+        output_shape[axis] = a_shape[axis]
+    if b_rank == 2
+        output_shape[a_rank - 1] = columns
+
+    if rows > 9223372036854775807 / columns
+        error("math.matmul output size overflows int")
+    int output_count = rows * columns
+
+    int[] expanded_shape = array(a_rank + 1, fill = 1)
+    for axis in range(a_rank - 1)
+        expanded_shape[axis] = a_shape[axis]
+    expanded_shape[a_rank - 1] = 1
+    expanded_shape[a_rank] = inner
+
+    tensor<float32> expanded
+    if a.is_contiguous()
+        expanded = a.reshape(expanded_shape)
+    elif a.is_tracked()
+        int input_count = rows * inner
+        int[] identity = array(input_count, fill = 0)
+        for index in range(input_count)
+            identity[index] = index
+        expanded = a.gather(identity, expanded_shape)
+    else
+        expanded = a.contiguous().reshape(expanded_shape)
+
+    int[] right_shape = array(a_rank + 1, fill = 1)
+    right_shape[a_rank - 1] = columns
+    right_shape[a_rank] = inner
+    int right_count = columns * inner
+    int[] right_indices = array(right_count, fill = 0)
+    for output_index in range(right_count)
+        int column = output_index / inner
+        int inner_index = output_index % inner
+        if b_rank == 1
+            right_indices[output_index] = inner_index
+        else
+            right_indices[output_index] = inner_index * columns + column
+    tensor<float32> right_rows = b.gather(right_indices, right_shape)
+
+    tensor<float32> products = expanded * right_rows
+    int[] selected = array(output_count, fill = 0)
+    for index in range(output_count)
+        selected[index] = index * inner
+    tensor<float32> output = products.gather(selected, output_shape)
+
+    for inner_index in range(1, inner)
+        for index in range(output_count)
+            selected[index] = index * inner + inner_index
+        output = output + products.gather(selected, output_shape)
+    return output
+
+tensor<float> matmul(tensor<float> a, tensor<float> b)
+    int[] a_shape = a.shape()
+    int[] b_shape = b.shape()
+    int a_rank = len(a_shape)
+    int b_rank = len(b_shape)
+
+    if a_rank < 1 or (b_rank != 1 and b_rank != 2)
+        error("math.matmul requires left rank >= 1 and right rank 1 or 2")
+
+    int inner = a_shape[a_rank - 1]
+    if inner <= 0 or b_shape[0] != inner
+        error("math.matmul inner dimensions do not match")
+
+    int columns = 1
+    if b_rank == 2
+        columns = b_shape[1]
+        if columns <= 0
+            error("math.matmul requires a positive output width")
+
+    int rows = 1
+    for axis in range(a_rank - 1)
+        int dimension = a_shape[axis]
+        if dimension <= 0
+            error("math.matmul requires positive tensor extents")
+        if rows > 9223372036854775807 / dimension
+            error("math.matmul row count overflows int")
+        rows = rows * dimension
+
+    int output_rank = a_rank
+    if b_rank == 1
+        output_rank = a_rank - 1
+    int[] output_shape = array(output_rank, fill = 1)
+    for axis in range(a_rank - 1)
+        output_shape[axis] = a_shape[axis]
+    if b_rank == 2
+        output_shape[a_rank - 1] = columns
+
+    if rows > 9223372036854775807 / columns
+        error("math.matmul output size overflows int")
+    int output_count = rows * columns
+
+    int[] expanded_shape = array(a_rank + 1, fill = 1)
+    for axis in range(a_rank - 1)
+        expanded_shape[axis] = a_shape[axis]
+    expanded_shape[a_rank - 1] = 1
+    expanded_shape[a_rank] = inner
+
+    tensor<float> expanded
+    if a.is_contiguous()
+        expanded = a.reshape(expanded_shape)
+    elif a.is_tracked()
+        int input_count = rows * inner
+        int[] identity = array(input_count, fill = 0)
+        for index in range(input_count)
+            identity[index] = index
+        expanded = a.gather(identity, expanded_shape)
+    else
+        expanded = a.contiguous().reshape(expanded_shape)
+
+    int[] right_shape = array(a_rank + 1, fill = 1)
+    right_shape[a_rank - 1] = columns
+    right_shape[a_rank] = inner
+    int right_count = columns * inner
+    int[] right_indices = array(right_count, fill = 0)
+    for output_index in range(right_count)
+        int column = output_index / inner
+        int inner_index = output_index % inner
+        if b_rank == 1
+            right_indices[output_index] = inner_index
+        else
+            right_indices[output_index] = inner_index * columns + column
+    tensor<float> right_rows = b.gather(right_indices, right_shape)
+
+    tensor<float> products = expanded * right_rows
+    int[] selected = array(output_count, fill = 0)
+    for index in range(output_count)
+        selected[index] = index * inner
+    tensor<float> output = products.gather(selected, output_shape)
+
+    for inner_index in range(1, inner)
+        for index in range(output_count)
+            selected[index] = index * inner + inner_index
+        output = output + products.gather(selected, output_shape)
+    return output
+

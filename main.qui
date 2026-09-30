@@ -1,0 +1,339 @@
+import internal = "./internal.qui"
+import native = "./native.qui"
+
+// Package-owned mathematical constants. Core only provides the generic
+// package-constant and exact-real atom mechanisms.
+const bigreal pi = exact.atom("math", 1)
+const bigreal e = exact.atom("math", 2)
+
+// Repeated public names form ordinary Quidra generic specialization families.
+// The generic members are real definitions, not prototypes: prototypes require
+// one exact later definition and do not declare overload families.
+
+T abs<T: numeric>(T value)
+    T zero = value - value
+    if value < zero
+        return zero - value
+    return value
+
+T min<T: numeric>(T left, T right)
+    if left < right
+        return left
+    return right
+
+T max<T: numeric>(T left, T right)
+    if left > right
+        return left
+    return right
+
+T | error sqrt<T: floating>(T value)
+    T zero = value - value
+    if value < zero
+        return error("math.sqrt requires a nonnegative value")
+    return value ^ 0.5
+
+T | error sin<T: floating>(T value)
+    return error("math.sin is not implemented for this floating type")
+
+T | error cos<T: floating>(T value)
+    return error("math.cos is not implemented for this floating type")
+
+T | error tan<T: floating>(T value)
+    return error("math.tan is not implemented for this floating type")
+
+T | error log<T: floating>(T value)
+    T zero = value - value
+    if value <= zero
+        return error("math.log requires a positive value")
+    return error("math.log is not implemented for this floating type")
+
+T | error exp<T: floating>(T value)
+    return error("math.exp is not implemented for this floating type")
+
+T pow<T: floating>(T base, T exponent)
+    return base ^ exponent
+
+bool is_finite<T: floating>(T value)
+    return true
+
+int | error trunc<T: floating>(T value)
+    return error("math.trunc is not implemented for this floating type")
+
+int | error round<T: floating>(T value)
+    return error("math.round is not implemented for this floating type")
+
+int | error floor<T: floating>(T value)
+    return error("math.floor is not implemented for this floating type")
+
+int | error ceil<T: floating>(T value)
+    return error("math.ceil is not implemented for this floating type")
+
+int | error trunc(float32 value)
+    if native.round_valid_f32(value, int32(1)) != int32(1)
+        return error("math.trunc requires a finite value in int range")
+    return native.round_value_f32(value, int32(1))
+
+int | error trunc(float value)
+    if native.round_valid_f64(value, int32(1)) != int32(1)
+        return error("math.trunc requires a finite value in int range")
+    return native.round_value_f64(value, int32(1))
+
+int | error round(float32 value)
+    if native.round_valid_f32(value, int32(2)) != int32(1)
+        return error("math.round requires a finite value in int range")
+    return native.round_value_f32(value, int32(2))
+
+int | error round(float value)
+    if native.round_valid_f64(value, int32(2)) != int32(1)
+        return error("math.round requires a finite value in int range")
+    return native.round_value_f64(value, int32(2))
+
+int | error floor(float32 value)
+    if native.round_valid_f32(value, int32(3)) != int32(1)
+        return error("math.floor requires a finite value in int range")
+    return native.round_value_f32(value, int32(3))
+
+int | error floor(float value)
+    if native.round_valid_f64(value, int32(3)) != int32(1)
+        return error("math.floor requires a finite value in int range")
+    return native.round_value_f64(value, int32(3))
+
+int | error ceil(float32 value)
+    if native.round_valid_f32(value, int32(4)) != int32(1)
+        return error("math.ceil requires a finite value in int range")
+    return native.round_value_f32(value, int32(4))
+
+int | error ceil(float value)
+    if native.round_valid_f64(value, int32(4)) != int32(1)
+        return error("math.ceil requires a finite value in int range")
+    return native.round_value_f64(value, int32(4))
+
+bigreal | error sqrt(bigreal value)
+    if value < bigreal(0)
+        return error("math.sqrt requires a nonnegative value")
+    return exact.unary("math", 1, value)
+
+bigreal sin(bigreal value)
+    return exact.unary("math", 2, value)
+
+bigreal cos(bigreal value)
+    return exact.unary("math", 3, value)
+
+bigreal tan(bigreal value)
+    return exact.unary("math", 4, value)
+
+bigreal | error log(bigreal value)
+    if value <= bigreal(0)
+        return error("math.log requires a positive value")
+    return exact.unary("math", 5, value)
+
+bigreal exp(bigreal value)
+    return exact.unary("math", 6, value)
+
+float32 | error sqrt(float32 value)
+    if value < float32(0)
+        return error("math.sqrt requires a nonnegative value")
+    return native.sqrt_f32(value)
+
+float | error sqrt(float value)
+    if value < 0.0
+        return error("math.sqrt requires a nonnegative value")
+    return native.sqrt_f64(value)
+
+float32 sin(float32 value)
+    return native.sin_f32(value)
+
+float sin(float value)
+    return native.sin_f64(value)
+
+float32 cos(float32 value)
+    return native.cos_f32(value)
+
+float cos(float value)
+    return native.cos_f64(value)
+
+float32 tan(float32 value)
+    return native.tan_f32(value)
+
+float tan(float value)
+    return native.tan_f64(value)
+
+float32 | error log(float32 value)
+    if value <= float32(0)
+        return error("math.log requires a positive value")
+    return native.log_f32(value)
+
+float | error log(float value)
+    if value <= 0.0
+        return error("math.log requires a positive value")
+    return native.log_f64(value)
+
+float32 exp(float32 value)
+    return native.exp_f32(value)
+
+float exp(float value)
+    return native.exp_f64(value)
+
+bigreal pow(bigreal base, bigreal exponent)
+    return base ^ exponent
+
+float32 pow(float32 base, float32 exponent)
+    return native.pow_f32(base, exponent)
+
+float pow(float base, float exponent)
+    return native.pow_f64(base, exponent)
+
+bool is_finite(float32 value)
+    return native.is_finite_f32(value)
+
+bool is_finite(float value)
+    return native.is_finite_f64(value)
+
+bool is_finite(bigreal value)
+    return true
+
+tensor<float32> abs(tensor<float32> value)
+    return internal.tensor_unary<float32>(value, int32(1))
+
+tensor<float> abs(tensor<float> value)
+    return internal.tensor_unary<float>(value, int32(1))
+
+tensor<float32> sqrt(tensor<float32> value)
+    return internal.tensor_unary<float32>(value, int32(2))
+
+tensor<float> sqrt(tensor<float> value)
+    return internal.tensor_unary<float>(value, int32(2))
+
+tensor<float32> log(tensor<float32> value)
+    return internal.tensor_unary<float32>(value, int32(3))
+
+tensor<float> log(tensor<float> value)
+    return internal.tensor_unary<float>(value, int32(3))
+
+tensor<float32> exp(tensor<float32> value)
+    return internal.tensor_unary<float32>(value, int32(4))
+
+tensor<float> exp(tensor<float> value)
+    return internal.tensor_unary<float>(value, int32(4))
+
+tensor<T> sum<T: integer>(tensor<T> value)
+    return internal.sum_all<T>(value)
+
+tensor<T> sum<T: floating>(tensor<T> value)
+    return internal.sum_all<T>(value)
+
+tensor<T> mean<T: floating>(tensor<T> value)
+    return internal.mean_all<T>(value)
+
+tensor<T> sum_last<T: floating>(tensor<T> value)
+    return internal.sum_last<T>(value)
+
+tensor<T> max_last<T: integer>(tensor<T> value)
+    return internal.max_last<T>(value)
+
+tensor<T> min_last<T: integer>(tensor<T> value)
+    return internal.min_last<T>(value)
+
+tensor<T> max_last<T: floating>(tensor<T> value)
+    return internal.max_last<T>(value)
+
+tensor<T> min_last<T: floating>(tensor<T> value)
+    return internal.min_last<T>(value)
+
+tensor<T> max_all<T: integer>(tensor<T> value)
+    return internal.max_all<T>(value)
+
+tensor<T> min_all<T: integer>(tensor<T> value)
+    return internal.min_all<T>(value)
+
+tensor<T> max_all<T: floating>(tensor<T> value)
+    return internal.max_all<T>(value)
+
+tensor<T> min_all<T: floating>(tensor<T> value)
+    return internal.min_all<T>(value)
+
+float32 dot(tensor<float32> a, tensor<float32> b)
+    int[] a_shape = a.shape()
+    int[] b_shape = b.shape()
+    if len(a_shape) != 1 or len(b_shape) != 1
+        error("math.dot requires two rank-1 tensors")
+    if a_shape[0] != b_shape[0]
+        error("math.dot requires equal vector lengths")
+    return internal.matmul(a, b).item()
+
+float dot(tensor<float> a, tensor<float> b)
+    int[] a_shape = a.shape()
+    int[] b_shape = b.shape()
+    if len(a_shape) != 1 or len(b_shape) != 1
+        error("math.dot requires two rank-1 tensors")
+    if a_shape[0] != b_shape[0]
+        error("math.dot requires equal vector lengths")
+    return internal.matmul(a, b).item()
+
+T dot<T: integer>(tensor<T> a, tensor<T> b)
+    int[] a_shape = a.shape()
+    int[] b_shape = b.shape()
+    if len(a_shape) != 1 or len(b_shape) != 1
+        error("math.dot requires two rank-1 tensors")
+    if a_shape[0] != b_shape[0]
+        error("math.dot requires equal vector lengths")
+    return internal.matmul<T>(a, b).item()
+
+tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
+    return internal.matmul<T>(a, b)
+
+tensor<float32> matmul(tensor<float32> a, tensor<float32> b)
+    int[] a_shape = a.shape()
+    int[] b_shape = b.shape()
+    int a_rank = len(a_shape)
+    int b_rank = len(b_shape)
+
+    if a_rank < 1 or (b_rank != 1 and b_rank != 2)
+        error("math.matmul requires left rank >= 1 and right rank 1 or 2")
+    if a_shape[a_rank - 1] <= 0 or b_shape[0] != a_shape[a_rank - 1]
+        error("math.matmul inner dimensions do not match")
+
+    if b_rank == 2 and b_shape[1] <= 0
+        error("math.matmul requires a positive output width")
+
+    int output_rank = a_rank
+    if b_rank == 1
+        output_rank = a_rank - 1
+    int[] output_shape = array(output_rank, fill = 1)
+    for axis in range(a_rank - 1)
+        output_shape[axis] = a_shape[axis]
+    if b_rank == 2
+        output_shape[a_rank - 1] = b_shape[1]
+
+    if not a.is_tracked() and not b.is_tracked()
+        int32 left_cuda = native.cuda_device_f32(&a)
+        int32 right_cuda = native.cuda_device_f32(&b)
+        if left_cuda >= int32(0) and right_cuda == left_cuda
+            tensor<float32> left = a
+            tensor<float32> right = b
+            if not left.is_contiguous()
+                left = left.contiguous()
+            if not right.is_contiguous()
+                right = right.contiguous()
+            tensor<float32> output = tensor.zeros<float32>(
+                output_shape,
+                gpu = int(left_cuda)
+            )
+            if native.matmul_cuda_f32(&left, &right, &output) == int32(0)
+                return output
+
+        if native.is_cpu_f32(&a) == int32(1) and native.is_cpu_f32(&b) == int32(1)
+            tensor<float32> left = a
+            tensor<float32> right = b
+            if not left.is_contiguous()
+                left = left.contiguous()
+            if not right.is_contiguous()
+                right = right.contiguous()
+            tensor<float32> output = tensor.zeros<float32>(output_shape)
+            if native.matmul_f32(&left, &right, &output) == int32(0)
+                return output
+
+    return internal.matmul(a, b)
+
+tensor<float> matmul(tensor<float> a, tensor<float> b)
+    return internal.matmul(a, b)

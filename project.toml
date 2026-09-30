@@ -1,0 +1,25 @@
+[package]
+name = "quidra-math"
+import = "math"
+display_name = "Quidra Math"
+version = "0.5.0"
+repository = "https://github.com/quidra-lang/math"
+
+[requires]
+quidra = ">=0.5.0 <0.6.0"
+abi = 1
+
+[native.source]
+cpu = "native/math_native.cpp"
+cuda_driver = "native/math_cuda.cpp"
+
+[native.source.macos-arm64]
+metal = "native/math_metal.mm"
+
+[native.source.macos-x86_64]
+metal = "native/math_metal.mm"
+
+# Package-owned declarative compiler semantics. Core only discovers and carries
+# this descriptor through the generic compiler-extension substrate.
+[compiler.extension]
+graph = "compiler/graph.toml"

@@ -1,0 +1,64 @@
+# Math-owned compiler semantics.
+# Core treats this as declarative package data and must not hard-code these IDs.
+[extension]
+version = 1
+phase = "tensor-region"
+kind = "operation-registry"
+
+[policy]
+kind = "tensor-region-policy"
+owner = "math"
+
+[analysis]
+shape = "required"
+dtype = "required"
+layout = "required"
+device = "required"
+autograd = "required"
+
+[operation.matmul]
+function = "matmul"
+semantic = "math.matmul"
+traits = "pure,differentiable,linear-algebra,tensor"
+
+[operation.dot]
+function = "dot"
+semantic = "math.dot"
+traits = "pure,linear-algebra,reduction"
+
+[operation.sum]
+function = "sum"
+semantic = "math.sum"
+traits = "pure,differentiable,reduction,tensor"
+
+[operation.mean]
+function = "mean"
+semantic = "math.mean"
+traits = "pure,differentiable,reduction,tensor"
+
+[operation.max_all]
+function = "max_all"
+semantic = "math.max_all"
+traits = "pure,differentiable,reduction,tensor"
+
+[operation.min_all]
+function = "min_all"
+semantic = "math.min_all"
+traits = "pure,differentiable,reduction,tensor"
+
+[operation.sum_last]
+function = "sum_last"
+semantic = "math.sum_last"
+traits = "pure,differentiable,reduction,tensor"
+
+[operation.max_last]
+function = "max_last"
+semantic = "math.max_last"
+traits = "pure,differentiable,reduction,tensor"
+
+[operation.min_last]
+function = "min_last"
+semantic = "math.min_last"
+traits = "pure,differentiable,reduction,tensor"
+
+

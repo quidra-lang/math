@@ -1,0 +1,42 @@
+name: real-gpu-hardware
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - develop
+    paths:
+      - ".github/workflows/real-gpu-hardware.yml"
+      - "main.qui"
+      - "internal.qui"
+      - "native.qui"
+      - "native/**"
+      - "tests/real_gpu_integration.sh"
+
+concurrency:
+  group: math-real-gpu-hardware-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nvidia:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && vars.QUIDRA_NVIDIA_GPU_CI == '1')
+    runs-on: [self-hosted, linux, x64, quidra-nvidia]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: quidra-lang/quidra
+          ref: develop
+          path: quidra
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build clang llvm libcurl4-openssl-dev
+      - name: Build Quidra
+        run: cmake -S quidra -B quidra/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DQUIDRA_WARNINGS_AS_ERRORS=ON && cmake --build quidra/build --parallel
+      - name: Require NVIDIA hardware and validate Math matmul
+        env:
+          QUIDRA_REQUIRE_REAL_GPU: "1"
+          QUIDRA_REQUIRE_GPU_BACKEND: "NVIDIA"
+        run: bash tests/real_gpu_integration.sh "$GITHUB_WORKSPACE/quidra/build/quidra"
