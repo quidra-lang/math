@@ -1024,12 +1024,12 @@ expect_true_lines "Math native sum carry" "$TMP/native-sum-carry.qui" 1
 # Shapes the native bridges do not claim keep the portable behaviour. Until
 # Core stops discarding bare error() statements, the portable composition runs
 # past its diagnostic, so both outcomes are accepted: the Math diagnostic, or
-# exactly what the develop composition produces.
-expect_diagnostic_or_develop() {
+# exactly the output the portable composition produces when it continues.
+expect_diagnostic_or_output() {
     local label="$1"
     local program="$2"
     local diagnostic="$3"
-    local develop="$4"
+    local continued_output="$4"
     local output
     local status
     set +e
@@ -1039,10 +1039,10 @@ expect_diagnostic_or_develop() {
     if [[ "$status" -ne 0 ]] && grep -Fq "$diagnostic" <<< "$output"; then
         return
     fi
-    if [[ -n "$develop" && "$status" -eq 0 && "$output" == "$develop" ]]; then
+    if [[ -n "$continued_output" && "$status" -eq 0 && "$output" == "$continued_output" ]]; then
         return
     fi
-    if [[ -z "$develop" && "$status" -ne 0 ]]; then
+    if [[ -z "$continued_output" && "$status" -ne 0 ]]; then
         return
     fi
     echo "unexpected $label outcome (status $status):" >&2
@@ -1058,30 +1058,30 @@ write_shape_case() {
 
 write_shape_case inner-mismatch 'tensor<float32> c = math.matmul(tensor.ones<float32>([2, 3]), tensor.ones<float32>([4, 5]))
 print("{c.shape()[0]} {c.shape()[1]} {c.gather([0], []).item()}{NL}")'
-expect_diagnostic_or_develop "matmul inner mismatch" "$TMP/inner-mismatch.qui" \
+expect_diagnostic_or_output "matmul inner mismatch" "$TMP/inner-mismatch.qui" \
     "math.matmul inner dimensions do not match" "2 5 3.0"
 write_shape_case inner-mismatch-tracked 'tensor<float32> a = tensor.ones<float32>([2, 3]).track()
 tensor<float32> b = tensor.ones<float32>([4, 5]).track()
 math.sum(math.matmul(a, b)).backward(&a, &b)
 print("{a.grad.gather([0], []).item()} {b.grad.gather([0], []).item()}{NL}")'
-expect_diagnostic_or_develop "tracked matmul inner mismatch" "$TMP/inner-mismatch-tracked.qui" \
+expect_diagnostic_or_output "tracked matmul inner mismatch" "$TMP/inner-mismatch-tracked.qui" \
     "math.matmul inner dimensions do not match" "5.0 2.0"
 # Zero extents never produce a native result: they stop with an error.
 write_shape_case zero-rows 'tensor<float32> c = math.matmul(tensor.ones<float32>([0, 3]), tensor.ones<float32>([3, 2]))
 print("{c.shape()[0]}{NL}")'
-expect_diagnostic_or_develop "matmul zero rows" "$TMP/zero-rows.qui" \
+expect_diagnostic_or_output "matmul zero rows" "$TMP/zero-rows.qui" \
     "math.matmul requires positive tensor extents" ""
 write_shape_case zero-inner 'tensor<float32> c = math.matmul(tensor.ones<float32>([2, 0]), tensor.ones<float32>([0, 2]))
 print("{c.shape()[0]}{NL}")'
-expect_diagnostic_or_develop "matmul zero inner" "$TMP/zero-inner.qui" \
+expect_diagnostic_or_output "matmul zero inner" "$TMP/zero-inner.qui" \
     "math.matmul inner dimensions do not match" ""
 write_shape_case zero-columns 'tensor<float32> c = math.matmul(tensor.ones<float32>([2, 3]), tensor.ones<float32>([3, 0]))
 print("{c.shape()[0]}{NL}")'
-expect_diagnostic_or_develop "matmul zero columns" "$TMP/zero-columns.qui" \
+expect_diagnostic_or_output "matmul zero columns" "$TMP/zero-columns.qui" \
     "math.matmul requires a positive output width" ""
 write_shape_case empty-max 'tensor<float32> m = math.max_all(tensor.ones<float32>([0, 3]))
 print("after{NL}")'
-expect_diagnostic_or_develop "max_all of an empty tensor" "$TMP/empty-max.qui" \
+expect_diagnostic_or_output "max_all of an empty tensor" "$TMP/empty-max.qui" \
     "math.max requires at least one element" ""
 
 # Empty rows and zero-width rows keep their shapes; empty tracked sums stay

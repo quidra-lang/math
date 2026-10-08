@@ -439,11 +439,11 @@ expect_true_lines "Math native fake-GPU sum carry" "$TMP/native-sum-carry-device
 
 # Shapes the native bridges do not claim keep the portable behaviour on the
 # device too (see integration.sh for why both outcomes are accepted).
-expect_diagnostic_or_develop() {
+expect_diagnostic_or_output() {
     local label="$1"
     local program="$2"
     local diagnostic="$3"
-    local develop="$4"
+    local continued_output="$4"
     local output
     local status
     set +e
@@ -453,10 +453,10 @@ expect_diagnostic_or_develop() {
     if [[ "$status" -ne 0 ]] && grep -Fq "$diagnostic" <<< "$output"; then
         return
     fi
-    if [[ -n "$develop" && "$status" -eq 0 && "$output" == "$develop" ]]; then
+    if [[ -n "$continued_output" && "$status" -eq 0 && "$output" == "$continued_output" ]]; then
         return
     fi
-    if [[ -z "$develop" && "$status" -ne 0 ]]; then
+    if [[ -z "$continued_output" && "$status" -ne 0 ]]; then
         return
     fi
     echo "unexpected $label outcome (status $status):" >&2
@@ -475,15 +475,15 @@ tensor<float32> b = tensor.ones<float32>([4, 5], gpu = 0).track()
 tensor<float32> c = math.matmul(a, b)
 math.sum(c).backward(&a, &b)
 print("{c.shape()[0]} {c.shape()[1]} {a.grad.cpu().gather([0], []).item()} {b.grad.cpu().gather([0], []).item()}{NL}")'
-expect_diagnostic_or_develop "fake-GPU matmul inner mismatch" "$TMP/device-inner-mismatch.qui" \
+expect_diagnostic_or_output "fake-GPU matmul inner mismatch" "$TMP/device-inner-mismatch.qui" \
     "math.matmul inner dimensions do not match" "2 5 5.0 2.0"
 write_shape_case device-zero-rows 'tensor<float32> c = math.matmul(tensor.ones<float32>([0, 3], gpu = 0), tensor.ones<float32>([3, 2], gpu = 0))
 print("{c.shape()[0]}{NL}")'
-expect_diagnostic_or_develop "fake-GPU matmul zero rows" "$TMP/device-zero-rows.qui" \
+expect_diagnostic_or_output "fake-GPU matmul zero rows" "$TMP/device-zero-rows.qui" \
     "math.matmul requires positive tensor extents" ""
 write_shape_case device-zero-inner 'tensor<float32> c = math.matmul(tensor.ones<float32>([2, 0], gpu = 0), tensor.ones<float32>([0, 2], gpu = 0))
 print("{c.shape()[0]}{NL}")'
-expect_diagnostic_or_develop "fake-GPU matmul zero inner" "$TMP/device-zero-inner.qui" \
+expect_diagnostic_or_output "fake-GPU matmul zero inner" "$TMP/device-zero-inner.qui" \
     "math.matmul inner dimensions do not match" ""
 
 cat > "$TMP/native-empty-device.qui" <<'QUI'
