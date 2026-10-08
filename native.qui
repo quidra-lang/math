@@ -1,14 +1,47 @@
 // Private package-native bridge. Native code sees only opaque tensor handles
 // through Quidra Core's stable native-extension ABI.
-extern int32 is_cpu_f32(
-    const tensor<float32> &value
-) = "math_native_is_cpu_f32"
 
-extern int32 matmul_f32(
-    const tensor<float32> &a,
-    const tensor<float32> &b,
-    tensor<float32> &output
-) = "math_native_matmul_f32"
+// 1 when Math's native matrix/reduction kernels serve this tensor's placement
+// (CPU, the fake test GPU, Metal float32); 0 keeps the portable composition.
+extern int32 linear_placement<T: floating>(
+    const tensor<T> &value
+) = "math_native_linear_placement"
+
+// Backend-neutral matrix product. left_data/right_data are contiguous value
+// borrows (bit 1/2 of layout: the transposed storage of a rank-2 view);
+// left/right are the differentiable tensors that become the autograd parents
+// (bit 4/8 of layout: tracked). The native dispatcher selects the backend and
+// attaches one Math-owned custom-autograd node to the fresh output.
+extern int32 matmul<T: floating>(
+    const tensor<T> &left_data,
+    const tensor<T> &right_data,
+    const tensor<T> &left,
+    const tensor<T> &right,
+    tensor<T> &output,
+    int32 layout
+) = "math_native_matmul"
+
+// Sum-family reductions: 1 = sum, 2 = mean, 3 = sum_last (broadcast shape).
+// `input` is a contiguous value borrow with the logical shape of `parent`,
+// the differentiable tensor that becomes the autograd parent.
+extern int32 reduce<T: floating>(
+    const tensor<T> &input,
+    const tensor<T> &parent,
+    tensor<T> &output,
+    int32 operation
+) = "math_native_reduce"
+
+// First-occurrence extrema: 1 = max_last, 2 = min_last, 3 = max_all,
+// 4 = min_all. `winners` receives each row's winning offset and is kept by the
+// autograd node, so backward never reads values back to the host. `input` and
+// `parent` split value borrow and differentiable tensor as in `reduce`.
+extern int32 select_extrema<T: floating>(
+    const tensor<T> &input,
+    const tensor<T> &parent,
+    tensor<T> &output,
+    tensor<int32> &winners,
+    int32 operation
+) = "math_native_select_extrema"
 
 extern int32 cuda_device_f32(
     const tensor<float32> &value

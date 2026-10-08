@@ -74,6 +74,42 @@ tensor<T> ones_vector_on<T: numeric>(int length, int device)
         return tensor.ones<T>([length], gpu = device)
     return tensor.ones<T>([length])
 
+// Math-native matrix and reduction kernels serve CPU, the fake test GPU, and
+// Metal float32 placements. Other placements (CUDA/HIP) keep the portable
+// composition.
+bool native_linear_ready<T: floating>(tensor<T> value)
+    return native.linear_placement<T>(&value) == int32(1)
+
+// Value-only contiguous borrow of `value` for a native kernel. It never
+// replaces `value` in the graph: every native node keeps the original tensor as
+// its differentiable parent (its gradient has the parent's logical shape and
+// flows back through the parent's own view graph), so a tracked non-contiguous
+// view is read on its device without cutting or detaching anything.
+tensor<T> native_linear_data<T: floating>(tensor<T> value)
+    if value.is_contiguous()
+        return value
+    tensor<T> alias = value
+    if alias.is_tracked()
+        alias = alias.untrack()
+    return alias.contiguous()
+
+// Core hands custom-autograd callbacks the upstream device gradient as it is,
+// and the native ABI carries no strides, so a transposed view taken of a native
+// result would reach Math's backward with an unreadable layout. A same-shape
+// reshape view in front of a tracked device result lets Core's own view
+// backward deliver a dense gradient; it is a descriptor, not a copy, and CPU
+// gradients are already dense. It can go once Core densifies device gradients
+// before custom callbacks.
+tensor<T> dense_device_gradient<T: floating>(tensor<T> output)
+    if output.device() >= 0 and output.is_tracked()
+        return output.reshape(output.shape())
+    return output
+
+tensor<int32> winner_output(int rows, int device)
+    if device >= 0
+        return tensor.zeros<int32>([rows], gpu = device)
+    return tensor.zeros<int32>([rows])
+
 tensor<T> sum_all_nonempty<T: numeric>(
     tensor<T> value,
     int count,
@@ -126,6 +162,13 @@ tensor<T> sum_all<T: floating>(tensor<T> value)
             if native.attach_empty_sum<T>(&value, &zero) != int32(0)
                 error("math.sum failed to attach empty-tensor autograd")
         return zero
+    // Native whole-tensor sum: the same pairwise tree as the composition below,
+    // evaluated on the input's device with one Math-owned autograd node.
+    if native_linear_ready<T>(value)
+        tensor<T> source = native_linear_data<T>(value)
+        tensor<T> total = zeros_scalar_on<T>(device)
+        if native.reduce<T>(&source, &value, &total, int32(1)) == int32(0)
+            return dense_device_gradient<T>(total)
     return sum_all_nonempty<T>(value, count, device)
 
 tensor<T> positive_count_scalar<T: floating>(int count, int device)
@@ -144,6 +187,13 @@ tensor<T> mean_all<T: floating>(tensor<T> value)
     int count = logical_count(value.shape(), "mean")
     if count == 0
         error("math.mean requires at least one element")
+    // Native mean: pairwise sum divided by the element count, with a single
+    // autograd node whose backward is upstream / count.
+    if native_linear_ready<T>(value)
+        tensor<T> source = native_linear_data<T>(value)
+        tensor<T> average = zeros_scalar_on<T>(value.device())
+        if native.reduce<T>(&source, &value, &average, int32(2)) == int32(0)
+            return dense_device_gradient<T>(average)
     tensor<T> denominator = positive_count_scalar<T>(count, value.device())
     return sum_all<T>(value) / denominator
 
@@ -153,6 +203,14 @@ tensor<T> sum_last<T: floating>(tensor<T> value)
     int count = logical_count(shape, "sum_last")
     if count == 0
         return value
+
+    // Native path: identical left-to-right row sums broadcast across the last
+    // axis (the result keeps the input shape), one Math-owned autograd node.
+    if native_linear_ready<T>(value)
+        tensor<T> source = native_linear_data<T>(value)
+        tensor<T> sums = unary_output<T>(shape, value.device())
+        if native.reduce<T>(&source, &value, &sums, int32(3)) == int32(0)
+            return dense_device_gradient<T>(sums)
 
     int[] selected = array(count, fill = 0)
     for index in range(count)
@@ -202,17 +260,55 @@ tensor<T> max_last<T: integer>(tensor<T> value)
 tensor<T> min_last<T: integer>(tensor<T> value)
     return extrema_last_selected<T>(value, value, false, "min_last")
 
-tensor<T> max_last<T: floating>(tensor<T> value)
+// Native first-occurrence extrema. The winning offset of every row is found
+// on the input's device with strict comparison and kept in a Math-owned int32
+// tensor; the result and its gradient never pass through host readback.
+// Returns false (leaving `result` untouched) when the portable composition
+// must be used.
+bool extrema_native<T: floating>(
+    tensor<T> value,
+    int[] output_shape,
+    int rows,
+    int32 operation,
+    tensor<T> &result
+)
+    if not native_linear_ready<T>(value)
+        return false
+    int device = value.device()
+    tensor<T> source = native_linear_data<T>(value)
+    tensor<T> output = unary_output<T>(output_shape, device)
+    tensor<int32> winners = winner_output(rows, device)
+    if native.select_extrema<T>(&source, &value, &output, &winners, operation) != int32(0)
+        return false
+    result = dense_device_gradient<T>(output)
+    return true
+
+tensor<T> extrema_last<T: floating>(
+    tensor<T> value,
+    bool maximum,
+    string operation
+)
+    int[] shape = value.shape()
+    int width = last_axis_width(shape, operation)
+    int count = logical_count(shape, operation)
+    if count == 0
+        return value
+    int32 code = int32(2)
+    if maximum
+        code = int32(1)
+    tensor<T> native_result = value
+    if extrema_native<T>(value, shape, count / width, code, &native_result)
+        return native_result
     tensor<T> selector = value
     if selector.is_tracked()
         selector = selector.untrack()
-    return extrema_last_selected<T>(value, selector, true, "max_last")
+    return extrema_last_selected<T>(value, selector, maximum, operation)
+
+tensor<T> max_last<T: floating>(tensor<T> value)
+    return extrema_last<T>(value, true, "max_last")
 
 tensor<T> min_last<T: floating>(tensor<T> value)
-    tensor<T> selector = value
-    if selector.is_tracked()
-        selector = selector.untrack()
-    return extrema_last_selected<T>(value, selector, false, "min_last")
+    return extrema_last<T>(value, false, "min_last")
 
 tensor<T> extrema_all_selected<T: numeric>(
     tensor<T> value,
@@ -242,17 +338,30 @@ tensor<T> max_all<T: integer>(tensor<T> value)
 tensor<T> min_all<T: integer>(tensor<T> value)
     return extrema_all_selected<T>(value, value, false, "min")
 
-tensor<T> max_all<T: floating>(tensor<T> value)
+tensor<T> extrema_all<T: floating>(
+    tensor<T> value,
+    bool maximum,
+    string operation
+)
+    int count = logical_count(value.shape(), operation)
+    if count == 0
+        error("math." + operation + " requires at least one element")
+    int32 code = int32(4)
+    if maximum
+        code = int32(3)
+    tensor<T> native_result = value
+    if extrema_native<T>(value, [], 1, code, &native_result)
+        return native_result
     tensor<T> selector = value
     if selector.is_tracked()
         selector = selector.untrack()
-    return extrema_all_selected<T>(value, selector, true, "max")
+    return extrema_all_selected<T>(value, selector, maximum, operation)
+
+tensor<T> max_all<T: floating>(tensor<T> value)
+    return extrema_all<T>(value, true, "max")
 
 tensor<T> min_all<T: floating>(tensor<T> value)
-    tensor<T> selector = value
-    if selector.is_tracked()
-        selector = selector.untrack()
-    return extrema_all_selected<T>(value, selector, false, "min")
+    return extrema_all<T>(value, false, "min")
 
 tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     if a.is_tracked() or b.is_tracked()
@@ -506,3 +615,87 @@ tensor<float> matmul(tensor<float> a, tensor<float> b)
         output = output + products.gather(selected, output_shape)
     return output
 
+// A rank-2 view whose transpose is contiguous (for example weight.transpose(0,
+// 1)) is read in place through its transposed storage. The borrow is
+// value-only: the original tensor stays the differentiable input, so autograd
+// still flows through its graph.
+bool transposed_storage<T: floating>(tensor<T> value, tensor<T> &storage)
+    if len(value.shape()) != 2
+        return false
+    tensor<T> alias = value
+    if alias.is_tracked()
+        alias = alias.untrack()
+    tensor<T> view = alias.transpose(0, 1)
+    if not view.is_contiguous()
+        return false
+    storage = view
+    return true
+
+// Native-first floating matrix product. Math's backend-neutral native bridge
+// serves CPU, the fake test GPU, and Metal for tracked and untracked inputs and
+// attaches one custom autograd node (first backward dA = G B^T, dB = A^T G by
+// native GEMM; higher order through the same product family). Any other
+// placement or an invalid shape uses the portable composition, which also owns
+// every diagnostic. Other non-contiguous layouts are read through a value-only
+// contiguous borrow while the original tensor stays the node's parent.
+tensor<T> matmul_native<T: floating>(tensor<T> a, tensor<T> b)
+    if native.linear_placement<T>(&a) != int32(1) or native.linear_placement<T>(&b) != int32(1)
+        return matmul(a, b)
+    if a.device() != b.device()
+        return matmul(a, b)
+
+    int[] a_shape = a.shape()
+    int[] b_shape = b.shape()
+    int a_rank = len(a_shape)
+    int b_rank = len(b_shape)
+    if a_rank < 1 or (b_rank != 1 and b_rank != 2)
+        return matmul(a, b)
+    int inner = a_shape[a_rank - 1]
+    if inner <= 0 or b_shape[0] != inner
+        return matmul(a, b)
+    int columns = 1
+    if b_rank == 2
+        columns = b_shape[1]
+    if columns <= 0
+        return matmul(a, b)
+    int rows = 1
+    for axis in range(a_rank - 1)
+        int dimension = a_shape[axis]
+        if dimension <= 0 or rows > 9223372036854775807 / dimension
+            return matmul(a, b)
+        rows = rows * dimension
+    if rows > 9223372036854775807 / columns or rows > 9223372036854775807 / inner
+        return matmul(a, b)
+
+    int32 layout = int32(0)
+    tensor<T> left = a
+    tensor<T> left_data = a
+    if not a.is_contiguous()
+        if transposed_storage<T>(a, &left_data)
+            layout = layout + int32(1)
+        else
+            left_data = native_linear_data<T>(a)
+    tensor<T> right = b
+    tensor<T> right_data = b
+    if not b.is_contiguous()
+        if transposed_storage<T>(b, &right_data)
+            layout = layout + int32(2)
+        else
+            right_data = native_linear_data<T>(b)
+    if a.is_tracked()
+        layout = layout + int32(4)
+    if b.is_tracked()
+        layout = layout + int32(8)
+
+    int output_rank = a_rank
+    if b_rank == 1
+        output_rank = a_rank - 1
+    int[] output_shape = array(output_rank, fill = 1)
+    for axis in range(a_rank - 1)
+        output_shape[axis] = a_shape[axis]
+    if b_rank == 2
+        output_shape[a_rank - 1] = columns
+    tensor<T> output = unary_output<T>(output_shape, a.device())
+    if native.matmul<T>(&left_data, &right_data, &left, &right, &output, layout) == int32(0)
+        return dense_device_gradient<T>(output)
+    return matmul(a, b)

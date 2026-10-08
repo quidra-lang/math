@@ -259,7 +259,7 @@ float32 dot(tensor<float32> a, tensor<float32> b)
         error("math.dot requires two rank-1 tensors")
     if a_shape[0] != b_shape[0]
         error("math.dot requires equal vector lengths")
-    return internal.matmul(a, b).item()
+    return internal.matmul_native<float32>(a, b).item()
 
 float dot(tensor<float> a, tensor<float> b)
     int[] a_shape = a.shape()
@@ -268,7 +268,7 @@ float dot(tensor<float> a, tensor<float> b)
         error("math.dot requires two rank-1 tensors")
     if a_shape[0] != b_shape[0]
         error("math.dot requires equal vector lengths")
-    return internal.matmul(a, b).item()
+    return internal.matmul_native<float>(a, b).item()
 
 T dot<T: integer>(tensor<T> a, tensor<T> b)
     int[] a_shape = a.shape()
@@ -305,6 +305,7 @@ tensor<float32> matmul(tensor<float32> a, tensor<float32> b)
     if b_rank == 2
         output_shape[a_rank - 1] = b_shape[1]
 
+    // CUDA keeps its untracked cuBLAS path unchanged.
     if not a.is_tracked() and not b.is_tracked()
         int32 left_cuda = native.cuda_device_f32(&a)
         int32 right_cuda = native.cuda_device_f32(&b)
@@ -322,18 +323,10 @@ tensor<float32> matmul(tensor<float32> a, tensor<float32> b)
             if native.matmul_cuda_f32(&left, &right, &output) == int32(0)
                 return output
 
-        if native.is_cpu_f32(&a) == int32(1) and native.is_cpu_f32(&b) == int32(1)
-            tensor<float32> left = a
-            tensor<float32> right = b
-            if not left.is_contiguous()
-                left = left.contiguous()
-            if not right.is_contiguous()
-                right = right.contiguous()
-            tensor<float32> output = tensor.zeros<float32>(output_shape)
-            if native.matmul_f32(&left, &right, &output) == int32(0)
-                return output
-
-    return internal.matmul(a, b)
+    // CPU, the fake test GPU, and Metal use Math's backend-neutral native
+    // product for tracked and untracked tensors alike; other placements fall
+    // back to the portable composition inside.
+    return internal.matmul_native<float32>(a, b)
 
 tensor<float> matmul(tensor<float> a, tensor<float> b)
-    return internal.matmul(a, b)
+    return internal.matmul_native<float>(a, b)
