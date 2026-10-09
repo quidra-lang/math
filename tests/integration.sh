@@ -1147,7 +1147,7 @@ bool negative_zero32(real32 x)
 // Column j: all +0 (j % 4 == 0), all -0 (1), mixed signed zeros (2), or
 // small positive integers (3), so every sum is exact in any order.
 tensor<real32> signed_left32(int rows, int inner)
-    tensor<real32> value = tensor.zeros<real32>([rows, inner])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(inner)])
     for i in range(rows)
         for k in range(inner)
             real32 magnitude = real32(1 + (i + k) % 5)
@@ -1157,7 +1157,7 @@ tensor<real32> signed_left32(int rows, int inner)
     return value
 
 tensor<real32> signed_right32(int inner, int columns)
-    tensor<real32> value = tensor.zeros<real32>([inner, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(inner), nat(columns)])
     real32 negative_zero = real32(0) * real32(-1)
     for k in range(inner)
         for j in range(columns)
