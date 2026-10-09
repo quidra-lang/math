@@ -253,8 +253,8 @@ tensor<T> min_all<T: floating>(tensor<T> value)
     return internal.min_all<T>(value)
 
 real32 dot(tensor<real32> a, tensor<real32> b)
-    int[] a_shape = a.shape()
-    int[] b_shape = b.shape()
+    int[] a_shape = int(a.shape())
+    int[] b_shape = int(b.shape())
     if len(a_shape) != 1 or len(b_shape) != 1
         error("math.dot requires two rank-1 tensors")
     if a_shape[0] != b_shape[0]
@@ -262,8 +262,8 @@ real32 dot(tensor<real32> a, tensor<real32> b)
     return internal.matmul_native<real32>(a, b).item()
 
 real64 dot(tensor<real64> a, tensor<real64> b)
-    int[] a_shape = a.shape()
-    int[] b_shape = b.shape()
+    int[] a_shape = int(a.shape())
+    int[] b_shape = int(b.shape())
     if len(a_shape) != 1 or len(b_shape) != 1
         error("math.dot requires two rank-1 tensors")
     if a_shape[0] != b_shape[0]
@@ -271,8 +271,8 @@ real64 dot(tensor<real64> a, tensor<real64> b)
     return internal.matmul_native<real64>(a, b).item()
 
 T dot<T: integer>(tensor<T> a, tensor<T> b)
-    int[] a_shape = a.shape()
-    int[] b_shape = b.shape()
+    int[] a_shape = int(a.shape())
+    int[] b_shape = int(b.shape())
     if len(a_shape) != 1 or len(b_shape) != 1
         error("math.dot requires two rank-1 tensors")
     if a_shape[0] != b_shape[0]
@@ -283,10 +283,10 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     return internal.matmul<T>(a, b)
 
 tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
-    int[] a_shape = a.shape()
-    int[] b_shape = b.shape()
-    int a_rank = len(a_shape)
-    int b_rank = len(b_shape)
+    int[] a_shape = int(a.shape())
+    int[] b_shape = int(b.shape())
+    int a_rank = int(len(a_shape))
+    int b_rank = int(len(b_shape))
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
         error("math.matmul requires left rank >= 1 and right rank 1 or 2")
@@ -299,7 +299,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     int output_rank = a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape = array(output_rank, fill = 1)
+    int[] output_shape = array(nat(output_rank), fill = 1)
     for axis in range(a_rank - 1)
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
@@ -318,7 +318,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
                 right = right.contiguous()
             tensor<real32> output = tensor.zeros<real32>(
                 output_shape,
-                gpu = int(left_cuda)
+                gpu = nat(left_cuda)
             )
             if native.matmul_cuda_f32(&left, &right, &output) == int32(0)
                 return output

@@ -7,14 +7,14 @@ import native = "./native.qui"
 // computation on the input device and owns each backend implementation.
 tensor<T> unary_output<T: floating>(int[] shape, int device)
     if device >= 0
-        return tensor.zeros<T>(shape, gpu = device)
-    return tensor.zeros<T>(shape)
+        return tensor.zeros<T>(nat(shape), gpu = nat(device))
+    return tensor.zeros<T>(nat(shape))
 
 tensor<T> tensor_unary<T: floating>(tensor<T> value, int32 operation)
     int device = value.device()
     tensor<T> source = value
     if not source.is_contiguous()
-        int[] source_shape = source.shape()
+        int[] source_shape = int(source.shape())
         int count = 1
         for extent in source_shape
             if extent < 0
@@ -22,12 +22,12 @@ tensor<T> tensor_unary<T: floating>(tensor<T> value, int32 operation)
             if extent != 0 and count > 9223372036854775807 / extent
                 error("math tensor unary element count overflows int")
             count = count * extent
-        int[] identity = array(count, fill = 0)
+        int[] identity = array(nat(count), fill = 0)
         for index in range(count)
             identity[index] = index
         source = source.gather(identity, source_shape)
 
-    tensor<T> output = unary_output<T>(source.shape(), device)
+    tensor<T> output = unary_output<T>(int(source.shape()), device)
     int32 status = native.tensor_unary<T>(&source, &output, operation)
     if status != int32(0)
         if operation == int32(2) and status == int32(4)
@@ -61,18 +61,18 @@ int logical_count(int[] shape, string operation)
 
 tensor<T> zeros_scalar_on<T: numeric>(int device)
     if device >= 0
-        return tensor.zeros<T>([], gpu = device)
+        return tensor.zeros<T>([], gpu = nat(device))
     return tensor.zeros<T>([])
 
 tensor<T> ones_scalar_on<T: numeric>(int device)
     if device >= 0
-        return tensor.ones<T>([], gpu = device)
+        return tensor.ones<T>([], gpu = nat(device))
     return tensor.ones<T>([])
 
 tensor<T> ones_vector_on<T: numeric>(int length, int device)
     if device >= 0
-        return tensor.ones<T>([length], gpu = device)
-    return tensor.ones<T>([length])
+        return tensor.ones<T>([nat(length)], gpu = nat(device))
+    return tensor.ones<T>([nat(length)])
 
 // Math-native matrix and reduction kernels serve CPU, the fake test GPU, and
 // Metal real32 placements. Other placements (CUDA/HIP) keep the portable
@@ -107,15 +107,15 @@ tensor<T> dense_device_gradient<T: floating>(tensor<T> output)
 
 tensor<int32> winner_output(int rows, int device)
     if device >= 0
-        return tensor.zeros<int32>([rows], gpu = device)
-    return tensor.zeros<int32>([rows])
+        return tensor.zeros<int32>([nat(rows)], gpu = nat(device))
+    return tensor.zeros<int32>([nat(rows)])
 
 tensor<T> sum_all_nonempty<T: numeric>(
     tensor<T> value,
     int count,
     int device
 )
-    int[] identity = array(count, fill = 0)
+    int[] identity = array(nat(count), fill = 0)
     for index in range(count)
         identity[index] = index
     tensor<T> current = value.gather(identity, [count])
@@ -123,8 +123,8 @@ tensor<T> sum_all_nonempty<T: numeric>(
 
     while length > 1
         int pairs = (length + 1) / 2
-        int[] left_indices = array(pairs, fill = 0)
-        int[] right_indices = array(pairs, fill = 0)
+        int[] left_indices = array(nat(pairs), fill = 0)
+        int[] right_indices = array(nat(pairs), fill = 0)
         for pair in range(pairs)
             int left_index = pair * 2
             int right_index = left_index + 1
@@ -147,14 +147,14 @@ tensor<T> sum_all_nonempty<T: numeric>(
     return current.gather([0], [])
 
 tensor<T> sum_all<T: integer>(tensor<T> value)
-    int count = logical_count(value.shape(), "sum")
+    int count = logical_count(int(value.shape()), "sum")
     int device = value.device()
     if count == 0
         return zeros_scalar_on<T>(device)
     return sum_all_nonempty<T>(value, count, device)
 
 tensor<T> sum_all<T: floating>(tensor<T> value)
-    int count = logical_count(value.shape(), "sum")
+    int count = logical_count(int(value.shape()), "sum")
     int device = value.device()
     if count == 0
         tensor<T> zero = zeros_scalar_on<T>(device)
@@ -184,7 +184,7 @@ tensor<T> positive_count_scalar<T: floating>(int count, int device)
     return result
 
 tensor<T> mean_all<T: floating>(tensor<T> value)
-    int count = logical_count(value.shape(), "mean")
+    int count = logical_count(int(value.shape()), "mean")
     if count == 0
         error("math.mean requires at least one element")
     // Native mean: pairwise sum divided by the element count, with a single
@@ -198,7 +198,7 @@ tensor<T> mean_all<T: floating>(tensor<T> value)
     return sum_all<T>(value) / denominator
 
 tensor<T> sum_last<T: floating>(tensor<T> value)
-    int[] shape = value.shape()
+    int[] shape = int(value.shape())
     int width = last_axis_width(shape, "sum_last")
     int count = logical_count(shape, "sum_last")
     if count == 0
@@ -212,7 +212,7 @@ tensor<T> sum_last<T: floating>(tensor<T> value)
         if native.reduce<T>(&source, &value, &sums, int32(3)) == int32(0)
             return dense_device_gradient<T>(sums)
 
-    int[] selected = array(count, fill = 0)
+    int[] selected = array(nat(count), fill = 0)
     for index in range(count)
         selected[index] = (index / width) * width
     tensor<T> output = value.gather(selected, shape)
@@ -229,13 +229,13 @@ tensor<T> extrema_last_selected<T: numeric>(
     bool maximum,
     string operation
 )
-    int[] shape = value.shape()
+    int[] shape = int(value.shape())
     int width = last_axis_width(shape, operation)
     int count = logical_count(shape, operation)
     if count == 0
         return value
 
-    int[] selected = array(count, fill = 0)
+    int[] selected = array(nat(count), fill = 0)
     int rows = count / width
     for row_index in range(rows)
         int base = row_index * width
@@ -288,7 +288,7 @@ tensor<T> extrema_last<T: floating>(
     bool maximum,
     string operation
 )
-    int[] shape = value.shape()
+    int[] shape = int(value.shape())
     int width = last_axis_width(shape, operation)
     int count = logical_count(shape, operation)
     if count == 0
@@ -316,7 +316,7 @@ tensor<T> extrema_all_selected<T: numeric>(
     bool maximum,
     string operation
 )
-    int count = logical_count(value.shape(), operation)
+    int count = logical_count(int(value.shape()), operation)
     if count == 0
         error("math." + operation + " requires at least one element")
 
@@ -343,7 +343,7 @@ tensor<T> extrema_all<T: floating>(
     bool maximum,
     string operation
 )
-    int count = logical_count(value.shape(), operation)
+    int count = logical_count(int(value.shape()), operation)
     if count == 0
         error("math." + operation + " requires at least one element")
     int32 code = int32(4)
@@ -367,10 +367,10 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     if a.is_tracked() or b.is_tracked()
         error("math.matmul tracked tensors require real32 or real64")
 
-    int[] a_shape = a.shape()
-    int[] b_shape = b.shape()
-    int a_rank = len(a_shape)
-    int b_rank = len(b_shape)
+    int[] a_shape = int(a.shape())
+    int[] b_shape = int(b.shape())
+    int a_rank = int(len(a_shape))
+    int b_rank = int(len(b_shape))
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
         error("math.matmul requires left rank >= 1 and right rank 1 or 2")
@@ -397,7 +397,7 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     int output_rank = a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape = array(output_rank, fill = 1)
+    int[] output_shape = array(nat(output_rank), fill = 1)
     for axis in range(a_rank - 1)
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
@@ -407,7 +407,7 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
         error("math.matmul output size overflows int")
     int output_count = rows * columns
 
-    int[] expanded_shape = array(a_rank + 1, fill = 1)
+    int[] expanded_shape = array(nat(a_rank + 1), fill = 1)
     for axis in range(a_rank - 1)
         expanded_shape[axis] = a_shape[axis]
     expanded_shape[a_rank - 1] = 1
@@ -419,11 +419,11 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     else
         expanded = a.contiguous().reshape(expanded_shape)
 
-    int[] right_shape = array(a_rank + 1, fill = 1)
+    int[] right_shape = array(nat(a_rank + 1), fill = 1)
     right_shape[a_rank - 1] = columns
     right_shape[a_rank] = inner
     int right_count = columns * inner
-    int[] right_indices = array(right_count, fill = 0)
+    int[] right_indices = array(nat(right_count), fill = 0)
     for output_index in range(right_count)
         int column = output_index / inner
         int inner_index = output_index % inner
@@ -434,7 +434,7 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     tensor<T> right_rows = b.gather(right_indices, right_shape)
 
     tensor<T> products = expanded * right_rows
-    int[] selected = array(output_count, fill = 0)
+    int[] selected = array(nat(output_count), fill = 0)
     for index in range(output_count)
         selected[index] = index * inner
     tensor<T> output = products.gather(selected, output_shape)
@@ -446,10 +446,10 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     return output
 
 tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
-    int[] a_shape = a.shape()
-    int[] b_shape = b.shape()
-    int a_rank = len(a_shape)
-    int b_rank = len(b_shape)
+    int[] a_shape = int(a.shape())
+    int[] b_shape = int(b.shape())
+    int a_rank = int(len(a_shape))
+    int b_rank = int(len(b_shape))
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
         error("math.matmul requires left rank >= 1 and right rank 1 or 2")
@@ -476,7 +476,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     int output_rank = a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape = array(output_rank, fill = 1)
+    int[] output_shape = array(nat(output_rank), fill = 1)
     for axis in range(a_rank - 1)
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
@@ -486,7 +486,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
         error("math.matmul output size overflows int")
     int output_count = rows * columns
 
-    int[] expanded_shape = array(a_rank + 1, fill = 1)
+    int[] expanded_shape = array(nat(a_rank + 1), fill = 1)
     for axis in range(a_rank - 1)
         expanded_shape[axis] = a_shape[axis]
     expanded_shape[a_rank - 1] = 1
@@ -497,18 +497,18 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
         expanded = a.reshape(expanded_shape)
     elif a.is_tracked()
         int input_count = rows * inner
-        int[] identity = array(input_count, fill = 0)
+        int[] identity = array(nat(input_count), fill = 0)
         for index in range(input_count)
             identity[index] = index
         expanded = a.gather(identity, expanded_shape)
     else
         expanded = a.contiguous().reshape(expanded_shape)
 
-    int[] right_shape = array(a_rank + 1, fill = 1)
+    int[] right_shape = array(nat(a_rank + 1), fill = 1)
     right_shape[a_rank - 1] = columns
     right_shape[a_rank] = inner
     int right_count = columns * inner
-    int[] right_indices = array(right_count, fill = 0)
+    int[] right_indices = array(nat(right_count), fill = 0)
     for output_index in range(right_count)
         int column = output_index / inner
         int inner_index = output_index % inner
@@ -519,7 +519,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     tensor<real32> right_rows = b.gather(right_indices, right_shape)
 
     tensor<real32> products = expanded * right_rows
-    int[] selected = array(output_count, fill = 0)
+    int[] selected = array(nat(output_count), fill = 0)
     for index in range(output_count)
         selected[index] = index * inner
     tensor<real32> output = products.gather(selected, output_shape)
@@ -531,10 +531,10 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     return output
 
 tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
-    int[] a_shape = a.shape()
-    int[] b_shape = b.shape()
-    int a_rank = len(a_shape)
-    int b_rank = len(b_shape)
+    int[] a_shape = int(a.shape())
+    int[] b_shape = int(b.shape())
+    int a_rank = int(len(a_shape))
+    int b_rank = int(len(b_shape))
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
         error("math.matmul requires left rank >= 1 and right rank 1 or 2")
@@ -561,7 +561,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
     int output_rank = a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape = array(output_rank, fill = 1)
+    int[] output_shape = array(nat(output_rank), fill = 1)
     for axis in range(a_rank - 1)
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
@@ -571,7 +571,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
         error("math.matmul output size overflows int")
     int output_count = rows * columns
 
-    int[] expanded_shape = array(a_rank + 1, fill = 1)
+    int[] expanded_shape = array(nat(a_rank + 1), fill = 1)
     for axis in range(a_rank - 1)
         expanded_shape[axis] = a_shape[axis]
     expanded_shape[a_rank - 1] = 1
@@ -582,18 +582,18 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
         expanded = a.reshape(expanded_shape)
     elif a.is_tracked()
         int input_count = rows * inner
-        int[] identity = array(input_count, fill = 0)
+        int[] identity = array(nat(input_count), fill = 0)
         for index in range(input_count)
             identity[index] = index
         expanded = a.gather(identity, expanded_shape)
     else
         expanded = a.contiguous().reshape(expanded_shape)
 
-    int[] right_shape = array(a_rank + 1, fill = 1)
+    int[] right_shape = array(nat(a_rank + 1), fill = 1)
     right_shape[a_rank - 1] = columns
     right_shape[a_rank] = inner
     int right_count = columns * inner
-    int[] right_indices = array(right_count, fill = 0)
+    int[] right_indices = array(nat(right_count), fill = 0)
     for output_index in range(right_count)
         int column = output_index / inner
         int inner_index = output_index % inner
@@ -604,7 +604,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
     tensor<real64> right_rows = b.gather(right_indices, right_shape)
 
     tensor<real64> products = expanded * right_rows
-    int[] selected = array(output_count, fill = 0)
+    int[] selected = array(nat(output_count), fill = 0)
     for index in range(output_count)
         selected[index] = index * inner
     tensor<real64> output = products.gather(selected, output_shape)
@@ -644,10 +644,10 @@ tensor<T> matmul_native<T: floating>(tensor<T> a, tensor<T> b)
     if a.device() != b.device()
         return matmul(a, b)
 
-    int[] a_shape = a.shape()
-    int[] b_shape = b.shape()
-    int a_rank = len(a_shape)
-    int b_rank = len(b_shape)
+    int[] a_shape = int(a.shape())
+    int[] b_shape = int(b.shape())
+    int a_rank = int(len(a_shape))
+    int b_rank = int(len(b_shape))
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
         return matmul(a, b)
     int inner = a_shape[a_rank - 1]
@@ -690,7 +690,7 @@ tensor<T> matmul_native<T: floating>(tensor<T> a, tensor<T> b)
     int output_rank = a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape = array(output_rank, fill = 1)
+    int[] output_shape = array(nat(output_rank), fill = 1)
     for axis in range(a_rank - 1)
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
