@@ -415,9 +415,9 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
 
     tensor<T> expanded
     if a.is_contiguous()
-        expanded = a.reshape(expanded_shape)
+        expanded = a.reshape(nat(expanded_shape))
     else
-        expanded = a.contiguous().reshape(expanded_shape)
+        expanded = a.contiguous().reshape(nat(expanded_shape))
 
     int[] right_shape = array(nat(a_rank + 1), fill = 1)
     right_shape[a_rank - 1] = columns
@@ -494,7 +494,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
 
     tensor<real32> expanded
     if a.is_contiguous()
-        expanded = a.reshape(expanded_shape)
+        expanded = a.reshape(nat(expanded_shape))
     elif a.is_tracked()
         int input_count = rows * inner
         int[] identity = array(nat(input_count), fill = 0)
@@ -502,7 +502,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
             identity[index] = index
         expanded = a.gather(identity, expanded_shape)
     else
-        expanded = a.contiguous().reshape(expanded_shape)
+        expanded = a.contiguous().reshape(nat(expanded_shape))
 
     int[] right_shape = array(nat(a_rank + 1), fill = 1)
     right_shape[a_rank - 1] = columns
@@ -579,7 +579,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
 
     tensor<real64> expanded
     if a.is_contiguous()
-        expanded = a.reshape(expanded_shape)
+        expanded = a.reshape(nat(expanded_shape))
     elif a.is_tracked()
         int input_count = rows * inner
         int[] identity = array(nat(input_count), fill = 0)
@@ -587,7 +587,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
             identity[index] = index
         expanded = a.gather(identity, expanded_shape)
     else
-        expanded = a.contiguous().reshape(expanded_shape)
+        expanded = a.contiguous().reshape(nat(expanded_shape))
 
     int[] right_shape = array(nat(a_rank + 1), fill = 1)
     right_shape[a_rank - 1] = columns

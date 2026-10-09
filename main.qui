@@ -317,7 +317,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
             if not right.is_contiguous()
                 right = right.contiguous()
             tensor<real32> output = tensor.zeros<real32>(
-                output_shape,
+                nat(output_shape),
                 gpu = nat(left_cuda)
             )
             if native.matmul_cuda_f32(&left, &right, &output) == int32(0)
