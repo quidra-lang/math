@@ -29,26 +29,26 @@ T max<T: numeric>(T left, T right)
 T | error sqrt<T: floating>(T value)
     T zero = value - value
     if value < zero
-        return error("math.sqrt requires a nonnegative value")
+        return error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
     return value ^ 0.5
 
 T | error sin<T: floating>(T value)
-    return error("math.sin is not implemented for this floating type")
+    return error("math.sin is not implemented for this floating type", code = "MATH_DTYPE")
 
 T | error cos<T: floating>(T value)
-    return error("math.cos is not implemented for this floating type")
+    return error("math.cos is not implemented for this floating type", code = "MATH_DTYPE")
 
 T | error tan<T: floating>(T value)
-    return error("math.tan is not implemented for this floating type")
+    return error("math.tan is not implemented for this floating type", code = "MATH_DTYPE")
 
 T | error log<T: floating>(T value)
     T zero = value - value
     if value <= zero
-        return error("math.log requires a positive value")
-    return error("math.log is not implemented for this floating type")
+        return error("math.log requires a positive value", code = "MATH_DOMAIN")
+    return error("math.log is not implemented for this floating type", code = "MATH_DTYPE")
 
 T | error exp<T: floating>(T value)
-    return error("math.exp is not implemented for this floating type")
+    return error("math.exp is not implemented for this floating type", code = "MATH_DTYPE")
 
 T pow<T: floating>(T base, T exponent)
     return base ^ exponent
@@ -57,60 +57,60 @@ bool is_finite<T: floating>(T value)
     return true
 
 int | error trunc<T: floating>(T value)
-    return error("math.trunc is not implemented for this floating type")
+    return error("math.trunc is not implemented for this floating type", code = "MATH_DTYPE")
 
 int | error round<T: floating>(T value)
-    return error("math.round is not implemented for this floating type")
+    return error("math.round is not implemented for this floating type", code = "MATH_DTYPE")
 
 int | error floor<T: floating>(T value)
-    return error("math.floor is not implemented for this floating type")
+    return error("math.floor is not implemented for this floating type", code = "MATH_DTYPE")
 
 int | error ceil<T: floating>(T value)
-    return error("math.ceil is not implemented for this floating type")
+    return error("math.ceil is not implemented for this floating type", code = "MATH_DTYPE")
 
 int | error trunc(real32 value)
     if native.round_valid_f32(value, int32(1)) != int32(1)
-        return error("math.trunc requires a finite value in int range")
+        return error("math.trunc requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(value, int32(1)))
 
 int | error trunc(real64 value)
     if native.round_valid_f64(value, int32(1)) != int32(1)
-        return error("math.trunc requires a finite value in int range")
+        return error("math.trunc requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f64(value, int32(1)))
 
 int | error round(real32 value)
     if native.round_valid_f32(value, int32(2)) != int32(1)
-        return error("math.round requires a finite value in int range")
+        return error("math.round requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(value, int32(2)))
 
 int | error round(real64 value)
     if native.round_valid_f64(value, int32(2)) != int32(1)
-        return error("math.round requires a finite value in int range")
+        return error("math.round requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f64(value, int32(2)))
 
 int | error floor(real32 value)
     if native.round_valid_f32(value, int32(3)) != int32(1)
-        return error("math.floor requires a finite value in int range")
+        return error("math.floor requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(value, int32(3)))
 
 int | error floor(real64 value)
     if native.round_valid_f64(value, int32(3)) != int32(1)
-        return error("math.floor requires a finite value in int range")
+        return error("math.floor requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f64(value, int32(3)))
 
 int | error ceil(real32 value)
     if native.round_valid_f32(value, int32(4)) != int32(1)
-        return error("math.ceil requires a finite value in int range")
+        return error("math.ceil requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(value, int32(4)))
 
 int | error ceil(real64 value)
     if native.round_valid_f64(value, int32(4)) != int32(1)
-        return error("math.ceil requires a finite value in int range")
+        return error("math.ceil requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f64(value, int32(4)))
 
 real | error sqrt(real value)
     if value < real(0)
-        return error("math.sqrt requires a nonnegative value")
+        return error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
     return real.unary("math", 1, value)
 
 real sin(real value)
@@ -124,7 +124,7 @@ real tan(real value)
 
 real | error log(real value)
     if value <= real(0)
-        return error("math.log requires a positive value")
+        return error("math.log requires a positive value", code = "MATH_DOMAIN")
     return real.unary("math", 5, value)
 
 real exp(real value)
@@ -132,12 +132,12 @@ real exp(real value)
 
 real32 | error sqrt(real32 value)
     if value < real32(0)
-        return error("math.sqrt requires a nonnegative value")
+        return error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
     return native.sqrt_f32(value)
 
 real64 | error sqrt(real64 value)
     if value < 0.0
-        return error("math.sqrt requires a nonnegative value")
+        return error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
     return native.sqrt_f64(value)
 
 real32 sin(real32 value)
@@ -160,12 +160,12 @@ real64 tan(real64 value)
 
 real32 | error log(real32 value)
     if value <= real32(0)
-        return error("math.log requires a positive value")
+        return error("math.log requires a positive value", code = "MATH_DOMAIN")
     return native.log_f32(value)
 
 real64 | error log(real64 value)
     if value <= 0.0
-        return error("math.log requires a positive value")
+        return error("math.log requires a positive value", code = "MATH_DOMAIN")
     return native.log_f64(value)
 
 real32 exp(real32 value)
@@ -256,27 +256,27 @@ real32 dot(tensor<real32> a, tensor<real32> b)
     int[] a_shape = int(a.shape())
     int[] b_shape = int(b.shape())
     if len(a_shape) != 1 or len(b_shape) != 1
-        error("math.dot requires two rank-1 tensors")
+        error("math.dot requires two rank-1 tensors", code = "MATH_SHAPE")
     if a_shape[0] != b_shape[0]
-        error("math.dot requires equal vector lengths")
+        error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
     return internal.matmul_native<real32>(a, b).item()
 
 real64 dot(tensor<real64> a, tensor<real64> b)
     int[] a_shape = int(a.shape())
     int[] b_shape = int(b.shape())
     if len(a_shape) != 1 or len(b_shape) != 1
-        error("math.dot requires two rank-1 tensors")
+        error("math.dot requires two rank-1 tensors", code = "MATH_SHAPE")
     if a_shape[0] != b_shape[0]
-        error("math.dot requires equal vector lengths")
+        error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
     return internal.matmul_native<real64>(a, b).item()
 
 T dot<T: integer>(tensor<T> a, tensor<T> b)
     int[] a_shape = int(a.shape())
     int[] b_shape = int(b.shape())
     if len(a_shape) != 1 or len(b_shape) != 1
-        error("math.dot requires two rank-1 tensors")
+        error("math.dot requires two rank-1 tensors", code = "MATH_SHAPE")
     if a_shape[0] != b_shape[0]
-        error("math.dot requires equal vector lengths")
+        error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
     return internal.matmul<T>(a, b).item()
 
 tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
@@ -289,12 +289,12 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     int b_rank = int(len(b_shape))
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
-        error("math.matmul requires left rank >= 1 and right rank 1 or 2")
+        error("math.matmul requires left rank >= 1 and right rank 1 or 2", code = "MATH_SHAPE")
     if a_shape[a_rank - 1] <= 0 or b_shape[0] != a_shape[a_rank - 1]
-        error("math.matmul inner dimensions do not match")
+        error("math.matmul inner dimensions do not match", code = "MATH_SHAPE")
 
     if b_rank == 2 and b_shape[1] <= 0
-        error("math.matmul requires a positive output width")
+        error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
     int output_rank = a_rank
     if b_rank == 1

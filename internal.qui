@@ -18,9 +18,9 @@ tensor<T> tensor_unary<T: floating>(tensor<T> value, int32 operation)
         int count = 1
         for extent in source_shape
             if extent < 0
-                error("math tensor unary encountered an invalid extent")
+                error("math tensor unary encountered an invalid extent", code = "MATH_INTERNAL")
             if extent != 0 and count > 9223372036854775807 / extent
-                error("math tensor unary element count overflows int")
+                error("math tensor unary element count overflows int", code = "MATH_SIZE")
             count = count * extent
         int[] identity = array(nat(count), fill = 0)
         for index in range(count)
@@ -31,31 +31,31 @@ tensor<T> tensor_unary<T: floating>(tensor<T> value, int32 operation)
     int32 status = native.tensor_unary<T>(&source, &output, operation)
     if status != int32(0)
         if operation == int32(2) and status == int32(4)
-            error("math.sqrt requires nonnegative tensor elements")
+            error("math.sqrt requires nonnegative tensor elements", code = "MATH_DOMAIN")
         if operation == int32(3) and status == int32(4)
-            error("math.log requires positive tensor elements")
+            error("math.log requires positive tensor elements", code = "MATH_DOMAIN")
         if status == int32(6)
-            error("math tensor unary is not implemented for this device backend")
+            error("math tensor unary is not implemented for this device backend", code = "MATH_DEVICE")
         if status == int32(7)
-            error("math tensor unary is not implemented for this device dtype")
-        error("math tensor unary native execution failed")
+            error("math tensor unary is not implemented for this device dtype", code = "MATH_DTYPE")
+        error("math tensor unary native execution failed", code = "MATH_NATIVE")
     return output
 
 int last_axis_width(int[] shape, string operation)
     if len(shape) == 0
-        error("math." + operation + " requires rank >= 1")
+        error("math." + operation + " requires rank >= 1", code = "MATH_SHAPE")
     int width = shape[len(shape) - 1]
     if width <= 0
-        error("math." + operation + " requires a non-empty last axis")
+        error("math." + operation + " requires a non-empty last axis", code = "MATH_SHAPE")
     return width
 
 int logical_count(int[] shape, string operation)
     int count = 1
     for extent in shape
         if extent < 0
-            error("math." + operation + " encountered an invalid extent")
+            error("math." + operation + " encountered an invalid extent", code = "MATH_INTERNAL")
         if extent != 0 and count > 9223372036854775807 / extent
-            error("math." + operation + " element count overflows int")
+            error("math." + operation + " element count overflows int", code = "MATH_SIZE")
         count = count * extent
     return count
 
@@ -160,7 +160,7 @@ tensor<T> sum_all<T: floating>(tensor<T> value)
         tensor<T> zero = zeros_scalar_on<T>(device)
         if value.is_tracked()
             if native.attach_empty_sum<T>(&value, &zero) != int32(0)
-                error("math.sum failed to attach empty-tensor autograd")
+                error("math.sum failed to attach empty-tensor autograd", code = "MATH_INTERNAL")
         return zero
     // Native whole-tensor sum: the same pairwise tree as the composition below,
     // evaluated on the input's device with one Math-owned autograd node.
@@ -186,7 +186,7 @@ tensor<T> positive_count_scalar<T: floating>(int count, int device)
 tensor<T> mean_all<T: floating>(tensor<T> value)
     int count = logical_count(int(value.shape()), "mean")
     if count == 0
-        error("math.mean requires at least one element")
+        error("math.mean requires at least one element", code = "MATH_SHAPE")
     // Native mean: pairwise sum divided by the element count, with a single
     // autograd node whose backward is upstream / count.
     if native_linear_ready<T>(value)
@@ -318,7 +318,7 @@ tensor<T> extrema_all_selected<T: numeric>(
 )
     int count = logical_count(int(value.shape()), operation)
     if count == 0
-        error("math." + operation + " requires at least one element")
+        error("math." + operation + " requires at least one element", code = "MATH_SHAPE")
 
     int best_index = 0
     T best = selector.gather([0], []).item()
@@ -345,7 +345,7 @@ tensor<T> extrema_all<T: floating>(
 )
     int count = logical_count(int(value.shape()), operation)
     if count == 0
-        error("math." + operation + " requires at least one element")
+        error("math." + operation + " requires at least one element", code = "MATH_SHAPE")
     int32 code = int32(4)
     if maximum
         code = int32(3)
@@ -365,7 +365,7 @@ tensor<T> min_all<T: floating>(tensor<T> value)
 
 tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     if a.is_tracked() or b.is_tracked()
-        error("math.matmul tracked tensors require real32 or real64")
+        error("math.matmul tracked tensors require real32 or real64", code = "MATH_DTYPE")
 
     int[] a_shape = int(a.shape())
     int[] b_shape = int(b.shape())
@@ -373,25 +373,25 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     int b_rank = int(len(b_shape))
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
-        error("math.matmul requires left rank >= 1 and right rank 1 or 2")
+        error("math.matmul requires left rank >= 1 and right rank 1 or 2", code = "MATH_SHAPE")
 
     int inner = a_shape[a_rank - 1]
     if inner <= 0 or b_shape[0] != inner
-        error("math.matmul inner dimensions do not match")
+        error("math.matmul inner dimensions do not match", code = "MATH_SHAPE")
 
     int columns = 1
     if b_rank == 2
         columns = b_shape[1]
         if columns <= 0
-            error("math.matmul requires a positive output width")
+            error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
     int rows = 1
     for axis in range(a_rank - 1)
         int dimension = a_shape[axis]
         if dimension <= 0
-            error("math.matmul requires positive tensor extents")
+            error("math.matmul requires positive tensor extents", code = "MATH_SHAPE")
         if rows > 9223372036854775807 / dimension
-            error("math.matmul row count overflows int")
+            error("math.matmul row count overflows int", code = "MATH_SIZE")
         rows = rows * dimension
 
     int output_rank = a_rank
@@ -404,7 +404,7 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
         output_shape[a_rank - 1] = columns
 
     if rows > 9223372036854775807 / columns
-        error("math.matmul output size overflows int")
+        error("math.matmul output size overflows int", code = "MATH_SIZE")
     int output_count = rows * columns
 
     int[] expanded_shape = array(nat(a_rank + 1), fill = 1)
@@ -452,25 +452,25 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     int b_rank = int(len(b_shape))
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
-        error("math.matmul requires left rank >= 1 and right rank 1 or 2")
+        error("math.matmul requires left rank >= 1 and right rank 1 or 2", code = "MATH_SHAPE")
 
     int inner = a_shape[a_rank - 1]
     if inner <= 0 or b_shape[0] != inner
-        error("math.matmul inner dimensions do not match")
+        error("math.matmul inner dimensions do not match", code = "MATH_SHAPE")
 
     int columns = 1
     if b_rank == 2
         columns = b_shape[1]
         if columns <= 0
-            error("math.matmul requires a positive output width")
+            error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
     int rows = 1
     for axis in range(a_rank - 1)
         int dimension = a_shape[axis]
         if dimension <= 0
-            error("math.matmul requires positive tensor extents")
+            error("math.matmul requires positive tensor extents", code = "MATH_SHAPE")
         if rows > 9223372036854775807 / dimension
-            error("math.matmul row count overflows int")
+            error("math.matmul row count overflows int", code = "MATH_SIZE")
         rows = rows * dimension
 
     int output_rank = a_rank
@@ -483,7 +483,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
         output_shape[a_rank - 1] = columns
 
     if rows > 9223372036854775807 / columns
-        error("math.matmul output size overflows int")
+        error("math.matmul output size overflows int", code = "MATH_SIZE")
     int output_count = rows * columns
 
     int[] expanded_shape = array(nat(a_rank + 1), fill = 1)
@@ -537,25 +537,25 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
     int b_rank = int(len(b_shape))
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
-        error("math.matmul requires left rank >= 1 and right rank 1 or 2")
+        error("math.matmul requires left rank >= 1 and right rank 1 or 2", code = "MATH_SHAPE")
 
     int inner = a_shape[a_rank - 1]
     if inner <= 0 or b_shape[0] != inner
-        error("math.matmul inner dimensions do not match")
+        error("math.matmul inner dimensions do not match", code = "MATH_SHAPE")
 
     int columns = 1
     if b_rank == 2
         columns = b_shape[1]
         if columns <= 0
-            error("math.matmul requires a positive output width")
+            error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
     int rows = 1
     for axis in range(a_rank - 1)
         int dimension = a_shape[axis]
         if dimension <= 0
-            error("math.matmul requires positive tensor extents")
+            error("math.matmul requires positive tensor extents", code = "MATH_SHAPE")
         if rows > 9223372036854775807 / dimension
-            error("math.matmul row count overflows int")
+            error("math.matmul row count overflows int", code = "MATH_SIZE")
         rows = rows * dimension
 
     int output_rank = a_rank
@@ -568,7 +568,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
         output_shape[a_rank - 1] = columns
 
     if rows > 9223372036854775807 / columns
-        error("math.matmul output size overflows int")
+        error("math.matmul output size overflows int", code = "MATH_SIZE")
     int output_count = rows * columns
 
     int[] expanded_shape = array(nat(a_rank + 1), fill = 1)
