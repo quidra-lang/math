@@ -75,7 +75,7 @@ tensor<T> ones_vector_on<T: numeric>(int length, int device)
     return tensor.ones<T>([length])
 
 // Math-native matrix and reduction kernels serve CPU, the fake test GPU, and
-// Metal float32 placements. Other placements (CUDA/HIP) keep the portable
+// Metal real32 placements. Other placements (CUDA/HIP) keep the portable
 // composition.
 bool native_linear_ready<T: floating>(tensor<T> value)
     return native.linear_placement<T>(&value) == int32(1)
@@ -365,7 +365,7 @@ tensor<T> min_all<T: floating>(tensor<T> value)
 
 tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     if a.is_tracked() or b.is_tracked()
-        error("math.matmul tracked tensors require float32 or float")
+        error("math.matmul tracked tensors require real32 or real64")
 
     int[] a_shape = a.shape()
     int[] b_shape = b.shape()
@@ -445,7 +445,7 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
         output = output + products.gather(selected, output_shape)
     return output
 
-tensor<float32> matmul(tensor<float32> a, tensor<float32> b)
+tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     int[] a_shape = a.shape()
     int[] b_shape = b.shape()
     int a_rank = len(a_shape)
@@ -492,7 +492,7 @@ tensor<float32> matmul(tensor<float32> a, tensor<float32> b)
     expanded_shape[a_rank - 1] = 1
     expanded_shape[a_rank] = inner
 
-    tensor<float32> expanded
+    tensor<real32> expanded
     if a.is_contiguous()
         expanded = a.reshape(expanded_shape)
     elif a.is_tracked()
@@ -516,13 +516,13 @@ tensor<float32> matmul(tensor<float32> a, tensor<float32> b)
             right_indices[output_index] = inner_index
         else
             right_indices[output_index] = inner_index * columns + column
-    tensor<float32> right_rows = b.gather(right_indices, right_shape)
+    tensor<real32> right_rows = b.gather(right_indices, right_shape)
 
-    tensor<float32> products = expanded * right_rows
+    tensor<real32> products = expanded * right_rows
     int[] selected = array(output_count, fill = 0)
     for index in range(output_count)
         selected[index] = index * inner
-    tensor<float32> output = products.gather(selected, output_shape)
+    tensor<real32> output = products.gather(selected, output_shape)
 
     for inner_index in range(1, inner)
         for index in range(output_count)
@@ -530,7 +530,7 @@ tensor<float32> matmul(tensor<float32> a, tensor<float32> b)
         output = output + products.gather(selected, output_shape)
     return output
 
-tensor<float> matmul(tensor<float> a, tensor<float> b)
+tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
     int[] a_shape = a.shape()
     int[] b_shape = b.shape()
     int a_rank = len(a_shape)
@@ -577,7 +577,7 @@ tensor<float> matmul(tensor<float> a, tensor<float> b)
     expanded_shape[a_rank - 1] = 1
     expanded_shape[a_rank] = inner
 
-    tensor<float> expanded
+    tensor<real64> expanded
     if a.is_contiguous()
         expanded = a.reshape(expanded_shape)
     elif a.is_tracked()
@@ -601,13 +601,13 @@ tensor<float> matmul(tensor<float> a, tensor<float> b)
             right_indices[output_index] = inner_index
         else
             right_indices[output_index] = inner_index * columns + column
-    tensor<float> right_rows = b.gather(right_indices, right_shape)
+    tensor<real64> right_rows = b.gather(right_indices, right_shape)
 
-    tensor<float> products = expanded * right_rows
+    tensor<real64> products = expanded * right_rows
     int[] selected = array(output_count, fill = 0)
     for index in range(output_count)
         selected[index] = index * inner
-    tensor<float> output = products.gather(selected, output_shape)
+    tensor<real64> output = products.gather(selected, output_shape)
 
     for inner_index in range(1, inner)
         for index in range(output_count)
