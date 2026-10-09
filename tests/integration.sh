@@ -544,7 +544,7 @@ import math
 
 // Deterministic, non-symmetric test data.
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([rows, columns])
+    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -552,7 +552,7 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     return value
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -570,13 +570,13 @@ tensor<real64> numeric_gradient(tensor<real64> a, tensor<real64> b, tensor<real6
     tensor<real64> target = b
     if left
         target = a
-    int rows = target.shape()[0]
-    int columns = target.shape()[1]
-    tensor<real64> result = tensor.zeros<real64>([rows, columns])
+    int rows = int(target.shape()[0])
+    int columns = int(target.shape()[1])
+    tensor<real64> result = tensor.zeros<real64>([nat(rows), nat(columns)])
     real64 eps = 0.000001
     for i in range(rows)
         for j in range(columns)
-            tensor<real64> step = tensor.zeros<real64>([rows, columns])
+            tensor<real64> step = tensor.zeros<real64>([nat(rows), nat(columns)])
             step[i, j] = eps
             real64 plus = 0.0
             real64 minus = 0.0
@@ -734,7 +734,7 @@ import math
 
 // Deterministic, non-symmetric test data.
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([rows, columns])
+    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -742,7 +742,7 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     return value
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -781,7 +781,7 @@ import math
 
 // Deterministic, non-symmetric test data.
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([rows, columns])
+    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -789,7 +789,7 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     return value
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -858,7 +858,7 @@ import math
 
 // Deterministic, non-symmetric test data.
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([rows, columns])
+    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -904,7 +904,7 @@ cat > "$TMP/native-views.qui" <<'QUI'
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -915,7 +915,7 @@ tensor<real32> pattern3(int a, int b, int c, int seed)
     return pattern32(a * b, c, seed).reshape([a, b, c])
 
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([rows, columns])
+    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -1159,9 +1159,9 @@ tensor<real32> signed_right32(int inner, int columns)
     return value
 
 bool fold_matches32(tensor<real32> left, tensor<real32> right, tensor<real32> product)
-    int rows = left.shape()[0]
-    int inner = left.shape()[1]
-    int columns = right.shape()[1]
+    int rows = int(left.shape()[0])
+    int inner = int(left.shape()[1])
+    int columns = int(right.shape()[1])
     for i in range(rows)
         for j in range(columns)
             real32 total = left[i, 0].item() * right[0, j].item()
@@ -1173,18 +1173,18 @@ bool fold_matches32(tensor<real32> left, tensor<real32> right, tensor<real32> pr
     return negative_zero32(product[0, 0].item())
 
 tensor<real64> widen(tensor<real32> value)
-    int rows = value.shape()[0]
-    int columns = value.shape()[1]
-    tensor<real64> result = tensor.zeros<real64>([rows, columns])
+    int rows = int(value.shape()[0])
+    int columns = int(value.shape()[1])
+    tensor<real64> result = tensor.zeros<real64>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             result[i, j] = real64(value[i, j].item())
     return result
 
 bool fold_matches64(tensor<real64> left, tensor<real64> right, tensor<real64> product)
-    int rows = left.shape()[0]
-    int inner = left.shape()[1]
-    int columns = right.shape()[1]
+    int rows = int(left.shape()[0])
+    int inner = int(left.shape()[1])
+    int columns = int(right.shape()[1])
     for i in range(rows)
         for j in range(columns)
             real64 total = left[i, 0].item() * right[0, j].item()
@@ -1271,14 +1271,14 @@ cat > "$TMP/native-dispatch.qui" <<'QUI'
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             value[i, j] = real32((i * 131 + j * 71 + seed * 17) % 97) / real32(48) - real32(1)
     return value
 
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([rows, columns])
+    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             value[i, j] = real64((i * 131 + j * 71 + seed * 17) % 97) / 48.0 - 1.0
