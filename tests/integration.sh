@@ -547,15 +547,15 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            value[i, j] = real64(h) / 48.0 - 1.0
+            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            value[i, j] = real64(h) / real64(48.0) - real64(1.0)
     return value
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
-            int h = (i * 131 + j * 71 + seed * 17) % 97
+            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
             value[i, j] = real32(h) / real32(48) - real32(1)
     return value
 
@@ -737,15 +737,15 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            value[i, j] = real64(h) / 48.0 - 1.0
+            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            value[i, j] = real64(h) / real64(48.0) - real64(1.0)
     return value
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
-            int h = (i * 131 + j * 71 + seed * 17) % 97
+            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
             value[i, j] = real32(h) / real32(48) - real32(1)
     return value
 
@@ -784,15 +784,15 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            value[i, j] = real64(h) / 48.0 - 1.0
+            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            value[i, j] = real64(h) / real64(48.0) - real64(1.0)
     return value
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
-            int h = (i * 131 + j * 71 + seed * 17) % 97
+            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
             value[i, j] = real32(h) / real32(48) - real32(1)
     return value
 
@@ -861,8 +861,8 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            value[i, j] = real64(h) / 48.0 - 1.0
+            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            value[i, j] = real64(h) / real64(48.0) - real64(1.0)
     return value
 
 // 1-2: higher-order through sum_last and max_last stays package-owned.
@@ -907,7 +907,7 @@ tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
-            int h = (i * 131 + j * 71 + seed * 17) % 97
+            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
             value[i, j] = real32(h) / real32(48) - real32(1)
     return value
 
@@ -918,8 +918,8 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            value[i, j] = real64(h) / 48.0 - 1.0
+            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            value[i, j] = real64(h) / real64(48.0) - real64(1.0)
     return value
 
 bool same32(tensor<real32> left, tensor<real32> right)
