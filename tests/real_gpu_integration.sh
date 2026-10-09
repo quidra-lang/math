@@ -246,7 +246,7 @@ import math
 extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -266,8 +266,8 @@ bool product_close(int m, int k, int n, int device)
     tensor<real32> a = pattern32(m, k, 1)
     tensor<real32> w = pattern32(n, k, 2)
     tensor<real32> expected = math.matmul(a, w.transpose(0, 1))
-    tensor<real32> actual = math.matmul(a.gpu(device), w.gpu(device).transpose(0, 1))
-    return actual.device() == device and real64(max_difference(actual.cpu(), expected)) < 0.00001 * real64(k)
+    tensor<real32> actual = math.matmul(a.gpu(nat(device)), w.gpu(nat(device)).transpose(0, 1))
+    return actual.device() == device and real64(max_difference(actual.cpu(), expected)) < real64(0.00001) * real64(k)
 
 print(product_close(45, 16, 2, $GPU_INDEX))
 print(NL)
@@ -298,7 +298,7 @@ tensor<real32> right = pattern32(128, 192, 11).gpu($GPU_INDEX)
 tensor<real32> first = math.matmul(left, right).cpu()
 tensor<real32> second = math.matmul(left, right).cpu()
 execution_policy(int32(0))
-print(same32(first, second) and real64(max_difference(first, math.matmul(pattern32(256, 128, 10), pattern32(128, 192, 11)))) < 0.000001 * 128.0)
+print(same32(first, second) and real64(max_difference(first, math.matmul(pattern32(256, 128, 10), pattern32(128, 192, 11)))) < real64(0.000001) * real64(128.0))
 print(NL)
 QUI
 expect_true_lines "Math native real-GPU matmul" "$TMP/native-matmul-real-gpu.qui" 6
@@ -310,7 +310,7 @@ import math
 extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -349,7 +349,7 @@ import math
 extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -398,7 +398,7 @@ import math
 extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -441,7 +441,7 @@ cat > "$TMP/native-views-real-gpu.qui" <<QUI
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -611,7 +611,7 @@ bool same_bits32(real32 x, real32 y)
     return x == y
 
 tensor<real32> signed_left32(int rows, int inner)
-    tensor<real32> value = tensor.zeros<real32>([rows, inner])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(inner)])
     for i in range(rows)
         for k in range(inner)
             real32 magnitude = real32(1 + (i + k) % 5)
@@ -621,7 +621,7 @@ tensor<real32> signed_left32(int rows, int inner)
     return value
 
 tensor<real32> signed_right32(int inner, int columns)
-    tensor<real32> value = tensor.zeros<real32>([inner, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(inner), nat(columns)])
     real32 negative_zero = real32(0) * real32(-1)
     for k in range(inner)
         for j in range(columns)
@@ -700,7 +700,7 @@ cat > "$TMP/native-gemm-numerics-real-gpu.qui" <<QUI
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -823,7 +823,7 @@ import math
 extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             int h = (i * 131 + j * 71 + seed * 17) % 97
@@ -912,7 +912,7 @@ cat > "$TMP/native-dispatch-real-gpu.qui" <<QUI
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([rows, columns])
+    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
     for i in range(rows)
         for j in range(columns)
             value[i, j] = real32((i * 131 + j * 71 + seed * 17) % 97) / real32(48) - real32(1)
