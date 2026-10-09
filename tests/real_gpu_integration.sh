@@ -14,6 +14,7 @@ REQUIRE_REAL="${QUIDRA_REQUIRE_REAL_GPU:-0}"
 REQUIRE_BACKEND="${QUIDRA_REQUIRE_GPU_BACKEND:-}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+export QUIDRA_CACHE_DIR="$TMP/run-cache"
 # The suite pins the default Metal path; the MPS opt-in is enabled explicitly
 # for the one program that tests it, never inherited from the caller.
 unset QUIDRA_MATH_METAL_MPS
