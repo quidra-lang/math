@@ -920,7 +920,7 @@ tensor<real32> pattern32(int rows, int columns, int seed)
     return value
 
 tensor<real32> pattern3(int a, int b, int c, int seed)
-    return pattern32(a * b, c, seed).reshape([a, b, c])
+    return pattern32(a * b, c, seed).reshape([nat(a), nat(b), nat(c)])
 
 tensor<real64> pattern64(int rows, int columns, int seed)
     tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
