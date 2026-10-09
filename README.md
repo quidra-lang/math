@@ -153,6 +153,23 @@ configuration, needs no API, ABI, or compiler descriptor change, and behaves
 the same under `quidra run`, the REPL, and AOT binaries. Core has no
 per-package option mechanism.
 
+## Error codes
+
+Math preserves every operation-specific error message, with a stable
+category code for programmatic handling. Core errors propagated from Math
+retain their originating codes.
+
+| Code | Meaning |
+| --- | --- |
+| `MATH_DOMAIN` | Argument outside a mathematical function's domain |
+| `MATH_RANGE` | Rounded result outside the permitted integer range |
+| `MATH_SHAPE` | Incompatible rank, shape or reduction extent |
+| `MATH_SIZE` | Tensor or temporary exceeds a supported size |
+| `MATH_DTYPE` | Element type is unsupported for an operation |
+| `MATH_DEVICE` | Backend does not support the operation |
+| `MATH_NATIVE` | Native kernel execution failed |
+| `MATH_INTERNAL` | Internal invariant or gradient attachment failed |
+
 ## Ownership boundary
 
 Quidra Core owns tensor representation, shape/stride/storage, CPU/GPU placement,

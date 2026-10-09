@@ -1384,3 +1384,37 @@ QUI
         exit 1
     fi
 done
+
+# Match package codes without relying on the human-oriented message text.
+cat > "$TMP/math-error-codes.qui" <<'QUI'
+import math
+
+real64 | error root = math.sqrt(real64(-1.0))
+match root
+    real64
+        print(false)
+    error problem
+        print(problem.code == "MATH_DOMAIN")
+print(NL)
+
+int | error rounded = math.round(real64(1.0e40))
+match rounded
+    int
+        print(false)
+    error problem
+        print(problem.code == "MATH_RANGE")
+print(NL)
+
+real16 | error unsupported = math.sin(real16(0.5))
+match unsupported
+    real16
+        print(false)
+    error problem
+        print(problem.code == "MATH_DTYPE")
+print(NL)
+QUI
+codes_output="$(QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" "$TMP/math-error-codes.qui")"
+if [[ "$codes_output" != "$(printf 'true\ntrue\ntrue')" ]]; then
+    printf 'Math error-code mismatch: %s\n' "$codes_output" >&2
+    exit 1
+fi
