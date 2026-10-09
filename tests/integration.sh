@@ -548,7 +548,8 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     for i in range(rows)
         for j in range(columns)
             int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            value[i, j] = real64(h) / real64(48.0) - real64(1.0)
+            real64 converted = real64(h)
+            value[i, j] = converted / real64(48.0) - real64(1.0)
     return value
 
 tensor<real32> pattern32(int rows, int columns, int seed)
@@ -556,7 +557,8 @@ tensor<real32> pattern32(int rows, int columns, int seed)
     for i in range(rows)
         for j in range(columns)
             int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            value[i, j] = real32(h) / real32(48) - real32(1)
+            real32 converted = real32(h)
+            value[i, j] = converted / real32(48) - real32(1)
     return value
 
 real64 max_abs64(tensor<real64> value)
@@ -738,7 +740,8 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     for i in range(rows)
         for j in range(columns)
             int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            value[i, j] = real64(h) / real64(48.0) - real64(1.0)
+            real64 converted = real64(h)
+            value[i, j] = converted / real64(48.0) - real64(1.0)
     return value
 
 tensor<real32> pattern32(int rows, int columns, int seed)
@@ -746,7 +749,8 @@ tensor<real32> pattern32(int rows, int columns, int seed)
     for i in range(rows)
         for j in range(columns)
             int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            value[i, j] = real32(h) / real32(48) - real32(1)
+            real32 converted = real32(h)
+            value[i, j] = converted / real32(48) - real32(1)
     return value
 
 real64 max_abs64(tensor<real64> value)
@@ -785,7 +789,8 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     for i in range(rows)
         for j in range(columns)
             int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            value[i, j] = real64(h) / real64(48.0) - real64(1.0)
+            real64 converted = real64(h)
+            value[i, j] = converted / real64(48.0) - real64(1.0)
     return value
 
 tensor<real32> pattern32(int rows, int columns, int seed)
@@ -793,7 +798,8 @@ tensor<real32> pattern32(int rows, int columns, int seed)
     for i in range(rows)
         for j in range(columns)
             int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            value[i, j] = real32(h) / real32(48) - real32(1)
+            real32 converted = real32(h)
+            value[i, j] = converted / real32(48) - real32(1)
     return value
 
 // 1-2: sum_last keeps the input shape and adds each row left to right.
@@ -862,7 +868,8 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     for i in range(rows)
         for j in range(columns)
             int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            value[i, j] = real64(h) / real64(48.0) - real64(1.0)
+            real64 converted = real64(h)
+            value[i, j] = converted / real64(48.0) - real64(1.0)
     return value
 
 // 1-2: higher-order through sum_last and max_last stays package-owned.
@@ -908,7 +915,8 @@ tensor<real32> pattern32(int rows, int columns, int seed)
     for i in range(rows)
         for j in range(columns)
             int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            value[i, j] = real32(h) / real32(48) - real32(1)
+            real32 converted = real32(h)
+            value[i, j] = converted / real32(48) - real32(1)
     return value
 
 tensor<real32> pattern3(int a, int b, int c, int seed)
@@ -919,7 +927,8 @@ tensor<real64> pattern64(int rows, int columns, int seed)
     for i in range(rows)
         for j in range(columns)
             int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            value[i, j] = real64(h) / real64(48.0) - real64(1.0)
+            real64 converted = real64(h)
+            value[i, j] = converted / real64(48.0) - real64(1.0)
     return value
 
 bool same32(tensor<real32> left, tensor<real32> right)
