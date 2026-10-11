@@ -2,94 +2,121 @@ import native = "./native.qui"
 
 // Private implementation helpers for math.main.qui.
 
+// Output storage for a native kernel that stores every element. On a device
+// it is allocated without a fill: the kernel takes it write-only
+// (qcore_tensor_output_handle) and marks it written. CPU outputs stay zeroed,
+// because Core's CPU accessors lend only initialized storage.
+tensor<T> native_output<T: numeric>(int[] shape, int device)
+    if device >= 0
+        return tensor<T>(nat(shape), gpu = nat(device))
+    return tensor.zeros<T>(nat(shape))
+
 // Math owns these unary semantics. Core supplies tensor storage/device
 // mechanisms and the generic package-native/custom-autograd ABI; Math keeps the
 // computation on the input device and owns each backend implementation.
-tensor<T> unary_output<T: floating>(int[] shape, int device)
-    if device >= 0
-        return tensor.zeros<T>(shape, gpu = device)
-    return tensor.zeros<T>(shape)
-
 tensor<T> tensor_unary<T: floating>(tensor<T> value, int32 operation)
     int device = value.device()
     tensor<T> source = value
     if not source.is_contiguous()
-        int[] source_shape = source.shape()
+        int[] source_shape = int(source.shape())
         int count = 1
-        for extent in source_shape
+        for auto extent = source_shape[]
             if extent < 0
-                error("math tensor unary encountered an invalid extent")
+                error("math tensor unary encountered an invalid extent", code = "MATH_INTERNAL")
             if extent != 0 and count > 9223372036854775807 / extent
-                error("math tensor unary element count overflows int")
+                error("math tensor unary element count overflows int", code = "MATH_SIZE")
             count = count * extent
-        int[] identity = array(count, fill = 0)
-        for index in range(count)
+        int[] identity = array(nat(count), fill = 0)
+        for 0 <= int index < count
             identity[index] = index
         source = source.gather(identity, source_shape)
 
-    tensor<T> output = unary_output<T>(source.shape(), device)
-    int32 status = native.tensor_unary<T>(&source, &output, operation)
+    tensor<T> output = native_output<T>(int(source.shape()), device)
+    // A CPU domain failure of sqrt or log is reported here (status 4). On a
+    // GPU the check stays device-resident: the kernel stores the failure in a
+    // Core status word, and Core reports the same message with this
+    // statement at the device's next synchronization point.
+    int32 status = native.tensor_unary<T>(source, &output, operation)
     if status != int32(0)
         if operation == int32(2) and status == int32(4)
-            error("math.sqrt requires nonnegative tensor elements")
+            error("math.sqrt requires nonnegative tensor elements", code = "MATH_DOMAIN")
         if operation == int32(3) and status == int32(4)
-            error("math.log requires positive tensor elements")
+            error("math.log requires positive tensor elements", code = "MATH_DOMAIN")
         if status == int32(6)
-            error("math tensor unary is not implemented for this device backend")
+            error("math tensor unary is not implemented for this device backend", code = "MATH_DEVICE")
         if status == int32(7)
-            error("math tensor unary is not implemented for this device dtype")
-        error("math tensor unary native execution failed")
+            error("math tensor unary is not implemented for this device dtype", code = "MATH_DTYPE")
+        error("math tensor unary native execution failed", code = "MATH_NATIVE")
     return output
 
 int last_axis_width(int[] shape, string operation)
     if len(shape) == 0
-        error("math." + operation + " requires rank >= 1")
+        error("math." + operation + " requires rank >= 1", code = "MATH_SHAPE")
     int width = shape[len(shape) - 1]
     if width <= 0
-        error("math." + operation + " requires a non-empty last axis")
+        error("math." + operation + " requires a non-empty last axis", code = "MATH_SHAPE")
     return width
 
 int logical_count(int[] shape, string operation)
     int count = 1
-    for extent in shape
+    for auto extent = shape[]
         if extent < 0
-            error("math." + operation + " encountered an invalid extent")
+            error("math." + operation + " encountered an invalid extent", code = "MATH_INTERNAL")
         if extent != 0 and count > 9223372036854775807 / extent
-            error("math." + operation + " element count overflows int")
+            error("math." + operation + " element count overflows int", code = "MATH_SIZE")
         count = count * extent
     return count
 
 tensor<T> zeros_scalar_on<T: numeric>(int device)
     if device >= 0
-        return tensor.zeros<T>([], gpu = device)
+        return tensor.zeros<T>([], gpu = nat(device))
     return tensor.zeros<T>([])
 
 tensor<T> ones_scalar_on<T: numeric>(int device)
     if device >= 0
-        return tensor.ones<T>([], gpu = device)
+        return tensor.ones<T>([], gpu = nat(device))
     return tensor.ones<T>([])
 
 tensor<T> ones_vector_on<T: numeric>(int length, int device)
     if device >= 0
-        return tensor.ones<T>([length], gpu = device)
-    return tensor.ones<T>([length])
+        return tensor.ones<T>([nat(length)], gpu = nat(device))
+    return tensor.ones<T>([nat(length)])
+
+// Math-native matrix and reduction kernels serve CPU, the fake test GPU, and
+// Metal real32 placements. Other placements (CUDA/HIP) keep the portable
+// composition.
+bool native_linear_ready<T: floating>(tensor<T> value)
+    return native.linear_placement<T>(value) == int32(1)
+
+// Value-only contiguous borrow of `value` for a native kernel. It never
+// replaces `value` in the graph: every native node keeps the original tensor as
+// its differentiable parent (its gradient has the parent's logical shape and
+// flows back through the parent's own view graph), so a tracked non-contiguous
+// view is read on its device without cutting or detaching anything.
+tensor<T> native_linear_data<T: floating>(tensor<T> value)
+    if value.is_contiguous()
+        return value
+    tensor<T> alias = value
+    if alias.is_tracked()
+        alias = alias.untrack()
+    return alias.contiguous()
 
 tensor<T> sum_all_nonempty<T: numeric>(
     tensor<T> value,
     int count,
     int device
 )
-    int[] identity = array(count, fill = 0)
-    for index in range(count)
+    int[] identity = array(nat(count), fill = 0)
+    for 0 <= int index < count
         identity[index] = index
     tensor<T> current = value.gather(identity, [count])
     int length = count
 
     while length > 1
         int pairs = (length + 1) / 2
-        int[] left_indices = array(pairs, fill = 0)
-        int[] right_indices = array(pairs, fill = 0)
-        for pair in range(pairs)
+        int[] left_indices = array(nat(pairs), fill = 0)
+        int[] right_indices = array(nat(pairs), fill = 0)
+        for 0 <= int pair < pairs
             int left_index = pair * 2
             int right_index = left_index + 1
             if right_index >= length
@@ -111,21 +138,28 @@ tensor<T> sum_all_nonempty<T: numeric>(
     return current.gather([0], [])
 
 tensor<T> sum_all<T: integer>(tensor<T> value)
-    int count = logical_count(value.shape(), "sum")
+    int count = logical_count(int(value.shape()), "sum")
     int device = value.device()
     if count == 0
         return zeros_scalar_on<T>(device)
     return sum_all_nonempty<T>(value, count, device)
 
 tensor<T> sum_all<T: floating>(tensor<T> value)
-    int count = logical_count(value.shape(), "sum")
+    int count = logical_count(int(value.shape()), "sum")
     int device = value.device()
     if count == 0
         tensor<T> zero = zeros_scalar_on<T>(device)
         if value.is_tracked()
-            if native.attach_empty_sum<T>(&value, &zero) != int32(0)
-                error("math.sum failed to attach empty-tensor autograd")
+            if native.attach_empty_sum<T>(value, &zero) != int32(0)
+                error("math.sum failed to attach empty-tensor autograd", code = "MATH_INTERNAL")
         return zero
+    // Native whole-tensor sum: the same pairwise tree as the composition below,
+    // evaluated on the input's device with one Math-owned autograd node.
+    if native_linear_ready<T>(value)
+        tensor<T> source = native_linear_data<T>(value)
+        tensor<T> total = native_output<T>([], device)
+        if native.reduce<T>(source, value, &total, int32(1)) == int32(0)
+            return total
     return sum_all_nonempty<T>(value, count, device)
 
 tensor<T> positive_count_scalar<T: floating>(int count, int device)
@@ -141,26 +175,41 @@ tensor<T> positive_count_scalar<T: floating>(int count, int device)
     return result
 
 tensor<T> mean_all<T: floating>(tensor<T> value)
-    int count = logical_count(value.shape(), "mean")
+    int count = logical_count(int(value.shape()), "mean")
     if count == 0
-        error("math.mean requires at least one element")
+        error("math.mean requires at least one element", code = "MATH_SHAPE")
+    // Native mean: pairwise sum divided by the element count, with a single
+    // autograd node whose backward is upstream / count.
+    if native_linear_ready<T>(value)
+        tensor<T> source = native_linear_data<T>(value)
+        tensor<T> average = native_output<T>([], value.device())
+        if native.reduce<T>(source, value, &average, int32(2)) == int32(0)
+            return average
     tensor<T> denominator = positive_count_scalar<T>(count, value.device())
     return sum_all<T>(value) / denominator
 
 tensor<T> sum_last<T: floating>(tensor<T> value)
-    int[] shape = value.shape()
-    int width = last_axis_width(shape, "sum_last")
+    int[] shape = int(value.shape())
     int count = logical_count(shape, "sum_last")
     if count == 0
         return value
+    int width = last_axis_width(shape, "sum_last")
 
-    int[] selected = array(count, fill = 0)
-    for index in range(count)
+    // Native path: identical left-to-right row sums broadcast across the last
+    // axis (the result keeps the input shape), one Math-owned autograd node.
+    if native_linear_ready<T>(value)
+        tensor<T> source = native_linear_data<T>(value)
+        tensor<T> sums = native_output<T>(shape, value.device())
+        if native.reduce<T>(source, value, &sums, int32(3)) == int32(0)
+            return sums
+
+    int[] selected = array(nat(count), fill = 0)
+    for 0 <= int index < count
         selected[index] = (index / width) * width
     tensor<T> output = value.gather(selected, shape)
 
-    for offset in range(1, width)
-        for index in range(count)
+    for 1 <= int offset < width
+        for 0 <= int index < count
             selected[index] = (index / width) * width + offset
         output = output + value.gather(selected, shape)
     return output
@@ -171,19 +220,19 @@ tensor<T> extrema_last_selected<T: numeric>(
     bool maximum,
     string operation
 )
-    int[] shape = value.shape()
-    int width = last_axis_width(shape, operation)
+    int[] shape = int(value.shape())
     int count = logical_count(shape, operation)
     if count == 0
         return value
+    int width = last_axis_width(shape, operation)
 
-    int[] selected = array(count, fill = 0)
+    int[] selected = array(nat(count), fill = 0)
     int rows = count / width
-    for row_index in range(rows)
+    for 0 <= int row_index < rows
         int base = row_index * width
         int best_index = base
         T best = selector.gather([base], []).item()
-        for offset in range(1, width)
+        for 1 <= int offset < width
             int candidate_index = base + offset
             T candidate = selector.gather([candidate_index], []).item()
             bool better = candidate > best
@@ -192,7 +241,7 @@ tensor<T> extrema_last_selected<T: numeric>(
             if better
                 best = candidate
                 best_index = candidate_index
-        for offset in range(width)
+        for 0 <= int offset < width
             selected[base + offset] = best_index
     return value.gather(selected, shape)
 
@@ -202,17 +251,55 @@ tensor<T> max_last<T: integer>(tensor<T> value)
 tensor<T> min_last<T: integer>(tensor<T> value)
     return extrema_last_selected<T>(value, value, false, "min_last")
 
-tensor<T> max_last<T: floating>(tensor<T> value)
+// Native first-occurrence extrema. The winning offset of every row is found
+// on the input's device with strict comparison and kept in a Math-owned int32
+// tensor; the result and its gradient never pass through host readback.
+// Returns false (leaving `result` untouched) when the portable composition
+// must be used.
+bool extrema_native<T: floating>(
+    tensor<T> value,
+    int[] output_shape,
+    int rows,
+    int32 operation,
+    tensor<T> &result
+)
+    if not native_linear_ready<T>(value)
+        return false
+    int device = value.device()
+    tensor<T> source = native_linear_data<T>(value)
+    tensor<T> output = native_output<T>(output_shape, device)
+    tensor<int32> winners = native_output<int32>([rows], device)
+    if native.select_extrema<T>(source, value, &output, &winners, operation) != int32(0)
+        return false
+    result = output
+    return true
+
+tensor<T> extrema_last<T: floating>(
+    tensor<T> value,
+    bool maximum,
+    string operation
+)
+    int[] shape = int(value.shape())
+    int count = logical_count(shape, operation)
+    if count == 0
+        return value
+    int width = last_axis_width(shape, operation)
+    int32 code = int32(2)
+    if maximum
+        code = int32(1)
+    tensor<T> native_result = value
+    if extrema_native<T>(value, shape, count / width, code, &native_result)
+        return native_result
     tensor<T> selector = value
     if selector.is_tracked()
         selector = selector.untrack()
-    return extrema_last_selected<T>(value, selector, true, "max_last")
+    return extrema_last_selected<T>(value, selector, maximum, operation)
+
+tensor<T> max_last<T: floating>(tensor<T> value)
+    return extrema_last<T>(value, true, "max_last")
 
 tensor<T> min_last<T: floating>(tensor<T> value)
-    tensor<T> selector = value
-    if selector.is_tracked()
-        selector = selector.untrack()
-    return extrema_last_selected<T>(value, selector, false, "min_last")
+    return extrema_last<T>(value, false, "min_last")
 
 tensor<T> extrema_all_selected<T: numeric>(
     tensor<T> value,
@@ -220,13 +307,13 @@ tensor<T> extrema_all_selected<T: numeric>(
     bool maximum,
     string operation
 )
-    int count = logical_count(value.shape(), operation)
+    int count = logical_count(int(value.shape()), operation)
     if count == 0
-        error("math." + operation + " requires at least one element")
+        error("math." + operation + " requires at least one element", code = "MATH_SHAPE")
 
     int best_index = 0
     T best = selector.gather([0], []).item()
-    for index in range(1, count)
+    for 1 <= int index < count
         T candidate = selector.gather([index], []).item()
         bool better = candidate > best
         if not maximum
@@ -242,80 +329,93 @@ tensor<T> max_all<T: integer>(tensor<T> value)
 tensor<T> min_all<T: integer>(tensor<T> value)
     return extrema_all_selected<T>(value, value, false, "min")
 
-tensor<T> max_all<T: floating>(tensor<T> value)
+tensor<T> extrema_all<T: floating>(
+    tensor<T> value,
+    bool maximum,
+    string operation
+)
+    int count = logical_count(int(value.shape()), operation)
+    if count == 0
+        error("math." + operation + " requires at least one element", code = "MATH_SHAPE")
+    int32 code = int32(4)
+    if maximum
+        code = int32(3)
+    tensor<T> native_result = value
+    if extrema_native<T>(value, [], 1, code, &native_result)
+        return native_result
     tensor<T> selector = value
     if selector.is_tracked()
         selector = selector.untrack()
-    return extrema_all_selected<T>(value, selector, true, "max")
+    return extrema_all_selected<T>(value, selector, maximum, operation)
+
+tensor<T> max_all<T: floating>(tensor<T> value)
+    return extrema_all<T>(value, true, "max")
 
 tensor<T> min_all<T: floating>(tensor<T> value)
-    tensor<T> selector = value
-    if selector.is_tracked()
-        selector = selector.untrack()
-    return extrema_all_selected<T>(value, selector, false, "min")
+    return extrema_all<T>(value, false, "min")
 
 tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     if a.is_tracked() or b.is_tracked()
-        error("math.matmul tracked tensors require float32 or float")
+        error("math.matmul tracked tensors require real32 or real64", code = "MATH_DTYPE")
 
-    int[] a_shape = a.shape()
-    int[] b_shape = b.shape()
-    int a_rank = len(a_shape)
-    int b_rank = len(b_shape)
+    int[] a_shape = int(a.shape())
+    int[] b_shape = int(b.shape())
+    int a_rank = int(len(a_shape))
+    int b_rank = int(len(b_shape))
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
-        error("math.matmul requires left rank >= 1 and right rank 1 or 2")
+        error("math.matmul requires left rank >= 1 and right rank 1 or 2", code = "MATH_SHAPE")
 
     int inner = a_shape[a_rank - 1]
     if inner <= 0 or b_shape[0] != inner
-        error("math.matmul inner dimensions do not match")
+        error("math.matmul inner dimensions do not match", code = "MATH_SHAPE")
 
     int columns = 1
     if b_rank == 2
         columns = b_shape[1]
         if columns <= 0
-            error("math.matmul requires a positive output width")
+            error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
     int rows = 1
-    for axis in range(a_rank - 1)
+    for 0 <= int axis < a_rank - 1
         int dimension = a_shape[axis]
         if dimension <= 0
-            error("math.matmul requires positive tensor extents")
+            error("math.matmul requires positive tensor extents", code = "MATH_SHAPE")
         if rows > 9223372036854775807 / dimension
-            error("math.matmul row count overflows int")
+            error("math.matmul row count overflows int", code = "MATH_SIZE")
         rows = rows * dimension
 
     int output_rank = a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape = array(output_rank, fill = 1)
-    for axis in range(a_rank - 1)
+    int[] output_shape = array(nat(output_rank), fill = 1)
+    for 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
         output_shape[a_rank - 1] = columns
 
     if rows > 9223372036854775807 / columns
-        error("math.matmul output size overflows int")
+        error("math.matmul output size overflows int", code = "MATH_SIZE")
     int output_count = rows * columns
 
-    int[] expanded_shape = array(a_rank + 1, fill = 1)
-    for axis in range(a_rank - 1)
+    int[] expanded_shape = array(nat(a_rank + 1), fill = 1)
+    for 0 <= int axis < a_rank - 1
         expanded_shape[axis] = a_shape[axis]
     expanded_shape[a_rank - 1] = 1
     expanded_shape[a_rank] = inner
 
     tensor<T> expanded
     if a.is_contiguous()
-        expanded = a.reshape(expanded_shape)
+        expanded = a.reshape(nat(expanded_shape))
     else
-        expanded = a.contiguous().reshape(expanded_shape)
+        expanded = a.contiguous().reshape(nat(expanded_shape))
 
-    int[] right_shape = array(a_rank + 1, fill = 1)
+    int[] right_shape = array(nat(a_rank + 1), fill = 1)
     right_shape[a_rank - 1] = columns
     right_shape[a_rank] = inner
     int right_count = columns * inner
-    int[] right_indices = array(right_count, fill = 0)
-    for output_index in range(right_count)
+    int[] right_indices = array(nat(right_count), fill = 0)
+    for 0 <= int output_index < right_count
         int column = output_index / inner
         int inner_index = output_index % inner
         if b_rank == 1
@@ -325,184 +425,268 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     tensor<T> right_rows = b.gather(right_indices, right_shape)
 
     tensor<T> products = expanded * right_rows
-    int[] selected = array(output_count, fill = 0)
-    for index in range(output_count)
+    int[] selected = array(nat(output_count), fill = 0)
+    for 0 <= int index < output_count
         selected[index] = index * inner
     tensor<T> output = products.gather(selected, output_shape)
 
-    for inner_index in range(1, inner)
-        for index in range(output_count)
+    for 1 <= int inner_index < inner
+        for 0 <= int index < output_count
             selected[index] = index * inner + inner_index
         output = output + products.gather(selected, output_shape)
     return output
 
-tensor<float32> matmul(tensor<float32> a, tensor<float32> b)
-    int[] a_shape = a.shape()
-    int[] b_shape = b.shape()
-    int a_rank = len(a_shape)
-    int b_rank = len(b_shape)
+tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
+    int[] a_shape = int(a.shape())
+    int[] b_shape = int(b.shape())
+    int a_rank = int(len(a_shape))
+    int b_rank = int(len(b_shape))
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
-        error("math.matmul requires left rank >= 1 and right rank 1 or 2")
+        error("math.matmul requires left rank >= 1 and right rank 1 or 2", code = "MATH_SHAPE")
 
     int inner = a_shape[a_rank - 1]
     if inner <= 0 or b_shape[0] != inner
-        error("math.matmul inner dimensions do not match")
+        error("math.matmul inner dimensions do not match", code = "MATH_SHAPE")
 
     int columns = 1
     if b_rank == 2
         columns = b_shape[1]
         if columns <= 0
-            error("math.matmul requires a positive output width")
+            error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
     int rows = 1
-    for axis in range(a_rank - 1)
+    for 0 <= int axis < a_rank - 1
         int dimension = a_shape[axis]
         if dimension <= 0
-            error("math.matmul requires positive tensor extents")
+            error("math.matmul requires positive tensor extents", code = "MATH_SHAPE")
         if rows > 9223372036854775807 / dimension
-            error("math.matmul row count overflows int")
+            error("math.matmul row count overflows int", code = "MATH_SIZE")
         rows = rows * dimension
 
     int output_rank = a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape = array(output_rank, fill = 1)
-    for axis in range(a_rank - 1)
+    int[] output_shape = array(nat(output_rank), fill = 1)
+    for 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
         output_shape[a_rank - 1] = columns
 
     if rows > 9223372036854775807 / columns
-        error("math.matmul output size overflows int")
+        error("math.matmul output size overflows int", code = "MATH_SIZE")
     int output_count = rows * columns
 
-    int[] expanded_shape = array(a_rank + 1, fill = 1)
-    for axis in range(a_rank - 1)
+    int[] expanded_shape = array(nat(a_rank + 1), fill = 1)
+    for 0 <= int axis < a_rank - 1
         expanded_shape[axis] = a_shape[axis]
     expanded_shape[a_rank - 1] = 1
     expanded_shape[a_rank] = inner
 
-    tensor<float32> expanded
+    tensor<real32> expanded
     if a.is_contiguous()
-        expanded = a.reshape(expanded_shape)
+        expanded = a.reshape(nat(expanded_shape))
     elif a.is_tracked()
         int input_count = rows * inner
-        int[] identity = array(input_count, fill = 0)
-        for index in range(input_count)
+        int[] identity = array(nat(input_count), fill = 0)
+        for 0 <= int index < input_count
             identity[index] = index
         expanded = a.gather(identity, expanded_shape)
     else
-        expanded = a.contiguous().reshape(expanded_shape)
+        expanded = a.contiguous().reshape(nat(expanded_shape))
 
-    int[] right_shape = array(a_rank + 1, fill = 1)
+    int[] right_shape = array(nat(a_rank + 1), fill = 1)
     right_shape[a_rank - 1] = columns
     right_shape[a_rank] = inner
     int right_count = columns * inner
-    int[] right_indices = array(right_count, fill = 0)
-    for output_index in range(right_count)
+    int[] right_indices = array(nat(right_count), fill = 0)
+    for 0 <= int output_index < right_count
         int column = output_index / inner
         int inner_index = output_index % inner
         if b_rank == 1
             right_indices[output_index] = inner_index
         else
             right_indices[output_index] = inner_index * columns + column
-    tensor<float32> right_rows = b.gather(right_indices, right_shape)
+    tensor<real32> right_rows = b.gather(right_indices, right_shape)
 
-    tensor<float32> products = expanded * right_rows
-    int[] selected = array(output_count, fill = 0)
-    for index in range(output_count)
+    tensor<real32> products = expanded * right_rows
+    int[] selected = array(nat(output_count), fill = 0)
+    for 0 <= int index < output_count
         selected[index] = index * inner
-    tensor<float32> output = products.gather(selected, output_shape)
+    tensor<real32> output = products.gather(selected, output_shape)
 
-    for inner_index in range(1, inner)
-        for index in range(output_count)
+    for 1 <= int inner_index < inner
+        for 0 <= int index < output_count
             selected[index] = index * inner + inner_index
         output = output + products.gather(selected, output_shape)
     return output
 
-tensor<float> matmul(tensor<float> a, tensor<float> b)
-    int[] a_shape = a.shape()
-    int[] b_shape = b.shape()
-    int a_rank = len(a_shape)
-    int b_rank = len(b_shape)
+tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
+    int[] a_shape = int(a.shape())
+    int[] b_shape = int(b.shape())
+    int a_rank = int(len(a_shape))
+    int b_rank = int(len(b_shape))
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
-        error("math.matmul requires left rank >= 1 and right rank 1 or 2")
+        error("math.matmul requires left rank >= 1 and right rank 1 or 2", code = "MATH_SHAPE")
 
     int inner = a_shape[a_rank - 1]
     if inner <= 0 or b_shape[0] != inner
-        error("math.matmul inner dimensions do not match")
+        error("math.matmul inner dimensions do not match", code = "MATH_SHAPE")
 
     int columns = 1
     if b_rank == 2
         columns = b_shape[1]
         if columns <= 0
-            error("math.matmul requires a positive output width")
+            error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
     int rows = 1
-    for axis in range(a_rank - 1)
+    for 0 <= int axis < a_rank - 1
         int dimension = a_shape[axis]
         if dimension <= 0
-            error("math.matmul requires positive tensor extents")
+            error("math.matmul requires positive tensor extents", code = "MATH_SHAPE")
         if rows > 9223372036854775807 / dimension
-            error("math.matmul row count overflows int")
+            error("math.matmul row count overflows int", code = "MATH_SIZE")
         rows = rows * dimension
 
     int output_rank = a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape = array(output_rank, fill = 1)
-    for axis in range(a_rank - 1)
+    int[] output_shape = array(nat(output_rank), fill = 1)
+    for 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
         output_shape[a_rank - 1] = columns
 
     if rows > 9223372036854775807 / columns
-        error("math.matmul output size overflows int")
+        error("math.matmul output size overflows int", code = "MATH_SIZE")
     int output_count = rows * columns
 
-    int[] expanded_shape = array(a_rank + 1, fill = 1)
-    for axis in range(a_rank - 1)
+    int[] expanded_shape = array(nat(a_rank + 1), fill = 1)
+    for 0 <= int axis < a_rank - 1
         expanded_shape[axis] = a_shape[axis]
     expanded_shape[a_rank - 1] = 1
     expanded_shape[a_rank] = inner
 
-    tensor<float> expanded
+    tensor<real64> expanded
     if a.is_contiguous()
-        expanded = a.reshape(expanded_shape)
+        expanded = a.reshape(nat(expanded_shape))
     elif a.is_tracked()
         int input_count = rows * inner
-        int[] identity = array(input_count, fill = 0)
-        for index in range(input_count)
+        int[] identity = array(nat(input_count), fill = 0)
+        for 0 <= int index < input_count
             identity[index] = index
         expanded = a.gather(identity, expanded_shape)
     else
-        expanded = a.contiguous().reshape(expanded_shape)
+        expanded = a.contiguous().reshape(nat(expanded_shape))
 
-    int[] right_shape = array(a_rank + 1, fill = 1)
+    int[] right_shape = array(nat(a_rank + 1), fill = 1)
     right_shape[a_rank - 1] = columns
     right_shape[a_rank] = inner
     int right_count = columns * inner
-    int[] right_indices = array(right_count, fill = 0)
-    for output_index in range(right_count)
+    int[] right_indices = array(nat(right_count), fill = 0)
+    for 0 <= int output_index < right_count
         int column = output_index / inner
         int inner_index = output_index % inner
         if b_rank == 1
             right_indices[output_index] = inner_index
         else
             right_indices[output_index] = inner_index * columns + column
-    tensor<float> right_rows = b.gather(right_indices, right_shape)
+    tensor<real64> right_rows = b.gather(right_indices, right_shape)
 
-    tensor<float> products = expanded * right_rows
-    int[] selected = array(output_count, fill = 0)
-    for index in range(output_count)
+    tensor<real64> products = expanded * right_rows
+    int[] selected = array(nat(output_count), fill = 0)
+    for 0 <= int index < output_count
         selected[index] = index * inner
-    tensor<float> output = products.gather(selected, output_shape)
+    tensor<real64> output = products.gather(selected, output_shape)
 
-    for inner_index in range(1, inner)
-        for index in range(output_count)
+    for 1 <= int inner_index < inner
+        for 0 <= int index < output_count
             selected[index] = index * inner + inner_index
         output = output + products.gather(selected, output_shape)
     return output
 
+// A rank-2 view whose transpose is contiguous (for example weight.transpose(0,
+// 1)) is read in place through its transposed storage. The borrow is
+// value-only: the original tensor stays the differentiable input, so autograd
+// still flows through its graph.
+bool transposed_storage<T: floating>(tensor<T> value, tensor<T> &storage)
+    if len(value.shape()) != 2
+        return false
+    tensor<T> alias = value
+    if alias.is_tracked()
+        alias = alias.untrack()
+    tensor<T> view = alias.transpose(0, 1)
+    if not view.is_contiguous()
+        return false
+    storage = view
+    return true
+
+// Native-first floating matrix product. Math's backend-neutral native bridge
+// serves CPU, the fake test GPU, and Metal for tracked and untracked inputs and
+// attaches one custom autograd node (first backward dA = G B^T, dB = A^T G by
+// native GEMM; higher order through the same product family). Any other
+// placement or an invalid shape uses the portable composition, which also owns
+// every diagnostic. Other non-contiguous layouts are read through a value-only
+// contiguous borrow while the original tensor stays the node's parent.
+tensor<T> matmul_native<T: floating>(tensor<T> a, tensor<T> b)
+    if native.linear_placement<T>(a) != int32(1) or native.linear_placement<T>(b) != int32(1)
+        return matmul(a, b)
+    if a.device() != b.device()
+        return matmul(a, b)
+
+    int[] a_shape = int(a.shape())
+    int[] b_shape = int(b.shape())
+    int a_rank = int(len(a_shape))
+    int b_rank = int(len(b_shape))
+    if a_rank < 1 or (b_rank != 1 and b_rank != 2)
+        return matmul(a, b)
+    int inner = a_shape[a_rank - 1]
+    if inner <= 0 or b_shape[0] != inner
+        return matmul(a, b)
+    int columns = 1
+    if b_rank == 2
+        columns = b_shape[1]
+    if columns <= 0
+        return matmul(a, b)
+    int rows = 1
+    for 0 <= int axis < a_rank - 1
+        int dimension = a_shape[axis]
+        if dimension <= 0 or rows > 9223372036854775807 / dimension
+            return matmul(a, b)
+        rows = rows * dimension
+    if rows > 9223372036854775807 / columns or rows > 9223372036854775807 / inner
+        return matmul(a, b)
+
+    int32 layout = int32(0)
+    tensor<T> left = a
+    tensor<T> left_data = a
+    if not a.is_contiguous()
+        if transposed_storage<T>(a, &left_data)
+            layout = layout + int32(1)
+        else
+            left_data = native_linear_data<T>(a)
+    tensor<T> right = b
+    tensor<T> right_data = b
+    if not b.is_contiguous()
+        if transposed_storage<T>(b, &right_data)
+            layout = layout + int32(2)
+        else
+            right_data = native_linear_data<T>(b)
+    if a.is_tracked()
+        layout = layout + int32(4)
+    if b.is_tracked()
+        layout = layout + int32(8)
+
+    int output_rank = a_rank
+    if b_rank == 1
+        output_rank = a_rank - 1
+    int[] output_shape = array(nat(output_rank), fill = 1)
+    for 0 <= int axis < a_rank - 1
+        output_shape[axis] = a_shape[axis]
+    if b_rank == 2
+        output_shape[a_rank - 1] = columns
+    tensor<T> output = native_output<T>(output_shape, a.device())
+    if native.matmul<T>(left_data, right_data, left, right, &output, layout) == int32(0)
+        return output
+    return matmul(a, b)

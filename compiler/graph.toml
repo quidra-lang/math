@@ -1,7 +1,7 @@
 # Math-owned compiler semantics.
 # Core treats this as declarative package data and must not hard-code these IDs.
 [extension]
-version = 1
+version = 2
 phase = "tensor-region"
 kind = "operation-registry"
 

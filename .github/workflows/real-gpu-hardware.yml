@@ -34,7 +34,7 @@ jobs:
       - name: Install build dependencies
         run: sudo apt-get update && sudo apt-get install -y cmake ninja-build clang llvm libcurl4-openssl-dev
       - name: Build Quidra
-        run: cmake -S quidra -B quidra/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DQUIDRA_WARNINGS_AS_ERRORS=ON && cmake --build quidra/build --parallel
+        run: cmake -S quidra -B quidra/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DQUIDRA_WARNINGS_AS_ERRORS=ON && cmake --build quidra/build --parallel ${{ runner.os == 'macOS' && 3 || 4 }}
       - name: Require NVIDIA hardware and validate Math matmul
         env:
           QUIDRA_REQUIRE_REAL_GPU: "1"

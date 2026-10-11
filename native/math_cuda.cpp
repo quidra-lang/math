@@ -106,6 +106,15 @@ std::uint64_t pointer_mut(void* tensor){
     if(!base||offset>std::numeric_limits<std::uint64_t>::max()-base)return 0;
     return base+offset;
 }
+// A write-only output: the kernel stores every element, so Core lends the
+// storage as is, filled or not (qcore_tensor_output_handle), and the output is
+// marked written once the kernel is launched.
+std::uint64_t pointer_output(void* tensor){
+    const auto base=qcore_tensor_output_handle(tensor);
+    const auto offset=qcore_tensor_device_offset_bytes(tensor);
+    if(!base||offset>std::numeric_limits<std::uint64_t>::max()-base)return 0;
+    return base+offset;
+}
 bool cuda_f32(const void* tensor){
     return tensor&&qcore_tensor_backend(tensor)==QCORE_BACKEND_CUDA&&
            qcore_tensor_dtype(tensor)==QCORE_DTYPE_FLOAT32&&
@@ -276,7 +285,7 @@ extern "C" int math_native_cuda_tensor_unary_forward(
        qcore_tensor_device(input)!=qcore_tensor_device(output)||!same_shape(input,output))
         return input&&qcore_tensor_dtype(input)==QCORE_DTYPE_FLOAT64?7:1;
     if(operation<1||operation>4)return 2;
-    std::uint64_t out=pointer_mut(output),in=pointer_const(input);
+    std::uint64_t in=pointer_const(input),out=pointer_output(output);
     std::uint64_t count=qcore_tensor_element_count(input),status=0;
     if(!out||!in)return 3;
     const auto device=qcore_tensor_device(input);
@@ -295,6 +304,11 @@ extern "C" int math_native_cuda_tensor_unary_forward(
     const int launched=launch(device,"math-unary-forward-"+std::to_string(operation),
                               forward_ptx(operation),count,args);
     if(launched!=0){if(scratch)qcore_device_buffer_release(scratch);return launched;}
+    // Every element is stored, a failing sqrt or log element as zero.
+    if(qcore_tensor_mark_written(output)!=0){
+        if(scratch)qcore_device_buffer_release(scratch);
+        return 5;
+    }
     if(scratch){
         std::uint32_t host=0;
         if(api.copy_d2h(&host,status,sizeof(host))!=0){
@@ -341,4 +355,48 @@ extern "C" int math_native_cuda_tensor_unary_second_backward(
     return launch(qcore_tensor_device(input),
                   "math-unary-second-"+std::to_string(operation),
                   second_ptx(operation),count,args);
+}
+
+extern "C" int math_native_cuda_validate_output(
+    void* output, const char* operation, const char* message) {
+    if (!cuda_f32(output)) return 7;
+    std::uint64_t count = qcore_tensor_element_count(output);
+    if (count == 0) return 0;
+    if (count > std::numeric_limits<std::uint32_t>::max()) return 2;
+    const auto device = qcore_tensor_device(output);
+    std::uint64_t handle = 0, offset = 0, slot = 0;
+    if (qcore_device_status_slot(device, &handle, &offset, &slot) != 0) return 5;
+    struct StatusOwner {
+        long long device;
+        std::uint64_t slot;
+        bool owned = true;
+        ~StatusOwner() { if (owned) qcore_device_status_release(device, slot); }
+    } owner{device, slot};
+    if (!handle || offset > std::numeric_limits<std::uint64_t>::max() - handle) return 5;
+    auto status = handle + offset;
+    auto input = pointer_const(output);
+    if (!input) return 3;
+    const auto ptx = prologue(
+        "  .param .u64 p_input,\n  .param .u64 p_status,\n  .param .u64 p_count\n",
+        "  .reg .pred %p<4>;\n  .reg .b32 %r<12>;\n  .reg .b64 %rd<14>;\n") +
+        "  ld.param.u64 %rd1,[p_input];\n  ld.param.u64 %rd2,[p_status];\n"
+        "  ld.param.u64 %rd3,[p_count];\n  setp.ge.u64 %p1,%rd7,%rd3;\n"
+        "  @%p1 bra DONE;\n  mul.lo.u64 %rd8,%rd7,4;\n  add.u64 %rd9,%rd1,%rd8;\n"
+        "  ld.global.u32 %r5,[%rd9];\n  and.b32 %r6,%r5,0x7f800000;\n"
+        "  setp.eq.u32 %p2,%r6,0x7f800000;\n  @!%p2 bra DONE;\n"
+        "  mov.u32 %r7,1;\n  atom.global.exch.b32 %r8,[%rd2],%r7;\nDONE:\n  ret;\n}\n";
+    void* args[] = {&input, &status, &count};
+    const int launched = launch(device, "math-finite-output", ptx, count, args);
+    if (launched != 0) return launched;
+    if (qcore_device_defer_status(device, slot, message) == 0) {
+        owner.owned = false;
+        return 0;
+    }
+    // A failed defer still leaves the queued kernel using this status word.
+    std::uint32_t value = 0;
+    const bool waited = qcore_device_status_wait(device, slot, &value) == 0;
+    owner.owned = false;
+    // Report after the slot is consumed, outside any catch.
+    if (waited && value != 0) qcore_tensor_report_status(output, operation, value);
+    return 5;
 }
