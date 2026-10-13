@@ -254,11 +254,32 @@ tensor<real32> exp(tensor<real32> value)
 tensor<real64> exp(tensor<real64> value)
     return internal.tensor_unary<real64>(value, int32(4))
 
+T sum<T: numeric>(T[] value)
+    T total = T(0)
+    for auto element = value[]
+        total = total + element
+    return total
+
 tensor<T> sum<T: integer>(tensor<T> value)
     return internal.sum_all<T>(value)
 
 tensor<T> sum<T: floating>(tensor<T> value)
     return internal.sum_all<T>(value)
+
+T mean<T: numeric>(T[] value)
+    if len(value) == 0
+        error("math.mean requires at least one element", code = "MATH_SHAPE")
+    T total = sum<T>(value)
+    T count = T(len(value))
+    return total / count
+
+real mean<T: integer>(T[] value)
+    if len(value) == 0
+        error("math.mean requires at least one element", code = "MATH_SHAPE")
+    real total = 0.0
+    for auto element = value[]
+        total = total + real(element)
+    return total / real(len(value))
 
 tensor<T> mean<T: floating>(tensor<T> value)
     return internal.mean_all<T>(value)
@@ -277,6 +298,26 @@ tensor<T> max_last<T: floating>(tensor<T> value)
 
 tensor<T> min_last<T: floating>(tensor<T> value)
     return internal.min_last<T>(value)
+
+T max_all<T: ordered>(T[] value)
+    if len(value) == 0
+        error("math.max requires at least one element", code = "MATH_SHAPE")
+    T best = value[0]
+    for 1 <= nat index < len(value)
+        T candidate = value[index]
+        if candidate > best
+            best = candidate
+    return best
+
+T min_all<T: ordered>(T[] value)
+    if len(value) == 0
+        error("math.min requires at least one element", code = "MATH_SHAPE")
+    T best = value[0]
+    for 1 <= nat index < len(value)
+        T candidate = value[index]
+        if candidate < best
+            best = candidate
+    return best
 
 tensor<T> max_all<T: integer>(tensor<T> value)
     return internal.max_all<T>(value)

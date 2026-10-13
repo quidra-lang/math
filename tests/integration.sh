@@ -8,6 +8,8 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 export QUIDRA_CACHE_DIR="$TMP/run-cache"
 
+bash "$REPOSITORY_ROOT/tests/array_reductions.sh" "$QUIDRA"
+
 cat > "$TMP/math.qui" <<'QUI'
 import math
 

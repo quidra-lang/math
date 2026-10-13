@@ -29,7 +29,15 @@ real32 d = math.dot(
 A right vector removes the contracted axis; a right matrix replaces it with
 the matrix output width. Two vectors therefore produce a rank-0 tensor.
 
-`math.sum(value)`, `math.mean(value)`, `math.max_all(value)`, and `math.min_all(value)` own whole-tensor numerical reduction semantics. Integer `sum` is untracked; floating reductions preserve the original differentiable path. Whole-tensor `sum`/`mean` add elements with a level-by-level pairwise tree (adjacent pairs; an odd trailing element is carried upward as `x + x * 0`, so an infinity in a carried position yields NaN on every path, as in the portable definition), and `mean` divides by the element count accumulated in the tensor's dtype from powers of two. Whole-tensor `max_all`/`min_all` use strict comparison, so ties are first-occurrence and a NaN never displaces an earlier winner. Empty floating `sum` keeps differentiability through a Math-owned zero-Jacobian custom operation; empty `mean`, `max_all`, and `min_all` are domain errors.
+`math.sum(value)`, `math.mean(value)`, `math.max_all(value)`, and `math.min_all(value)` also accept numeric arrays. Array `sum` adds left to right from a zero of the element type and returns that type, including for an empty array. It supports every integer, real, and complex type, preserving the scalar addition's checked overflow and rounding. Array `mean` returns an exact `real` for integer arrays, accumulating exactly before division; real and complex arrays keep their element type and divide their left-to-right sum by the length converted to that type. Array `min_all`/`max_all` accept ordered numeric elements (integers and reals), return the element type, and keep the first occurrence of ties. Empty array `mean`, `min_all`, and `max_all` report `MATH_SHAPE`, as their tensor counterparts do. Array comprehensions work directly:
+
+```quidra
+int[] values = [-2, 1, 2, 3]
+int squares = math.sum([for auto x = values[] if x > 0 then x * x])
+real average = math.mean(values)
+```
+
+The tensor forms own whole-tensor numerical reduction semantics. Integer `sum` is untracked; floating reductions preserve the original differentiable path. Whole-tensor `sum`/`mean` add elements with a level-by-level pairwise tree (adjacent pairs; an odd trailing element is carried upward as `x + x * 0`, so an infinity in a carried position yields NaN on every path, as in the portable definition), and `mean` divides by the element count accumulated in the tensor's dtype from powers of two. Whole-tensor `max_all`/`min_all` use strict comparison, so ties are first-occurrence and a NaN never displaces an earlier winner. Empty floating `sum` keeps differentiability through a Math-owned zero-Jacobian custom operation; empty `mean`, `max_all`, and `min_all` are domain errors.
 
 The former Core tensor methods `sum_last()`, `max_last()`, and
 `min_last()` are package-owned here as `math.sum_last(value)`,
