@@ -1077,7 +1077,9 @@ static int math_native_matmul_cuda_f32_impl(
         &beta,
         destination,
         static_cast<int>(columns));
-    return status == cublas_success ? 0 : 10;
+    if (status != cublas_success) return 10;
+    qcore_counter_note_dispatches(1);
+    return 0;
 }
 
 extern "C" int math_native_attach_empty_sum(

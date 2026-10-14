@@ -273,8 +273,10 @@ int launch(long long device,const std::string& key,const std::string& ptx,
     if(!function)return 5;
     auto stream=reinterpret_cast<CudaApi::Stream>(
         static_cast<std::uintptr_t>(qcore_device_queue_handle(device)));
-    return api.launch_kernel(function,static_cast<unsigned>(blocks64),1,1,
-                             threads,1,1,0,stream,arguments,nullptr)==0?0:5;
+    if(api.launch_kernel(function,static_cast<unsigned>(blocks64),1,1,
+                         threads,1,1,0,stream,arguments,nullptr)!=0)return 5;
+    qcore_counter_note_dispatches(1);
+    return 0;
 }
 
 } // namespace
