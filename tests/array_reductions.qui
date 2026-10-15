@@ -194,13 +194,15 @@ print(NL)
 real64[] input_sqrt = [1.0, 4.0, 9.0]
 real64[] sqrt_values = math.sqrt(input_sqrt)
 real64[] sqrt_expected = [1.0, 2.0, 3.0]
-print(sqrt_values == sqrt_expected and input_sqrt == [1.0, 4.0, 9.0])
+real64[] original_sqrt = [1.0, 4.0, 9.0]
+print(sqrt_values == sqrt_expected and input_sqrt == original_sqrt)
 print(NL)
 
 real32[] input_abs = [-2.0, 0.0, 3.0]
 real32[] abs_values = math.abs(input_abs)
 real32[] abs_expected = [2.0, 0.0, 3.0]
-print(abs_values == abs_expected and input_abs == [-2.0, 0.0, 3.0])
+real32[] original_abs = [-2.0, 0.0, 3.0]
+print(abs_values == abs_expected and input_abs == original_abs)
 print(NL)
 
 real64[] input_exp = [0.0, 1.0]
@@ -210,12 +212,15 @@ print(NL)
 
 real64[] input_log = [1.0]
 real64[] log_values = math.log(input_log)
-print(log_values == [0.0])
+real64[] expected_log = [0.0]
+print(log_values == expected_log)
 print(NL)
 
 real32[] empty_values = []
-print(math.sqrt(empty_values) == empty_values and
-      math.exp(empty_values) == empty_values and
-      math.log(empty_values) == empty_values and
-      math.abs(empty_values) == empty_values)
+real32[] empty_sqrt = math.sqrt(empty_values)
+real32[] empty_exp = math.exp(empty_values)
+real32[] empty_log = math.log(empty_values)
+real32[] empty_abs = math.abs(empty_values)
+print(empty_sqrt == empty_values and empty_exp == empty_values and
+      empty_log == empty_values and empty_abs == empty_values)
 print(NL)
