@@ -257,30 +257,30 @@ tensor<real64> exp(extend tensor<real64> value)
 // Array elementwise functions are ordinary value-producing generic
 // overloads. Each element uses the corresponding checked scalar operation,
 // so domain/overflow rules remain identical. Append never mutates its input.
-T[] abs<T: numeric>(extend T[] values)
+T[] abs<T>(extend T[] value)
     T[] result = []
-    for T value = values[]
-        result = result.append(abs<T>(value))
+    for T element = value[]
+        result = result.append(abs(element))
     return result
 
-T[] | error sqrt<T: floating>(extend T[] values)
+T[] | error sqrt<T>(extend T[] value)
     T[] result = []
-    for T value = values[]
-        T mapped = try sqrt<T>(value)
+    for T element = value[]
+        T mapped = try sqrt(element)
         result = result.append(mapped)
     return result
 
-T[] | error log<T: floating>(extend T[] values)
+T[] | error log<T>(extend T[] value)
     T[] result = []
-    for T value = values[]
-        T mapped = try log<T>(value)
+    for T element = value[]
+        T mapped = try log(element)
         result = result.append(mapped)
     return result
 
-T[] | error exp<T: floating>(extend T[] values)
+T[] | error exp<T>(extend T[] value)
     T[] result = []
-    for T value = values[]
-        T mapped = try exp<T>(value)
+    for T element = value[]
+        T mapped = try exp(element)
         result = result.append(mapped)
     return result
 

@@ -262,3 +262,49 @@ print(ext_sum.untrack().item() == real32(3) and
 print(NL)
 print(ext_tensor.mean().untrack().item() == real32(1))
 print(NL)
+
+// Exact-real and nested arrays use the same scalar implementations.
+real[] exact_input = [real(1), real(4)]
+real[] exact_roots = exact_input.sqrt()
+real[] exact_expected = [real(1), real(2)]
+print(exact_roots == exact_expected)
+print(NL)
+real[] exact_log = [real(1)]
+real[] exact_zero = [real(0)]
+real[] exact_one = [real(1)]
+real[] exact_logs = exact_log.log()
+real[] exact_exps = exact_zero.exp()
+print(exact_logs == exact_zero and exact_exps == exact_one)
+print(NL)
+real64[][] nested = [[1.0, 4.0], [9.0]]
+real64[][] nested_expected = [[1.0, 2.0], [3.0]]
+real64[][] nested_roots = nested.sqrt()
+print(nested_roots == nested_expected)
+print(NL)
+int[] combined = [1, -2, 3, -4, 5]
+print((combined[combined > 0] ^ 2).sum() == 35 and (:9 ^ 2).sum() == 285)
+print(NL)
+
+// Separate rounding of multiply and add differs from FMA on this pair.
+real32[] fma_left = [-1.0, 1.00000011920928955078125]
+real32[] fma_right = [1.0, 0.99999988079071044921875]
+print(fma_left.dot(fma_right) == real32(0.0))
+print(NL)
+real32[] ordered_left = [1.0e20, -1.0e20, 3.0]
+real32[] ordered_right = [1.0, 1.0, 1.0]
+print(ordered_left.dot(ordered_right) == real32(3.0))
+print(NL)
+
+// Array mapping must select the scalar real64 specialization, never an
+// explicit generic fallback that narrows to real32 internally.
+real64 precision_input = 0.1
+real64[] precision_array = [precision_input]
+real64[] precision_exp = precision_array.exp()
+real64[] precision_log = precision_array.log()
+real64[] precision_sqrt = precision_array.sqrt()
+real64 scalar_exp = math.exp(precision_input)
+real64 scalar_log = math.log(precision_input)
+real64 scalar_sqrt = math.sqrt(precision_input)
+print(precision_exp[0] == scalar_exp and precision_log[0] == scalar_log and
+      precision_sqrt[0] == scalar_sqrt)
+print(NL)

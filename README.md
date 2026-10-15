@@ -37,6 +37,14 @@ int squares = math.sum([for auto x = values[] if x > 0 then x * x])
 real average = math.mean(values)
 ```
 
+Array `dot(a, b)` requires equal lengths and identical numeric element
+types. It returns the element type, including zero for two empty arrays.
+It visits indices in increasing order, rounds each product in the element
+type, then adds it to the accumulator with a separate rounding step.
+Multiplication and addition are not fused into FMA and the sum is not
+reassociated. Checked overflow applies to each intermediate operation.
+Complex dot is bilinear (it does not conjugate either operand).
+
 The tensor forms own whole-tensor numerical reduction semantics. Integer `sum` is untracked; floating reductions preserve the original differentiable path. Whole-tensor `sum`/`mean` add elements with a level-by-level pairwise tree (adjacent pairs; an odd trailing element is carried upward as `x + x * 0`, so an infinity in a carried position yields NaN on every path, as in the portable definition), and `mean` divides by the element count accumulated in the tensor's dtype from powers of two. Whole-tensor `max_all`/`min_all` use strict comparison, so ties are first-occurrence and a NaN never displaces an earlier winner. Empty floating `sum` keeps differentiability through a Math-owned zero-Jacobian custom operation; empty `mean`, `max_all`, and `min_all` are domain errors.
 
 The former Core tensor methods `sum_last()`, `max_last()`, and
@@ -243,6 +251,12 @@ Additional suites are `tests/provider_v2.sh`, `tests/finite_results.sh`
 rational brackets when linked with Core's native-extension runtime.
 
 ## Extension methods
+
+Elementwise array `abs`, `sqrt`, `log`, and `exp` recurse through nested
+arrays, including unequal row lengths and empty rows. Each leaf uses the
+corresponding scalar specialization, so exact `real` remains exact and
+floating results keep the scalar function's rounding and domain rules.
+These functions preserve the array's shape and create independent values.
 
 Importing Math makes its public mathematical functions usable as statically
 resolved extension methods. Both forms call the same implementation:
