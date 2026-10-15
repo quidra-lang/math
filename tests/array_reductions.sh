@@ -17,7 +17,7 @@ if ! "$QUIDRA" "$TMP/array_reductions.qui" >"$TMP/values.out" 2>"$TMP/values.err
     cat "$TMP/values.err" >&2
     exit 1
 fi
-expected="$(printf 'true\n%.0s' {1..69})"
+expected="$(printf 'true\n%.0s' {1..74})"
 if [[ "$(cat "$TMP/values.out")" != "$expected" ]]; then
     echo "unexpected numeric-array reduction output:" >&2
     cat "$TMP/values.out" "$TMP/values.err" >&2

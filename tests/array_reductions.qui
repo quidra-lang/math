@@ -188,3 +188,34 @@ print(dot_matches<com32>([1.0 + 2.0i], [3.0 - 4.0i], 11.0 + 2.0i))
 print(NL)
 print(dot_matches<int>([], [], 0))
 print(NL)
+
+// Scalar functions applied elementwise to array values; outputs are separate
+// arrays and source values remain unchanged.
+real64[] input_sqrt = [1.0, 4.0, 9.0]
+real64[] sqrt_values = math.sqrt(input_sqrt)
+real64[] sqrt_expected = [1.0, 2.0, 3.0]
+print(sqrt_values == sqrt_expected and input_sqrt == [1.0, 4.0, 9.0])
+print(NL)
+
+real32[] input_abs = [-2.0, 0.0, 3.0]
+real32[] abs_values = math.abs(input_abs)
+real32[] abs_expected = [2.0, 0.0, 3.0]
+print(abs_values == abs_expected and input_abs == [-2.0, 0.0, 3.0])
+print(NL)
+
+real64[] input_exp = [0.0, 1.0]
+real64[] exp_values = math.exp(input_exp)
+print(exp_values[0] == 1.0 and exp_values[1] > 2.0 and exp_values[1] < 3.0)
+print(NL)
+
+real64[] input_log = [1.0]
+real64[] log_values = math.log(input_log)
+print(log_values == [0.0])
+print(NL)
+
+real32[] empty_values = []
+print(math.sqrt(empty_values) == empty_values and
+      math.exp(empty_values) == empty_values and
+      math.log(empty_values) == empty_values and
+      math.abs(empty_values) == empty_values)
+print(NL)

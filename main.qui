@@ -254,6 +254,36 @@ tensor<real32> exp(tensor<real32> value)
 tensor<real64> exp(tensor<real64> value)
     return internal.tensor_unary<real64>(value, int32(4))
 
+// Array elementwise functions are ordinary value-producing generic
+// overloads. Each element uses the corresponding checked scalar operation,
+// so domain/overflow rules remain identical. Append never mutates its input.
+T[] abs<T: numeric>(T[] values)
+    T[] result = []
+    for T value = values[]
+        result = result.append(abs<T>(value))
+    return result
+
+T[] | error sqrt<T: floating>(T[] values)
+    T[] result = []
+    for T value = values[]
+        T mapped = try sqrt<T>(value)
+        result = result.append(mapped)
+    return result
+
+T[] | error log<T: floating>(T[] values)
+    T[] result = []
+    for T value = values[]
+        T mapped = try log<T>(value)
+        result = result.append(mapped)
+    return result
+
+T[] | error exp<T: floating>(T[] values)
+    T[] result = []
+    for T value = values[]
+        T mapped = try exp<T>(value)
+        result = result.append(mapped)
+    return result
+
 T sum<T: numeric>(T[] value)
     T total = T(0)
     for auto element = value[]
