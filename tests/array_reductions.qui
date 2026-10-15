@@ -224,3 +224,41 @@ real32[] empty_abs = math.abs(empty_values)
 print(empty_sqrt == empty_values and empty_exp == empty_values and
       empty_log == empty_values and empty_abs == empty_values)
 print(NL)
+
+// Both syntax forms have the same public API and checked result type.
+real64[] input_abs64 = [-2.0, 0.0, 3.0]
+real64[] ext_sqrt = input_sqrt.sqrt()
+real64[] ext_abs = input_abs64.abs()
+print(ext_sqrt == sqrt_expected and ext_abs[0] == 2.0)
+print(NL)
+
+real64[] ext_exp = input_exp.exp()
+real64[] ext_log = input_log.log()
+print(ext_exp == exp_values and ext_log == expected_log)
+print(NL)
+
+int[] ext_integers = [1, 2, 3, 4]
+real ext_mean = ext_integers.mean()
+print(ext_integers.sum() == 10 and ext_mean == real(5) / real(2))
+print(NL)
+print(ext_integers.max_all() == 4 and ext_integers.min_all() == 1)
+print(NL)
+
+int[] ext_left = [1, 2, 3]
+int[] ext_right = [4, 5, 6]
+print(ext_left.dot(ext_right) == 32 and
+      math.dot(ext_left, ext_right) == ext_left.dot(ext_right))
+print(NL)
+
+real32[] ext_vector = [0.5, 1.5]
+print(ext_vector.dot(ext_vector) == real32(2.5))
+print(NL)
+
+tensor<real32> ext_tensor = tensor.ones<real32>([3]).track()
+tensor<real32> ext_sum = ext_tensor.sum()
+ext_sum.backward(&ext_tensor)
+print(ext_sum.untrack().item() == real32(3) and
+      ext_tensor.grad[0].item() == real32(1))
+print(NL)
+print(ext_tensor.mean().untrack().item() == real32(1))
+print(NL)

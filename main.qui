@@ -10,7 +10,7 @@ const literal real e = real.atom("math", 2)
 // The generic members are real definitions, not prototypes: prototypes require
 // one exact later definition and do not declare overload families.
 
-T abs<T: numeric>(T value)
+T abs<T: numeric>(extend T value)
     T zero = value - value
     if value < zero
         return zero - value
@@ -26,7 +26,7 @@ T max<T: numeric>(T left, T right)
         return left
     return right
 
-T | error sqrt<T: floating>(T value)
+T | error sqrt<T: floating>(extend T value)
     T zero = value - value
     if value < zero
         return error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
@@ -41,13 +41,13 @@ T | error cos<T: floating>(T value)
 T | error tan<T: floating>(T value)
     return T(native.tan_f32(real32(value)))
 
-T | error log<T: floating>(T value)
+T | error log<T: floating>(extend T value)
     T zero = value - value
     if value <= zero
         return error("math.log requires a positive value", code = "MATH_DOMAIN")
     return T(native.log_f32(real32(value)))
 
-T | error exp<T: floating>(T value)
+T | error exp<T: floating>(extend T value)
     return T(native.exp_f32(real32(value)))
 
 T pow<T: floating>(T base, T exponent)
@@ -120,7 +120,7 @@ int | error ceil(real64 value)
         return error("math.ceil requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f64(value, int32(4)))
 
-real | error sqrt(real value)
+real | error sqrt(extend real value)
     if value < real(0)
         return error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
     return real.unary("math", 257, value)
@@ -134,20 +134,20 @@ real cos(real value)
 real tan(real value)
     return real.unary("math", 260, value)
 
-real | error log(real value)
+real | error log(extend real value)
     if value <= real(0)
         return error("math.log requires a positive value", code = "MATH_DOMAIN")
     return real.unary("math", 261, value)
 
-real exp(real value)
+real exp(extend real value)
     return real.unary("math", 262, value)
 
-real32 | error sqrt(real32 value)
+real32 | error sqrt(extend real32 value)
     if value < real32(0)
         return error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
     return native.sqrt_f32(value)
 
-real64 | error sqrt(real64 value)
+real64 | error sqrt(extend real64 value)
     if value < 0.0
         return error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
     return native.sqrt_f64(value)
@@ -170,20 +170,20 @@ real32 tan(real32 value)
 real64 tan(real64 value)
     return native.tan_f64(value)
 
-real32 | error log(real32 value)
+real32 | error log(extend real32 value)
     if value <= real32(0)
         return error("math.log requires a positive value", code = "MATH_DOMAIN")
     return native.log_f32(value)
 
-real64 | error log(real64 value)
+real64 | error log(extend real64 value)
     if value <= 0.0
         return error("math.log requires a positive value", code = "MATH_DOMAIN")
     return native.log_f64(value)
 
-real32 exp(real32 value)
+real32 exp(extend real32 value)
     return native.exp_f32(value)
 
-real64 exp(real64 value)
+real64 exp(extend real64 value)
     return native.exp_f64(value)
 
 real pow(real base, real exponent)
@@ -206,104 +206,104 @@ bool is_finite(real value)
 
 // Half tensor operations widen exactly, compute in real32, and round once
 // when converted back. Differentiable floating casts keep the input's target.
-tensor<real16> abs(tensor<real16> value)
+tensor<real16> abs(extend tensor<real16> value)
     return real16(internal.tensor_unary<real32>(real32(value), int32(1)))
 
-tensor<real16b> abs(tensor<real16b> value)
+tensor<real16b> abs(extend tensor<real16b> value)
     return real16b(internal.tensor_unary<real32>(real32(value), int32(1)))
 
-tensor<real16> sqrt(tensor<real16> value)
+tensor<real16> sqrt(extend tensor<real16> value)
     return real16(internal.tensor_unary<real32>(real32(value), int32(2)))
 
-tensor<real16b> sqrt(tensor<real16b> value)
+tensor<real16b> sqrt(extend tensor<real16b> value)
     return real16b(internal.tensor_unary<real32>(real32(value), int32(2)))
 
-tensor<real16> log(tensor<real16> value)
+tensor<real16> log(extend tensor<real16> value)
     return real16(internal.tensor_unary<real32>(real32(value), int32(3)))
 
-tensor<real16b> log(tensor<real16b> value)
+tensor<real16b> log(extend tensor<real16b> value)
     return real16b(internal.tensor_unary<real32>(real32(value), int32(3)))
 
-tensor<real16> exp(tensor<real16> value)
+tensor<real16> exp(extend tensor<real16> value)
     return real16(internal.tensor_unary<real32>(real32(value), int32(4)))
 
-tensor<real16b> exp(tensor<real16b> value)
+tensor<real16b> exp(extend tensor<real16b> value)
     return real16b(internal.tensor_unary<real32>(real32(value), int32(4)))
 
-tensor<real32> abs(tensor<real32> value)
+tensor<real32> abs(extend tensor<real32> value)
     return internal.tensor_unary<real32>(value, int32(1))
 
-tensor<real64> abs(tensor<real64> value)
+tensor<real64> abs(extend tensor<real64> value)
     return internal.tensor_unary<real64>(value, int32(1))
 
-tensor<real32> sqrt(tensor<real32> value)
+tensor<real32> sqrt(extend tensor<real32> value)
     return internal.tensor_unary<real32>(value, int32(2))
 
-tensor<real64> sqrt(tensor<real64> value)
+tensor<real64> sqrt(extend tensor<real64> value)
     return internal.tensor_unary<real64>(value, int32(2))
 
-tensor<real32> log(tensor<real32> value)
+tensor<real32> log(extend tensor<real32> value)
     return internal.tensor_unary<real32>(value, int32(3))
 
-tensor<real64> log(tensor<real64> value)
+tensor<real64> log(extend tensor<real64> value)
     return internal.tensor_unary<real64>(value, int32(3))
 
-tensor<real32> exp(tensor<real32> value)
+tensor<real32> exp(extend tensor<real32> value)
     return internal.tensor_unary<real32>(value, int32(4))
 
-tensor<real64> exp(tensor<real64> value)
+tensor<real64> exp(extend tensor<real64> value)
     return internal.tensor_unary<real64>(value, int32(4))
 
 // Array elementwise functions are ordinary value-producing generic
 // overloads. Each element uses the corresponding checked scalar operation,
 // so domain/overflow rules remain identical. Append never mutates its input.
-T[] abs<T: numeric>(T[] values)
+T[] abs<T: numeric>(extend T[] values)
     T[] result = []
     for T value = values[]
         result = result.append(abs<T>(value))
     return result
 
-T[] | error sqrt<T: floating>(T[] values)
+T[] | error sqrt<T: floating>(extend T[] values)
     T[] result = []
     for T value = values[]
         T mapped = try sqrt<T>(value)
         result = result.append(mapped)
     return result
 
-T[] | error log<T: floating>(T[] values)
+T[] | error log<T: floating>(extend T[] values)
     T[] result = []
     for T value = values[]
         T mapped = try log<T>(value)
         result = result.append(mapped)
     return result
 
-T[] | error exp<T: floating>(T[] values)
+T[] | error exp<T: floating>(extend T[] values)
     T[] result = []
     for T value = values[]
         T mapped = try exp<T>(value)
         result = result.append(mapped)
     return result
 
-T sum<T: numeric>(T[] value)
+T sum<T: numeric>(extend T[] value)
     T total = T(0)
     for auto element = value[]
         total = total + element
     return total
 
-tensor<T> sum<T: integer>(tensor<T> value)
+tensor<T> sum<T: integer>(extend tensor<T> value)
     return internal.sum_all<T>(value)
 
-tensor<T> sum<T: floating>(tensor<T> value)
+tensor<T> sum<T: floating>(extend tensor<T> value)
     return internal.sum_all<T>(value)
 
-T mean<T: numeric>(T[] value)
+T mean<T: numeric>(extend T[] value)
     if len(value) == 0
         error("math.mean requires at least one element", code = "MATH_SHAPE")
     T total = sum<T>(value)
     T count = T(len(value))
     return total / count
 
-real mean<T: integer>(T[] value)
+real mean<T: integer>(extend T[] value)
     if len(value) == 0
         error("math.mean requires at least one element", code = "MATH_SHAPE")
     real total = 0.0
@@ -311,25 +311,25 @@ real mean<T: integer>(T[] value)
         total = total + real(element)
     return total / real(len(value))
 
-tensor<T> mean<T: floating>(tensor<T> value)
+tensor<T> mean<T: floating>(extend tensor<T> value)
     return internal.mean_all<T>(value)
 
-tensor<T> sum_last<T: floating>(tensor<T> value)
+tensor<T> sum_last<T: floating>(extend tensor<T> value)
     return internal.sum_last<T>(value)
 
-tensor<T> max_last<T: integer>(tensor<T> value)
+tensor<T> max_last<T: integer>(extend tensor<T> value)
     return internal.max_last<T>(value)
 
-tensor<T> min_last<T: integer>(tensor<T> value)
+tensor<T> min_last<T: integer>(extend tensor<T> value)
     return internal.min_last<T>(value)
 
-tensor<T> max_last<T: floating>(tensor<T> value)
+tensor<T> max_last<T: floating>(extend tensor<T> value)
     return internal.max_last<T>(value)
 
-tensor<T> min_last<T: floating>(tensor<T> value)
+tensor<T> min_last<T: floating>(extend tensor<T> value)
     return internal.min_last<T>(value)
 
-T max_all<T: ordered>(T[] value)
+T max_all<T: ordered>(extend T[] value)
     if len(value) == 0
         error("math.max requires at least one element", code = "MATH_SHAPE")
     T best = value[0]
@@ -339,7 +339,7 @@ T max_all<T: ordered>(T[] value)
             best = candidate
     return best
 
-T min_all<T: ordered>(T[] value)
+T min_all<T: ordered>(extend T[] value)
     if len(value) == 0
         error("math.min requires at least one element", code = "MATH_SHAPE")
     T best = value[0]
@@ -349,22 +349,22 @@ T min_all<T: ordered>(T[] value)
             best = candidate
     return best
 
-tensor<T> max_all<T: integer>(tensor<T> value)
+tensor<T> max_all<T: integer>(extend tensor<T> value)
     return internal.max_all<T>(value)
 
-tensor<T> min_all<T: integer>(tensor<T> value)
+tensor<T> min_all<T: integer>(extend tensor<T> value)
     return internal.min_all<T>(value)
 
-tensor<T> max_all<T: floating>(tensor<T> value)
+tensor<T> max_all<T: floating>(extend tensor<T> value)
     return internal.max_all<T>(value)
 
-tensor<T> min_all<T: floating>(tensor<T> value)
+tensor<T> min_all<T: floating>(extend tensor<T> value)
     return internal.min_all<T>(value)
 
 // An array dot product preserves the element type and checks each operation.
 // In particular, fixed-width intermediate multiplication and addition cannot
  // silently widen or reorder, and an empty pair returns the additive identity.
-T dot<T: numeric>(T[] a, T[] b)
+T dot<T: numeric>(extend T[] a, T[] b)
     if len(a) != len(b)
         error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
     T total = T(0)
@@ -372,7 +372,7 @@ T dot<T: numeric>(T[] a, T[] b)
         total += a[index] * b[index]
     return total
 
-real32 dot(tensor<real32> a, tensor<real32> b)
+real32 dot(extend tensor<real32> a, tensor<real32> b)
     int[] a_shape = int(a.shape())
     int[] b_shape = int(b.shape())
     if len(a_shape) != 1 or len(b_shape) != 1
@@ -381,7 +381,7 @@ real32 dot(tensor<real32> a, tensor<real32> b)
         error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
     return internal.matmul_native<real32>(a, b).item()
 
-real64 dot(tensor<real64> a, tensor<real64> b)
+real64 dot(extend tensor<real64> a, tensor<real64> b)
     int[] a_shape = int(a.shape())
     int[] b_shape = int(b.shape())
     if len(a_shape) != 1 or len(b_shape) != 1
@@ -390,7 +390,7 @@ real64 dot(tensor<real64> a, tensor<real64> b)
         error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
     return internal.matmul_native<real64>(a, b).item()
 
-T dot<T: integer>(tensor<T> a, tensor<T> b)
+T dot<T: integer>(extend tensor<T> a, tensor<T> b)
     int[] a_shape = int(a.shape())
     int[] b_shape = int(b.shape())
     if len(a_shape) != 1 or len(b_shape) != 1
@@ -399,10 +399,10 @@ T dot<T: integer>(tensor<T> a, tensor<T> b)
         error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
     return internal.matmul<T>(a, b).item()
 
-tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
+tensor<T> matmul<T: integer>(extend tensor<T> a, tensor<T> b)
     return internal.matmul<T>(a, b)
 
-tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
+tensor<real32> matmul(extend tensor<real32> a, tensor<real32> b)
     int[] a_shape = int(a.shape())
     int[] b_shape = int(b.shape())
     int a_rank = int(len(a_shape))
@@ -448,5 +448,5 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     // back to the portable composition inside.
     return internal.matmul_native<real32>(a, b)
 
-tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
+tensor<real64> matmul(extend tensor<real64> a, tensor<real64> b)
     return internal.matmul_native<real64>(a, b)

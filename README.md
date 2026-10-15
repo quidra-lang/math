@@ -241,3 +241,21 @@ Additional suites are `tests/provider_v2.sh`, `tests/finite_results.sh`
 (optional explicit GPU index), and `tests/half_math.sh`.
 `tests/exact_intervals.cpp` checks integer/interval invariants and independent
 rational brackets when linked with Core's native-extension runtime.
+
+## Extension methods
+
+Importing Math makes its public mathematical functions usable as statically
+resolved extension methods. Both forms call the same implementation:
+
+```quidra
+import math
+real64[] values = [1.0, 4.0, 9.0]
+real64[] roots = values.sqrt()      // math.sqrt(values)
+int[] a = [1, 2, 3]
+int result = a.sum()                // math.sum(a)
+int product = a.dot(a)             // math.dot(a, a)
+```
+
+Scalar, array and tensor overloads share the existing precision, error,
+shape, CPU/GPU and autograd contracts. Methods never mutate their input
+unless a library author explicitly declares a writable extension receiver.
