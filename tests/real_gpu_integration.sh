@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# GitHub Actions otherwise shows only "exit code 1" when an unadorned
+# assertion fails. Always give the failing command/line in the job log.
+trap 'rc=$?; printf "Math real GPU test failed at line %s (exit %s): %s\n" "$LINENO" "$rc" "$BASH_COMMAND" >&2' ERR
 
 QUIDRA="${1:-}"
 if [[ -z "$QUIDRA" ]]; then
@@ -63,9 +66,13 @@ QUI
         >"$TMP/math-device-dtype.out" 2>"$TMP/math-device-dtype.err"
     dtype_status=$?
     set -e
-    [[ "$dtype_status" -eq 101 ]]
-    grep -Fq 'Quidra runtime error[MATH_DTYPE]' "$TMP/math-device-dtype.err"
-    grep -Fq 'math tensor unary is not implemented for this device dtype' "$TMP/math-device-dtype.err"
+    if [[ "$dtype_status" -ne 101 ]] ||
+       ! grep -Fq 'Quidra runtime error[MATH_DTYPE]' "$TMP/math-device-dtype.err" ||
+       ! grep -Fq 'math tensor unary is not implemented for this device dtype' "$TMP/math-device-dtype.err"; then
+        echo "unexpected real GPU dtype rejection (status=$dtype_status):" >&2
+        cat "$TMP/math-device-dtype.out" "$TMP/math-device-dtype.err" >&2
+        exit 1
+    fi
 fi
 
 cat > "$TMP/math-real-gpu.qui" <<QUI
