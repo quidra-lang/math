@@ -332,7 +332,7 @@ if [[ "$math_status" -ne 0 ]]; then
     # A native compiler failure can precede every numeric assertion. Capture
     # the invalid LLVM's producing block and its missing SSA value to locate
     # the actual Core lowering defect, without modifying test expectations.
-    if "$QUIDRA" llvm "$TMP/math.qui" > "$TMP/failed-integration.ll" 2>"$TMP/failed-llvm.err"; then
+    if QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" llvm "$TMP/math.qui" > "$TMP/failed-integration.ll" 2>"$TMP/failed-llvm.err"; then
         echo "Generated LLVM around failed string equality:" >&2
         grep -n -B 55 -A 20 'str.equal.179' "$TMP/failed-integration.ll" >&2 || true
         echo "Definitions and uses of suspected undefined value:" >&2
