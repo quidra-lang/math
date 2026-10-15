@@ -1,0 +1,13 @@
+import math
+
+int[] values = [1, -2, 3, -4, 5]
+int positive_square_sum = (values[values > 0] ^ 2).sum()
+int range_square_sum = (:9 ^ 2).sum()
+int[] selection = values[[4, 2, 0]]
+int[] expected_selection = [5, 3, 1]
+int[] expected_slice = [1, -2, 3, -4]
+nat[] expected_indices = [0, 1, 2, 3, 4]
+print(positive_square_sum == 35 and range_square_sum == 285 and
+      selection == expected_selection and values[:3] == expected_slice and
+      values.indices() == expected_indices)
+print(NL)

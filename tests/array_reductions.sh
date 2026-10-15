@@ -24,6 +24,28 @@ if [[ "$(cat "$TMP/values.out")" != "$expected" ]]; then
     exit 1
 fi
 
+# Exercise the complete range -> array -> comparison/mask -> method pipeline.
+if ! "$QUIDRA" "$ROOT/tests/array_pipeline.qui" >"$TMP/pipeline.out" 2>"$TMP/pipeline.err"; then
+    cat "$TMP/pipeline.err" >&2
+    exit 1
+fi
+if [[ "$(cat "$TMP/pipeline.out")" != "true" ]]; then
+    echo "unexpected numeric-array pipeline output:" >&2
+    cat "$TMP/pipeline.out" "$TMP/pipeline.err" >&2
+    exit 1
+fi
+
+# Array scalar dispatch must preserve real64 and exact-real precision.
+if ! "$QUIDRA" "$ROOT/tests/array_precision.qui" >"$TMP/precision.out" 2>"$TMP/precision.err"; then
+    cat "$TMP/precision.err" >&2
+    exit 1
+fi
+if [[ "$(cat "$TMP/precision.out")" != "$(printf 'true\n%.0s' {1..6})" ]]; then
+    echo "array and scalar precision differ:" >&2
+    cat "$TMP/precision.out" "$TMP/precision.err" >&2
+    exit 1
+fi
+
 # Ordinary array dot rejects unequal input lengths without partial results.
 cat >"$TMP/dot-length.qui" <<'QUI'
 import math

@@ -37,14 +37,6 @@ int squares = math.sum([for auto x = values[] if x > 0 then x * x])
 real average = math.mean(values)
 ```
 
-Array `dot(a, b)` requires equal lengths and identical numeric element
-types. It returns the element type, including zero for two empty arrays.
-It visits indices in increasing order, rounds each product in the element
-type, then adds it to the accumulator with a separate rounding step.
-Multiplication and addition are not fused into FMA and the sum is not
-reassociated. Checked overflow applies to each intermediate operation.
-Complex dot is bilinear (it does not conjugate either operand).
-
 The tensor forms own whole-tensor numerical reduction semantics. Integer `sum` is untracked; floating reductions preserve the original differentiable path. Whole-tensor `sum`/`mean` add elements with a level-by-level pairwise tree (adjacent pairs; an odd trailing element is carried upward as `x + x * 0`, so an infinity in a carried position yields NaN on every path, as in the portable definition), and `mean` divides by the element count accumulated in the tensor's dtype from powers of two. Whole-tensor `max_all`/`min_all` use strict comparison, so ties are first-occurrence and a NaN never displaces an earlier winner. Empty floating `sum` keeps differentiability through a Math-owned zero-Jacobian custom operation; empty `mean`, `max_all`, and `min_all` are domain errors.
 
 The former Core tensor methods `sum_last()`, `max_last()`, and
@@ -90,6 +82,20 @@ point. On Metal that is a host read such as `.cpu()` or `.item()`,
 `gpu.sync`, or program exit. Core's fake test GPU does not yet consume
 deferred checks at host reads, only at `gpu.sync` and program exit, so there a
 program can read a failed result and keep running until one of those.
+
+For ordinary arrays, `math.dot(a, b)` / `a.dot(b)` requires equal lengths
+and exactly matching numeric element types, returns that element type, and
+returns its zero for two empty arrays. It visits indices from left to right,
+computes each product with the scalar multiplication rules, then adds that
+rounded product to the running total with the scalar addition rules. The
+accumulator starts at the element type's zero. It does not reorder the sum,
+widen its accumulator, or contract multiplication and addition into FMA.
+`real16` and `real16b` scalar operations compute in `real32` and round each
+stored intermediate back to the element type. Exact `int`, `nat`, `real`
+and `com` retain their existing exact scalar semantics. Overflow and
+non-finite failures stop at the first failing multiplication or addition.
+Complex dot is bilinear (it does not conjugate either operand).
+This array contract is independent of the tensor matrix-product contract below.
 
 Floating `matmul` (and `dot`) on the CPU, the fake test GPU, and Metal
 (`real32`) runs through one backend-neutral native bridge for tracked and
@@ -257,6 +263,7 @@ arrays, including unequal row lengths and empty rows. Each leaf uses the
 corresponding scalar specialization, so exact `real` remains exact and
 floating results keep the scalar function's rounding and domain rules.
 These functions preserve the array's shape and create independent values.
+Fixed inner extents are retained during recursive mapping.
 
 Importing Math makes its public mathematical functions usable as statically
 resolved extension methods. Both forms call the same implementation:
@@ -273,3 +280,12 @@ int product = a.dot(a)             // math.dot(a, a)
 Scalar, array and tensor overloads share the existing precision, error,
 shape, CPU/GPU and autograd contracts. Methods never mutate their input
 unless a library author explicitly declares a writable extension receiver.
+
+Ranges, masks, array operators, and methods compose directly:
+
+```quidra
+import math
+int[] values = [1, -2, 3, -4, 5]
+int positive_square_sum = (values[values > 0] ^ 2).sum() // 35
+int range_square_sum = (:9 ^ 2).sum()                    // 285
+```

@@ -1,0 +1,88 @@
+import math
+
+// Values distinguish real64 scalar kernels from a round-trip through real32.
+real64[] log_inputs = [1.0000000001, 1.0e100]
+real64[] exp_inputs = [0.123456789012345, 100.0]
+real64[] sqrt_inputs = [2.0, 1.0e100]
+real64[] logarithms = log_inputs.log()
+real64[] exponentials = exp_inputs.exp()
+real64[] roots = sqrt_inputs.sqrt()
+real64 scalar_log0 = math.log(log_inputs[0])
+real64 scalar_log1 = math.log(log_inputs[1])
+real64 scalar_root0 = math.sqrt(sqrt_inputs[0])
+real64 scalar_root1 = math.sqrt(sqrt_inputs[1])
+print(logarithms[0] == scalar_log0 and
+      logarithms[1] == scalar_log1 and
+      exponentials[0] == math.exp(exp_inputs[0]) and
+      exponentials[1] == math.exp(exp_inputs[1]) and
+      roots[0] == scalar_root0 and
+      roots[1] == scalar_root1)
+print(NL)
+
+// Exact real operations preserve the same symbolic values as scalar calls.
+real[] exact_inputs = [2.0]
+real[] exact_logs = exact_inputs.log()
+real[] exact_exps = exact_inputs.exp()
+real[] exact_roots = exact_inputs.sqrt()
+print(exact_logs[0].string() == math.log(exact_inputs[0]).string() and
+      exact_exps[0].string() == math.exp(exact_inputs[0]).string() and
+      exact_roots[0].string() == math.sqrt(exact_inputs[0]).string())
+print(NL)
+
+// Independent products round before addition; contracting into an FMA
+// would produce -2^-54 instead of zero in the second iteration.
+real64[] dot_left = [-1.0, 1.000000007450580596923828125]
+real64[] dot_right = [1.0, 0.999999992549419403076171875]
+real64[] ordered_left = [9007199254740992.0, 1.0, -9007199254740992.0, 1.0]
+real64[] ordered_right = [1.0, 1.0, 1.0, 1.0]
+print(dot_left.dot(dot_right) == real64(0) and
+      ordered_left.dot(ordered_right) == real64(1))
+print(NL)
+
+// Unary mappings recurse over ragged arrays without changing any axis length.
+real64[][] ragged_roots_input = [[1.0, 4.0], [9.0]]
+real64[][] ragged_roots_expected = [[1.0, 2.0], [3.0]]
+real64[][] ragged_roots = ragged_roots_input.sqrt()
+int[][] ragged_abs_input = [[-1, 2], [], [-3]]
+int[][] ragged_abs_expected = [[1, 2], [], [3]]
+int[][] ragged_abs = ragged_abs_input.abs()
+print(ragged_roots == ragged_roots_expected and ragged_abs == ragged_abs_expected)
+print(NL)
+
+// Fixed inner extents survive recursive mapping; only a private copy is changed.
+real64[2][3] fixed_input = [[1.0, 4.0, 9.0], [16.0, 25.0, 36.0]]
+real64[2][3] fixed_original = fixed_input
+real64[][3] fixed_roots = fixed_input.sqrt()
+real64[][3] fixed_expected = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
+real64[2][3] fixed_ones = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
+real64[2][3] fixed_zeros = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+real64[][3] fixed_logs = fixed_ones.log()
+real64[][3] fixed_exps = fixed_zeros.exp()
+real64[][3] expected_zeros = fixed_zeros
+real64[][3] expected_ones = fixed_ones
+int[2][3] fixed_signed = [[-1, 2, -3], [4, -5, 6]]
+int[][3] fixed_absolute = fixed_signed.abs()
+int[][3] expected_absolute = [[1, 2, 3], [4, 5, 6]]
+print(fixed_roots == fixed_expected and fixed_input == fixed_original and
+      fixed_logs == expected_zeros and fixed_exps == expected_ones and
+      fixed_absolute == expected_absolute)
+print(NL)
+
+// An error in a later row remains catchable and leaves the source untouched.
+real64[2][3] invalid_roots = [[1.0, 4.0, 9.0], [16.0, -1.0, 36.0]]
+real64[2][3] invalid_original = invalid_roots
+real64[2][3] invalid_logs = [[1.0, 1.0, 1.0], [1.0, 0.0, 1.0]]
+bool root_error = false
+bool log_error = false
+match invalid_roots.sqrt()
+    real64[][3] success
+        root_error = false
+    error problem
+        root_error = problem == error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
+match invalid_logs.log()
+    real64[][3] success
+        log_error = false
+    error problem
+        log_error = problem == error("math.log requires a positive value", code = "MATH_DOMAIN")
+print(root_error and log_error and invalid_roots == invalid_original)
+print(NL)

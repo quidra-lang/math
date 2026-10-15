@@ -254,34 +254,65 @@ tensor<real32> exp(extend tensor<real32> value)
 tensor<real64> exp(extend tensor<real64> value)
     return internal.tensor_unary<real64>(value, int32(4))
 
-// Array elementwise functions are ordinary value-producing generic
-// overloads. Each element uses the corresponding checked scalar operation,
-// so domain/overflow rules remain identical. Append never mutates its input.
+// Array mappings copy their input, then update that private copy. The recursive
+// helpers retain the complete type of each row, including fixed inner extents.
+// Scalar specializations use inferred calls so real64 and exact real keep their
+// scalar kernels. Fallible leaves propagate the original error with try.
+private void .array_abs<T: numeric>(T &value)
+    value = abs(value)
+
+private void .array_abs<T>(T &value)
+    for 0 <= nat index < len(value)
+        .array_abs(&value[index])
+
+private void | error .array_sqrt<T: numeric>(T &value)
+    T | error mapped = sqrt(value)
+    value = try mapped
+    return
+
+private void | error .array_sqrt<T>(T &value)
+    for 0 <= nat index < len(value)
+        try .array_sqrt(&value[index])
+    return
+
+private void | error .array_log<T: numeric>(T &value)
+    T | error mapped = log(value)
+    value = try mapped
+    return
+
+private void | error .array_log<T>(T &value)
+    for 0 <= nat index < len(value)
+        try .array_log(&value[index])
+    return
+
+private void | error .array_exp<T: numeric>(T &value)
+    T | error mapped = exp(value)
+    value = try mapped
+    return
+
+private void | error .array_exp<T>(T &value)
+    for 0 <= nat index < len(value)
+        try .array_exp(&value[index])
+    return
+
 T[] abs<T>(extend T[] value)
-    T[] result = []
-    for T element = value[]
-        result = result.append(abs(element))
+    T[] result = value
+    .array_abs(&result)
     return result
 
 T[] | error sqrt<T>(extend T[] value)
-    T[] result = []
-    for T element = value[]
-        T mapped = try sqrt(element)
-        result = result.append(mapped)
+    T[] result = value
+    try .array_sqrt(&result)
     return result
 
 T[] | error log<T>(extend T[] value)
-    T[] result = []
-    for T element = value[]
-        T mapped = try log(element)
-        result = result.append(mapped)
+    T[] result = value
+    try .array_log(&result)
     return result
 
 T[] | error exp<T>(extend T[] value)
-    T[] result = []
-    for T element = value[]
-        T mapped = try exp(element)
-        result = result.append(mapped)
+    T[] result = value
+    try .array_exp(&result)
     return result
 
 T sum<T: numeric>(extend T[] value)
