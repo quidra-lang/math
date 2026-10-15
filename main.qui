@@ -331,6 +331,17 @@ tensor<T> max_all<T: floating>(tensor<T> value)
 tensor<T> min_all<T: floating>(tensor<T> value)
     return internal.min_all<T>(value)
 
+// An array dot product preserves the element type and checks each operation.
+// In particular, fixed-width intermediate multiplication and addition cannot
+ // silently widen or reorder, and an empty pair returns the additive identity.
+T dot<T: numeric>(T[] a, T[] b)
+    if len(a) != len(b)
+        error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
+    T total = T(0)
+    for 0 <= nat index < len(a)
+        total += a[index] * b[index]
+    return total
+
 real32 dot(tensor<real32> a, tensor<real32> b)
     int[] a_shape = int(a.shape())
     int[] b_shape = int(b.shape())

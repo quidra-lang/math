@@ -173,3 +173,18 @@ print(math.sum(integers).item() == int32(3) and total.untrack().item() == real32
 print(NL)
 print(math.mean(tracked).untrack().item() == real32(1) and math.min_all(integers).item() == int32(1) and math.max_all(tracked).untrack().item() == real32(1))
 print(NL)
+
+bool dot_matches<T: numeric>(T[] left, T[] right, T expected)
+    T computed = math.dot(left, right)
+    return computed == expected
+
+print(dot_matches<int8>([1, 2, 3], [4, 5, 6], 32))
+print(NL)
+print(dot_matches<int>([18446744073709551616, 2], [2, 3], 36893488147419103238))
+print(NL)
+print(dot_matches<real32>([0.5, 1.0], [2.0, -3.0], -2.0))
+print(NL)
+print(dot_matches<com32>([1.0 + 2.0i], [3.0 - 4.0i], 11.0 + 2.0i))
+print(NL)
+print(dot_matches<int>([], [], 0))
+print(NL)

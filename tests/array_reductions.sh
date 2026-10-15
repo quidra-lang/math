@@ -17,10 +17,26 @@ if ! "$QUIDRA" "$TMP/array_reductions.qui" >"$TMP/values.out" 2>"$TMP/values.err
     cat "$TMP/values.err" >&2
     exit 1
 fi
-expected="$(printf 'true\n%.0s' {1..64})"
+expected="$(printf 'true\n%.0s' {1..69})"
 if [[ "$(cat "$TMP/values.out")" != "$expected" ]]; then
     echo "unexpected numeric-array reduction output:" >&2
     cat "$TMP/values.out" "$TMP/values.err" >&2
+    exit 1
+fi
+
+# Ordinary array dot rejects unequal input lengths without partial results.
+cat >"$TMP/dot-length.qui" <<'QUI'
+import math
+int[] left = [1, 2, 3]
+int[] right = [4, 5]
+print(math.dot(left, right))
+QUI
+dot_status=0
+"$QUIDRA" "$TMP/dot-length.qui" >"$TMP/dot-length.out" 2>"$TMP/dot-length.err" || dot_status=$?
+if [[ "$dot_status" -ne 101 || -s "$TMP/dot-length.out" ]] ||
+   ! grep -Fq 'runtime error[MATH_SHAPE]' "$TMP/dot-length.err"; then
+    echo "unexpected mismatched array dot outcome (status $dot_status):" >&2
+    cat "$TMP/dot-length.out" "$TMP/dot-length.err" >&2
     exit 1
 fi
 
