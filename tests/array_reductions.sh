@@ -15,6 +15,17 @@ cp "$ROOT/tests/array_reductions.qui" "$TMP/array_reductions.qui"
 
 if ! "$QUIDRA" "$TMP/array_reductions.qui" >"$TMP/values.out" 2>"$TMP/values.err"; then
     cat "$TMP/values.err" >&2
+    # Preserve the original numeric checks. On an LLVM verification failure,
+    # print the producing function instead of suppressing the assertion or
+    # silently replacing the exact-value comparison with a weaker one.
+    if "$QUIDRA" llvm "$TMP/array_reductions.qui" >"$TMP/failed.ll" 2>"$TMP/llvm.err"; then
+        echo "LLVM around failed string equality (if present):" >&2
+        grep -n -B 45 -A 15 'str.equal.179' "$TMP/failed.ll" >&2 || true
+        echo "LLVM definitions/references of the missing operand (if present):" >&2
+        grep -n -E '%v178([^0-9]|$)' "$TMP/failed.ll" | tail -25 >&2 || true
+    else
+        cat "$TMP/llvm.err" >&2
+    fi
     exit 1
 fi
 expected="$(printf 'true\n%.0s' {1..89})"
