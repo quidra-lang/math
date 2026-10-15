@@ -329,6 +329,17 @@ set -e
 if [[ "$math_status" -ne 0 ]]; then
     echo "Math integration program failed with status $math_status:" >&2
     printf '%s\n' "$actual" >&2
+    # A native compiler failure can precede every numeric assertion. Capture
+    # the invalid LLVM's producing block and its missing SSA value to locate
+    # the actual Core lowering defect, without modifying test expectations.
+    if "$QUIDRA" llvm "$TMP/math.qui" > "$TMP/failed-integration.ll" 2>"$TMP/failed-llvm.err"; then
+        echo "Generated LLVM around failed string equality:" >&2
+        grep -n -B 55 -A 20 'str.equal.179' "$TMP/failed-integration.ll" >&2 || true
+        echo "Definitions and uses of suspected undefined value:" >&2
+        grep -n -E '%v178([^0-9]|$)' "$TMP/failed-integration.ll" | tail -40 >&2 || true
+    else
+        cat "$TMP/failed-llvm.err" >&2
+    fi
     exit 1
 fi
 if [[ "$actual" != "$expected" ]]; then

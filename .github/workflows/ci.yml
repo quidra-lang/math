@@ -28,9 +28,16 @@ jobs:
       - name: Enforce Core native ABI boundary
         run: python3 quidra/tests/package_native_boundary_tests.py .
       - name: Install Quidra dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang llvm libcurl4-openssl-dev
+        run: sudo apt-get update && sudo apt-get install -y clang llvm libcurl4-openssl-dev ccache
+      - name: Restore Linux Core build cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: math-quidra-${{ runner.os }}-${{ hashFiles('quidra/CMakeLists.txt', 'quidra/src/**', 'quidra/include/**') }}
+          restore-keys: |
+            math-quidra-${{ runner.os }}-
       - name: Build Quidra develop
-        run: cmake -S quidra -B quidra/build -DCMAKE_BUILD_TYPE=Release -DQUIDRA_ENABLE_TEST_GPU_BACKEND=ON && cmake --build quidra/build --target quidra --parallel ${{ runner.os == 'macOS' && 3 || 4 }}
+        run: cmake -S quidra -B quidra/build -DCMAKE_BUILD_TYPE=Release -DQUIDRA_ENABLE_TEST_GPU_BACKEND=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache && cmake --build quidra/build --target quidra --parallel ${{ runner.os == 'macOS' && 3 || 4 }}
       - name: Validate package metadata with Core
         run: quidra/build/quidra package validate "$GITHUB_WORKSPACE"
       - name: Math integration
@@ -52,6 +59,13 @@ jobs:
           path: quidra
       - name: Install Quidra dependencies
         run: brew install ccache curl
+      - name: Restore macOS Core build cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: math-quidra-${{ runner.os }}-${{ hashFiles('quidra/CMakeLists.txt', 'quidra/src/**', 'quidra/include/**') }}
+          restore-keys: |
+            math-quidra-${{ runner.os }}-
       - name: Build Quidra develop
         run: cmake -S quidra -B quidra/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$(brew --prefix curl)" -DCMAKE_CXX_COMPILER_LAUNCHER=ccache && cmake --build quidra/build --target quidra --parallel ${{ runner.os == 'macOS' && 3 || 4 }}
       - name: Real Metal GPU numerical integration
