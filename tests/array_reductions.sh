@@ -35,9 +35,30 @@ if [[ "$(cat "$TMP/values.out")" != "$expected" ]]; then
     exit 1
 fi
 
+# When a new array contract breaks LLVM emission, keep the concrete
+# pre-optimization and post-optimization operands visible in CI logs.
+# Do not change any numeric assertions or suppress compiler failures.
+diagnose_failed_ir() {
+    local source="$1" label="$2"
+    if "$QUIDRA" ir "$source" >"$TMP/$label.ir" 2>"$TMP/$label.ir.err"; then
+        echo "Typed IR around suspected missing operand in $label:" >&2
+        grep -n -B 28 -A 14 -E '%178([^0-9]|$)|%179([^0-9]|$)' "$TMP/$label.ir" | tail -125 >&2 || true
+    else
+        cat "$TMP/$label.ir.err" >&2
+    fi
+    if "$QUIDRA" llvm "$source" >"$TMP/$label.ll" 2>"$TMP/$label.llvm.err"; then
+        echo "LLVM around suspected missing SSA operand in $label:" >&2
+        grep -n -B 55 -A 18 -E 'str\.equal\.179|%v178([^0-9]|$)' "$TMP/$label.ll" | tail -165 >&2 || true
+    else
+        cat "$TMP/$label.llvm.err" >&2
+    fi
+}
+
 # Exercise the complete range -> array -> comparison/mask -> method pipeline.
 if ! "$QUIDRA" "$ROOT/tests/array_pipeline.qui" >"$TMP/pipeline.out" 2>"$TMP/pipeline.err"; then
+    echo "Math array pipeline failed:" >&2
     cat "$TMP/pipeline.err" >&2
+    diagnose_failed_ir "$ROOT/tests/array_pipeline.qui" pipeline
     exit 1
 fi
 if [[ "$(cat "$TMP/pipeline.out")" != "true" ]]; then
@@ -48,7 +69,9 @@ fi
 
 # Array scalar dispatch must preserve real64 and exact-real precision.
 if ! "$QUIDRA" "$ROOT/tests/array_precision.qui" >"$TMP/precision.out" 2>"$TMP/precision.err"; then
+    echo "Math array precision failed:" >&2
     cat "$TMP/precision.err" >&2
+    diagnose_failed_ir "$ROOT/tests/array_precision.qui" precision
     exit 1
 fi
 if [[ "$(cat "$TMP/precision.out")" != "$(printf 'true\n%.0s' {1..6})" ]]; then
