@@ -11,7 +11,7 @@ const literal real e = real.atom("math", 2)
 // one exact later definition and do not declare overload families.
 
 T abs<T: numeric>(extend T value)
-    T zero = value - value
+    T zero = T(0)
     if value < zero
         return zero - value
     return value
@@ -27,7 +27,7 @@ T max<T: numeric>(T left, T right)
     return right
 
 T | error sqrt<T: floating>(extend T value)
-    T zero = value - value
+    T zero = T(0)
     if value < zero
         return error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
     return value ^ 0.5
@@ -42,9 +42,9 @@ T | error tan<T: floating>(T value)
     return T(native.tan_f32(real32(value)))
 
 T | error log<T: floating>(extend T value)
-    T zero = value - value
-    if value <= zero
-        return error("math.log requires a positive value", code = "MATH_DOMAIN")
+    T zero = T(0)
+    if value < zero
+        return error("math.log requires a nonnegative value", code = "MATH_DOMAIN")
     return T(native.log_f32(real32(value)))
 
 T | error exp<T: floating>(extend T value)
@@ -54,7 +54,7 @@ T pow<T: floating>(T base, T exponent)
     return base ^ exponent
 
 bool is_finite<T: floating>(T value)
-    return true
+    return value != T(inf) and value != T(-inf)
 
 int | error trunc<T: floating>(T value)
     real32 widened = real32(value)
@@ -135,8 +135,8 @@ real tan(real value)
     return real.unary("math", 260, value)
 
 real | error log(extend real value)
-    if value <= real(0)
-        return error("math.log requires a positive value", code = "MATH_DOMAIN")
+    if value < real(0)
+        return error("math.log requires a nonnegative value", code = "MATH_DOMAIN")
     return real.unary("math", 261, value)
 
 real exp(extend real value)
@@ -171,13 +171,13 @@ real64 tan(real64 value)
     return native.tan_f64(value)
 
 real32 | error log(extend real32 value)
-    if value <= real32(0)
-        return error("math.log requires a positive value", code = "MATH_DOMAIN")
+    if value < real32(0)
+        return error("math.log requires a nonnegative value", code = "MATH_DOMAIN")
     return native.log_f32(value)
 
 real64 | error log(extend real64 value)
-    if value <= 0.0
-        return error("math.log requires a positive value", code = "MATH_DOMAIN")
+    if value < 0.0
+        return error("math.log requires a nonnegative value", code = "MATH_DOMAIN")
     return native.log_f64(value)
 
 real32 exp(extend real32 value)
@@ -202,7 +202,7 @@ bool is_finite(real64 value)
     return native.is_finite_f64(value)
 
 bool is_finite(real value)
-    return true
+    return value != inf and value != -inf
 
 // Half tensor operations widen exactly, compute in real32, and round once
 // when converted back. Differentiable floating casts keep the input's target.

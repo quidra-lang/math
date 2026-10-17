@@ -254,10 +254,11 @@ inline std::uint32_t arity(std::uint32_t op) { if(op==1||op==2)return 0;if(op>=2
 inline std::uint32_t flags(std::uint32_t op) {
     switch(op) {
         case 1:case 2:return QCORE_EXACT_UNARY_RESULT_POSITIVE;
-        case 257:return QCORE_EXACT_UNARY_DOMAIN_NONNEGATIVE|QCORE_EXACT_UNARY_RESULT_NONNEGATIVE;
+        case 257:return QCORE_EXACT_UNARY_DOMAIN_NONNEGATIVE|QCORE_EXACT_UNARY_RESULT_NONNEGATIVE|QCORE_EXACT_UNARY_CANONICALIZES_INFINITY;
         case 258:case 259:return QCORE_EXACT_UNARY_TOTAL;
-        case 261:return QCORE_EXACT_UNARY_DOMAIN_POSITIVE;
-        case 262:return QCORE_EXACT_UNARY_TOTAL|QCORE_EXACT_UNARY_RESULT_POSITIVE;
+        case 261:return QCORE_EXACT_UNARY_DOMAIN_NONNEGATIVE|QCORE_EXACT_UNARY_CANONICALIZES_INFINITY;
+        case 262:return QCORE_EXACT_UNARY_TOTAL|QCORE_EXACT_UNARY_RESULT_POSITIVE|QCORE_EXACT_UNARY_CANONICALIZES_INFINITY;
+        case 263:return QCORE_EXACT_UNARY_CANONICALIZES_INFINITY;
         default:return 0;
     }
 }
@@ -283,6 +284,8 @@ inline void* canonicalize_impl(std::uint32_t op,const void* const* args,std::uin
     if(op==263&&count==2) {
         // Reuse Core's domain checks. Its generic power need not refine here.
         Owned checked(qcore_exact_real_pow(args[0],args[1]));
+        if(qcore_exact_real_infinity_sign(args[0]) || qcore_exact_real_infinity_sign(args[1]))
+            return qcore_exact_real_retain(checked.value);
         const char *num=nullptr,*den=nullptr;
         if(qcore_exact_real_rational_parts(args[1],&num,&den)) {
             const auto power=Integer::decimal(num),degree=Integer::decimal(den);
@@ -293,11 +296,18 @@ inline void* canonicalize_impl(std::uint32_t op,const void* const* args,std::uin
         return nullptr;
     }
     if(count!=1)return nullptr;
+    const int infinite=qcore_exact_real_infinity_sign(args[0]);
+    if(infinite) {
+        if((op==257 || op==261) && infinite>0) return qcore_exact_real_infinity(1);
+        if(op==262) return infinite>0?qcore_exact_real_infinity(1):qcore_exact_real_rational("0","1");
+        return nullptr;
+    }
     const char *numerator=nullptr,*denominator=nullptr;
     const bool rational=qcore_exact_real_rational_parts(args[0],&numerator,&denominator)!=0;
     Integer n,d;
     if(rational){n=Integer::decimal(numerator);d=Integer::decimal(denominator);}
     if(rational&&n==Integer()) {
+        if(op==261)return qcore_exact_real_infinity(-1);
         if(op==257||op==258||op==260)return qcore_exact_real_rational("0","1");
         if(op==259||op==262)return qcore_exact_real_rational("1","1");
     }

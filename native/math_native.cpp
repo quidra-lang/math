@@ -39,7 +39,7 @@ struct MathGemmTask {
 extern "C" const char* math_native_unary_domain_message(std::int32_t operation) {
     switch (operation) {
         case 2: return "math.sqrt requires nonnegative tensor elements";
-        case 3: return "math.log requires positive tensor elements";
+        case 3: return "math.log requires nonnegative tensor elements";
         default: return "math tensor unary domain check failed";
     }
 }
@@ -564,7 +564,7 @@ T tensor_unary_forward(T value, TensorUnaryOperation operation, bool& domain_ok)
             }
             return std::sqrt(value);
         case TensorUnaryOperation::Log:
-            if (!(value > T(0))) {
+            if (value < T(0)) {
                 domain_ok = false;
                 return T(0);
             }
@@ -2509,16 +2509,16 @@ int validate_math_output(void* output, const char* operation) {
         if (dtype == QCORE_DTYPE_FLOAT32) {
             const auto* values = tensor_unary_read<float>(output);
             if (count && !values) return 5;
-            for (std::uint64_t i = 0; i < count; ++i) finite = finite && std::isfinite(values[i]);
+            for (std::uint64_t i = 0; i < count; ++i) finite = finite && !std::isnan(values[i]);
         } else if (dtype == QCORE_DTYPE_FLOAT64) {
             const auto* values = tensor_unary_read<double>(output);
             if (count && !values) return 5;
-            for (std::uint64_t i = 0; i < count; ++i) finite = finite && std::isfinite(values[i]);
+            for (std::uint64_t i = 0; i < count; ++i) finite = finite && !std::isnan(values[i]);
         } else return 7;
         return qcore_tensor_report_status(output, operation, finite ? 0 : 1);
     }
     const std::string message = std::string("package operation ") + operation +
-        " produced a non-finite real32 value";
+        " produced a NaN real32 value";
     if (backend == QCORE_BACKEND_CUDA) return math_native_cuda_validate_output(output, operation, message.c_str());
 #ifdef __APPLE__
     if (backend == QCORE_BACKEND_METAL) return math_native_metal_validate_output(output, operation, message.c_str());
@@ -2527,13 +2527,13 @@ int validate_math_output(void* output, const char* operation) {
 }
 struct MathOutputFlags {
     MathOutputFlags() {
-        (void)qcore_op_register_flags("math_native_tensor_unary", QCORE_OP_VALIDATES_NONFINITE);
-        (void)qcore_op_register_flags("math_native_matmul", QCORE_OP_VALIDATES_NONFINITE);
-        (void)qcore_op_register_flags("math_native_matmul_cuda_f32", QCORE_OP_VALIDATES_NONFINITE);
-        (void)qcore_op_register_flags("math_native_reduce", QCORE_OP_VALIDATES_NONFINITE);
-        (void)qcore_op_register_flags("math_native_select_extrema", QCORE_OP_FINITE_PRESERVING);
+        (void)qcore_op_register_flags("math_native_tensor_unary", QCORE_OP_VALIDATES_NAN);
+        (void)qcore_op_register_flags("math_native_matmul", QCORE_OP_VALIDATES_NAN);
+        (void)qcore_op_register_flags("math_native_matmul_cuda_f32", QCORE_OP_VALIDATES_NAN);
+        (void)qcore_op_register_flags("math_native_reduce", QCORE_OP_VALIDATES_NAN);
+        (void)qcore_op_register_flags("math_native_select_extrema", QCORE_OP_NAN_PRESERVING);
         // Attaching the empty sum's zero Jacobian changes no tensor value.
-        (void)qcore_op_register_flags("math_native_attach_empty_sum", QCORE_OP_FINITE_PRESERVING);
+        (void)qcore_op_register_flags("math_native_attach_empty_sum", QCORE_OP_NAN_PRESERVING);
     }
 };
 const MathOutputFlags math_output_flags{};

@@ -150,7 +150,7 @@ std::string forward_ptx(std::int32_t operation){
         "INVALID:\n  mov.u32 %r5,1;\n  atom.global.exch.b32 %r6,[%rd4],%r5;\n"
         "  mov.f32 %f2,0f00000000;\n  st.global.f32 [%rd10],%f2;\n";
     else if(operation==3) body=
-        "  setp.gt.f32 %p2,%f1,0f00000000;\n  @%p2 bra LOG_VALID;\n"
+        "  setp.ge.f32 %p2,%f1,0f00000000;\n  @%p2 bra LOG_VALID;\n"
         "  mov.u32 %r5,1;\n  atom.global.exch.b32 %r6,[%rd4],%r5;\n"
         "  mov.f32 %f2,0f00000000;\n  st.global.f32 [%rd10],%f2;\n  bra DONE;\n"
         "LOG_VALID:\n  lg2.approx.f32 %f2,%f1;\n  mov.f32 %f3,0f3f317218;\n"
@@ -384,8 +384,8 @@ extern "C" int math_native_cuda_validate_output(
         "  ld.param.u64 %rd1,[p_input];\n  ld.param.u64 %rd2,[p_status];\n"
         "  ld.param.u64 %rd3,[p_count];\n  setp.ge.u64 %p1,%rd7,%rd3;\n"
         "  @%p1 bra DONE;\n  mul.lo.u64 %rd8,%rd7,4;\n  add.u64 %rd9,%rd1,%rd8;\n"
-        "  ld.global.u32 %r5,[%rd9];\n  and.b32 %r6,%r5,0x7f800000;\n"
-        "  setp.eq.u32 %p2,%r6,0x7f800000;\n  @!%p2 bra DONE;\n"
+        "  ld.global.u32 %r5,[%rd9];\n  and.b32 %r6,%r5,0x7fffffff;\n"
+        "  setp.gt.u32 %p2,%r6,0x7f800000;\n  @!%p2 bra DONE;\n"
         "  mov.u32 %r7,1;\n  atom.global.exch.b32 %r8,[%rd2],%r7;\nDONE:\n  ret;\n}\n";
     void* args[] = {&input, &status, &count};
     const int launched = launch(device, "math-finite-output", ptx, count, args);

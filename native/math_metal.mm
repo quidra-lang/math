@@ -65,7 +65,7 @@ kernel void unary_forward_checked(
         valid = !(value < 0.0f);
         result = sqrt(value);
     } else {
-        valid = value > 0.0f;
+        valid = value >= 0.0f;
         result = valid ? log(value) : 0.0f;
     }
     if (!valid)
@@ -132,7 +132,7 @@ kernel void unary_second_backward(
 kernel void finite_output(device const float* input [[buffer(0)]],
     device atomic_uint* status [[buffer(1)]],
     constant uint& count [[buffer(2)]], uint index [[thread_position_in_grid]]) {
-    if (index < count && !isfinite(input[index]))
+    if (index < count && (as_type<uint>(input[index]) & 0x7fffffffu) > 0x7f800000u)
         atomic_store_explicit(status, 1u, memory_order_relaxed);
 }
 )MSL"];
