@@ -1,0 +1,57 @@
+import math
+
+// Array mapping inherits scalar domain and infinity rules, including signed zero.
+real32[] input32 = [0.0, -0.0, 1.0, inf]
+real64[2][2] input64 = [[0.0, -0.0], [1.0, inf]]
+real[] input_exact = [0.0, 1.0, inf]
+real32[] original32 = input32
+real64[2][2] original64 = input64
+real[] original_exact = input_exact
+real32[] logs32 = input32.log()
+real64[][2] logs64 = input64.log()
+real[] logs_exact = input_exact.log()
+real32[] expected32 = [-inf, -inf, 0.0, inf]
+real64[][2] expected64 = [[-inf, -inf], [0.0, inf]]
+real[] expected_exact = [-inf, 0.0, inf]
+print(logs32 == expected32 and logs64 == expected64 and logs_exact == expected_exact and
+      input32 == original32 and input64 == original64 and input_exact == original_exact)
+print(NL)
+
+// Overflow to infinity is a value. A later finite cancellation cannot undo it.
+real32[] overflowing32 = [3.0e38, 3.0e38, -3.0e38]
+real64[] overflowing64 = [1.0e308, 1.0e308, -1.0e308]
+real32 sum32 = overflowing32.sum()
+real32 mean32 = overflowing32.mean()
+real64 sum64 = overflowing64.sum()
+real64 mean64 = overflowing64.mean()
+print(sum32 == real32(inf) and mean32 == real32(inf) and
+      sum64 == real64(inf) and mean64 == real64(inf))
+print(NL)
+
+// Complex reductions preserve infinite components without manufacturing NaN.
+com32[] overflowing_complex = [3.0e38 + 0.0i, 3.0e38 + 0.0i]
+com32 complex_sum = overflowing_complex.sum()
+print(complex_sum == com32(real32(inf)))
+print(NL)
+
+// Ordered array dot still rounds each product before the left-to-right sum.
+real32[] dot_left = [3.0e38, 1.0]
+real32[] dot_right = [2.0, -1.0]
+print(dot_left.dot(dot_right) == real32(inf))
+print(NL)
+
+// Selection and elementwise arithmetic keep ordinary value semantics for inf.
+real64[] extremes = [-inf, 0.0, inf]
+real64[] positive = extremes[extremes > real64(0)]
+real64[] doubled = extremes * real64(2)
+real64[] expected_positive = [inf]
+print(positive == expected_positive and doubled == extremes and
+      extremes[[2, 0]][0] == real64(inf))
+print(NL)
+
+// Unbounded exact-real values never overflow into infinity accidentally.
+real[] exact_large = [1.0e308, 1.0e308, -1.0e308]
+real exact_sum = exact_large.sum()
+print(exact_sum == real(1.0e308) and exact_sum < real(inf) and
+      logs_exact[0].string() == "-∞" and logs_exact[2].string() == "∞")
+print(NL)

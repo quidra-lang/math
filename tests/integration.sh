@@ -795,7 +795,7 @@ print(NL)
 QUI
 expect_true_lines "Math native sum/mean" "$TMP/native-sum-mean.qui" 4
 
-# Invalid real construction is fatal before a Math operation can consume it.
+# Invalid 0/0 construction is fatal before a Math operation can consume it.
 expect_real_division_failure() {
     local label="$1"
     local program="$2"
@@ -1055,27 +1055,8 @@ print(NL)
 QUI
 expect_true_lines "Math native views" "$TMP/native-views.qui" 6
 
-# Infinity cannot reach an odd-carry reduction: its construction is fatal.
-# Keep the original carried/paired/leading consumers below that failure.
-cat > "$TMP/native-sum-carry.qui" <<'QUI'
-import math
-
-bool is_nan(real32 value)
-    return value != value
-
-// 1: odd-carry definition: [1, 1, inf] -> NaN (inf carried), [1, inf] and
-// [inf, 1, 1, 1, 1] -> inf, on contiguous and view inputs alike.
-real32 infinity = real32(1) / real32(0)
-tensor<real32> carried = tensor.ones<real32>([1, 3])
-carried[0, 2] = infinity
-tensor<real32> paired = tensor.ones<real32>([1, 2])
-paired[0, 1] = infinity
-tensor<real32> leading = tensor.ones<real32>([1, 5])
-leading[0, 0] = infinity
-print(is_nan(math.sum(carried).item()) and is_nan(math.mean(carried).item()) and is_nan(math.sum(carried.track().transpose(0, 1)).untrack().item()) and math.sum(paired).item() == infinity and math.sum(leading).item() == infinity and math.mean(leading.track().transpose(0, 1)).untrack().item() == infinity)
-print(NL)
-QUI
-expect_real_division_failure "Math invalid infinity construction" "$TMP/native-sum-carry.qui"
+# Infinity is allowed; only the odd-carry NaN result is fatal.
+bash "$REPOSITORY_ROOT/tests/tensor_infinity.sh" "$QUIDRA" cpu
 
 # Shapes the native bridges do not claim keep the portable behaviour. Until
 # Core stops discarding bare error() statements, the portable composition runs

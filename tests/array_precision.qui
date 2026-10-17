@@ -71,7 +71,8 @@ print(NL)
 // An error in a later row remains catchable and leaves the source untouched.
 real64[2][3] invalid_roots = [[1.0, 4.0, 9.0], [16.0, -1.0, 36.0]]
 real64[2][3] invalid_original = invalid_roots
-real64[2][3] invalid_logs = [[1.0, 1.0, 1.0], [1.0, 0.0, 1.0]]
+real64[2][3] invalid_logs = [[1.0, 1.0, 1.0], [1.0, -1.0, 1.0]]
+real64[2][3] invalid_logs_original = invalid_logs
 bool root_error = false
 bool log_error = false
 match invalid_roots.sqrt()
@@ -83,6 +84,7 @@ match invalid_logs.log()
     real64[][3] success
         log_error = false
     error problem
-        log_error = problem == error("math.log requires a positive value", code = "MATH_DOMAIN")
-print(root_error and log_error and invalid_roots == invalid_original)
+        log_error = problem == error("math.log requires a nonnegative value", code = "MATH_DOMAIN")
+print(root_error and log_error and invalid_roots == invalid_original and
+      invalid_logs == invalid_logs_original)
 print(NL)

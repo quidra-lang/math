@@ -186,11 +186,11 @@ cat > "$TMP/log-domain-device.qui" <<'QUI'
 import math
 
 tensor<real32> source = tensor.ones<real32>([3])
-source[1] = real32(0)
+source[1] = real32(-1)
 tensor<real32> logs = math.log(source.gpu(0))
 QUI
 expect_deferred_domain_failure "fake-GPU log domain failure at exit" "$TMP/log-domain-device.qui" \
-    "math.log requires positive tensor elements" "" ""
+    "math.log requires nonnegative tensor elements" "" ""
 
 cat > "$TMP/whole-extrema-device.qui" <<'QUI'
 import math
@@ -482,30 +482,8 @@ print(NL)
 QUI
 expect_true_lines "Math native fake-GPU views" "$TMP/native-views-device.qui" 6
 
-# Infinity construction fails before any device odd-carry reduction.
-cat > "$TMP/native-sum-carry-device.qui" <<'QUI'
-import math
-
-bool is_nan(real32 value)
-    return value != value
-
-// 1: odd-carry definition on the device.
-real32 infinity = real32(1) / real32(0)
-tensor<real32> carried = tensor.ones<real32>([1, 3])
-carried[0, 2] = infinity
-tensor<real32> paired = tensor.ones<real32>([1, 2])
-paired[0, 1] = infinity
-print(is_nan(math.sum(carried.gpu(0)).cpu().item()) and is_nan(math.mean(carried.gpu(0)).cpu().item()) and math.sum(paired.gpu(0)).cpu().item() == infinity)
-print(NL)
-QUI
-set +e
-QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" "$TMP/native-sum-carry-device.qui" \
-    > "$TMP/invalid-carry.out" 2> "$TMP/invalid-carry.err"
-status=$?
-set -e
-[[ "$status" -eq 101 && ! -s "$TMP/invalid-carry.out" ]]
-grep -Fq 'Quidra runtime error[DIVISION_BY_ZERO]' "$TMP/invalid-carry.err"
-grep -Fq 'real32 division by zero' "$TMP/invalid-carry.err"
+# Device reductions obey the same infinity and odd-carry NaN contract.
+bash "$REPOSITORY_ROOT/tests/tensor_infinity.sh" "$QUIDRA" gpu
 
 # Shapes the native bridges do not claim keep the portable behaviour on the
 # device too (see integration.sh for why both outcomes are accepted).

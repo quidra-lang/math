@@ -80,6 +80,20 @@ if [[ "$(cat "$TMP/precision.out")" != "$(printf 'true\n%.0s' {1..6})" ]]; then
     exit 1
 fi
 
+# Arrays inherit the scalar extended-real contract; infinities are values,
+# whereas indeterminate operations still fail. Check the positive paths too.
+if ! "$QUIDRA" "$ROOT/tests/array_infinity.qui" >"$TMP/infinity.out" 2>"$TMP/infinity.err"; then
+    echo "Math array infinity failed:" >&2
+    cat "$TMP/infinity.err" >&2
+    diagnose_failed_ir "$ROOT/tests/array_infinity.qui" infinity
+    exit 1
+fi
+if [[ "$(cat "$TMP/infinity.out")" != "$(printf 'true\n%.0s' {1..6})" ]]; then
+    echo "unexpected numeric-array infinity output:" >&2
+    cat "$TMP/infinity.out" "$TMP/infinity.err" >&2
+    exit 1
+fi
+
 # Ordinary array dot rejects unequal input lengths without partial results.
 cat >"$TMP/dot-length.qui" <<'QUI'
 import math
@@ -96,7 +110,7 @@ if [[ "$dot_status" -ne 101 || -s "$TMP/dot-length.out" ]] ||
     exit 1
 fi
 
-expect_overflow() {
+expect_numeric_error() {
     local name="$1" type="$2" values="$3" code="$4" operation="${5:-sum}"
     cat >"$TMP/$name.qui" <<QUI
 import math
@@ -113,12 +127,13 @@ QUI
     fi
 }
 
-# A later cancelling term cannot hide an earlier checked overflow.
-expect_overflow signed-overflow int8 '[127, 1, -1]' INTEGER_OVERFLOW
-expect_overflow natural-overflow nat8 '[255, 1]' INTEGER_OVERFLOW
-expect_overflow real-overflow real32 '[3.0e38, 3.0e38, -3.0e38]' REAL_OVERFLOW
-expect_overflow complex-overflow com32 '[3.0e38 + 0.0i, 3.0e38 + 0.0i]' REAL_OVERFLOW
-expect_overflow mean-overflow real32 '[3.0e38, 3.0e38, -3.0e38]' REAL_OVERFLOW mean
+# A later cancelling term cannot hide an earlier checked integer overflow.
+expect_numeric_error signed-overflow int8 '[127, 1, -1]' INTEGER_OVERFLOW
+expect_numeric_error natural-overflow nat8 '[255, 1]' INTEGER_OVERFLOW
+# Infinity is allowed, but an indeterminate sum must not return NaN.
+expect_numeric_error real-nan real32 '[inf, -inf]' NONFINITE_RESULT
+expect_numeric_error complex-nan com32 '[com32(real32(inf)), com32(real32(-inf))]' NONFINITE_RESULT
+expect_numeric_error mean-nan real32 '[inf, -inf]' NONFINITE_RESULT mean
 
 for operation_type in 'mean real32' 'mean int8' 'mean com32' 'min_all real32' 'max_all real32'; do
     read -r operation element_type <<<"$operation_type"

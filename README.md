@@ -92,8 +92,15 @@ accumulator starts at the element type's zero. It does not reorder the sum,
 widen its accumulator, or contract multiplication and addition into FMA.
 `real16` and `real16b` scalar operations compute in `real32` and round each
 stored intermediate back to the element type. Exact `int`, `nat`, `real`
-and `com` retain their existing exact scalar semantics. Overflow and
-non-finite failures stop at the first failing multiplication or addition.
+and `com` retain their existing exact scalar semantics. Checked integer
+overflow and NaN-producing operations stop at the first failing multiplication
+or addition; real overflow to signed infinity is allowed, following Core's
+scalar contract. A later finite term cannot undo an earlier overflow to infinity.
+Array `log` accepts zero (including fixed-width negative zero) and returns
+negative infinity, while negative inputs retain their catchable `MATH_DOMAIN`
+error. Exact `real` displays infinity as `∞` or `-∞`; fixed-width reals use
+`inf` or `-inf`. Array mappings and selections preserve these values without
+modifying their inputs.
 Complex dot is bilinear (it does not conjugate either operand).
 This array contract is independent of the tensor matrix-product contract below.
 
@@ -241,10 +248,11 @@ once after the operation. Half tensor unary functions use differentiable
 floating casts, preserving the source gradient destination. The existing
 `real32` and `real64` arithmetic paths retain their operation order.
 
-Native unary, matrix-product and sum kernels validate finite outputs. CPU
+Native unary, matrix-product and sum kernels reject NaN outputs. CPU
 failures report `NONFINITE_RESULT`; device checks are consumed at the next
 synchronization with Core's code and the same Math message and origin.
-Extrema only select already finite inputs and declare finite preservation.
+Extrema only select existing NaN-free inputs and declare that preservation.
+Signed infinities remain valid unless an operation combines them into NaN.
 A zero-width last axis returns its original empty shape before width guards.
 
 The compiler descriptor uses version 2 and the current numeric type names.
