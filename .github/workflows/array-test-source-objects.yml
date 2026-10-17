@@ -25,7 +25,7 @@ jobs:
           expected = {
               'README.md': ('ff985ab3b892ed897ae3b4aeca1dd31c99dfe48a52319774f425046223c6e26c', 'b05213a3e2c25eb975dd2c81f5af7fbb55550bd20e8ad1fc00457cbc625ce627'),
               'tests/integration.sh': ('3bc6a328d11d7834ebaf045e7dbd77abef812ba17ca88f45ad1eb575619f65f3', '1e1db084819dd9b41e50b99f4fc5a01344df2ae8c0dc85291ff969ccf8798a62'),
-              'tests/device.sh': ('7735573a7d83d2f66a0310b6969f8adf8b5f26ac55ecd77c5b278138750bb3c3', 'ef53101556c9aeaadd501b23b5a649508d4e16666029b29bbe89ef7f3f2f131e'),
+              'tests/device.sh': ('7735573a7d83d2f66a0310b6969f8adf8b5f26ac55ecd77c5b278138750bb3c3', 'ba0f9a45a1ba63b9a0a36c28bb05402b9d1ba9928428dca7dbd2856b19e5d977'),
           }
           texts = {}
           for name, (before, after) in expected.items():
@@ -54,6 +54,13 @@ jobs:
               start = texts[name].index(start_marker)
               end = texts[name].index('# Shapes the native bridges do not claim', start)
               texts[name] = texts[name][:start] + replacement + texts[name][end:]
+          name = 'tests/device.sh'
+          for before, after in (
+              ('source[1] = real32(0)\ntensor<real32> logs = math.log(source.gpu(0))', 'source[1] = real32(-1)\ntensor<real32> logs = math.log(source.gpu(0))'),
+              ('"math.log requires positive tensor elements" "" ""', '"math.log requires nonnegative tensor elements" "" ""'),
+          ):
+              assert texts[name].count(before) == 1
+              texts[name] = texts[name].replace(before, after)
           for name, text in texts.items():
               data = text.encode('utf-8')
               assert hashlib.sha256(data).hexdigest() == expected[name][1], ('result mismatch', name)
@@ -89,5 +96,29 @@ jobs:
         with:
           name: array-test-source-objects
           path: source-objects.json
+          if-no-files-found: error
+          retention-days: 1
+      - name: Export the LLVM JIT runner used for native-package verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y llvm
+          lli --version
+          mkdir -p "$RUNNER_TEMP/llvm-jit/bin" "$RUNNER_TEMP/llvm-jit/lib"
+          runner="$(readlink -f "$(command -v lli)")"
+          cp "$runner" "$RUNNER_TEMP/llvm-jit/bin/lli"
+          # Carry LLVM and Z3 only; libc/libstdc++ stay native to the host.
+          while read -r library; do
+            cp -L "$library" "$RUNNER_TEMP/llvm-jit/lib/"
+          done < <(ldd "$runner" | awk '/libLLVM|libz3/ { print $3 }')
+          tar -C "$RUNNER_TEMP" -czf llvm-jit.tar.gz llvm-jit
+          sha256sum llvm-jit.tar.gz > llvm-jit.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: llvm-jit-verification-runner
+          path: |
+            llvm-jit.tar.gz
+            llvm-jit.sha256
           if-no-files-found: error
           retention-days: 1
