@@ -1,0 +1,93 @@
+name: array-test-source-objects
+
+# Temporary transport for three large reviewed test/documentation files.
+# This job stores blobs only; the final source commit removes this workflow.
+on:
+  push:
+    branches: [develop]
+    paths: [.github/workflows/array-test-source-objects.yml]
+permissions:
+  contents: write
+jobs:
+  source-objects:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Materialize the exact reviewed file contents
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, subprocess
+          expected = {
+              'README.md': ('ff985ab3b892ed897ae3b4aeca1dd31c99dfe48a52319774f425046223c6e26c', 'b05213a3e2c25eb975dd2c81f5af7fbb55550bd20e8ad1fc00457cbc625ce627'),
+              'tests/integration.sh': ('3bc6a328d11d7834ebaf045e7dbd77abef812ba17ca88f45ad1eb575619f65f3', '1e1db084819dd9b41e50b99f4fc5a01344df2ae8c0dc85291ff969ccf8798a62'),
+              'tests/device.sh': ('7735573a7d83d2f66a0310b6969f8adf8b5f26ac55ecd77c5b278138750bb3c3', 'ef53101556c9aeaadd501b23b5a649508d4e16666029b29bbe89ef7f3f2f131e'),
+          }
+          texts = {}
+          for name, (before, after) in expected.items():
+              data = Path(name).read_bytes()
+              assert hashlib.sha256(data).hexdigest() == before, ('source changed', name)
+              texts[name] = data.decode('utf-8')
+          name = 'README.md'
+          replacements = [
+              ('and `com` retain their existing exact scalar semantics. Overflow and\nnon-finite failures stop at the first failing multiplication or addition.\n',
+               'and `com` retain their existing exact scalar semantics. Checked integer\noverflow and NaN-producing operations stop at the first failing multiplication\nor addition; real overflow to signed infinity is allowed, following Core\'s\nscalar contract. A later finite term cannot undo an earlier overflow to infinity.\nArray `log` accepts zero (including fixed-width negative zero) and returns\nnegative infinity, while negative inputs retain their catchable `MATH_DOMAIN`\nerror. Exact `real` displays infinity as `∞` or `-∞`; fixed-width reals use\n`inf` or `-inf`. Array mappings and selections preserve these values without\nmodifying their inputs.\n'),
+              ('Native unary, matrix-product and sum kernels validate finite outputs. CPU\n', 'Native unary, matrix-product and sum kernels reject NaN outputs. CPU\n'),
+              ('Extrema only select already finite inputs and declare finite preservation.\n', 'Extrema only select existing NaN-free inputs and declare that preservation.\nSigned infinities remain valid unless an operation combines them into NaN.\n'),
+          ]
+          for before, after in replacements:
+              assert texts[name].count(before) == 1
+              texts[name] = texts[name].replace(before, after)
+          name = 'tests/integration.sh'
+          before = '# Invalid real construction is fatal before a Math operation can consume it.'
+          assert texts[name].count(before) == 1
+          texts[name] = texts[name].replace(before, '# Invalid 0/0 construction is fatal before a Math operation can consume it.')
+          for name, start_marker, replacement in (
+              ('tests/integration.sh', '# Infinity cannot reach an odd-carry reduction:', '# Infinity is allowed; only the odd-carry NaN result is fatal.\nbash "$REPOSITORY_ROOT/tests/tensor_infinity.sh" "$QUIDRA" cpu\n\n'),
+              ('tests/device.sh', '# Infinity construction fails before any device odd-carry reduction.', '# Device reductions obey the same infinity and odd-carry NaN contract.\nbash "$REPOSITORY_ROOT/tests/tensor_infinity.sh" "$QUIDRA" gpu\n\n'),
+          ):
+              assert texts[name].count(start_marker) == 1
+              start = texts[name].index(start_marker)
+              end = texts[name].index('# Shapes the native bridges do not claim', start)
+              texts[name] = texts[name][:start] + replacement + texts[name][end:]
+          for name, text in texts.items():
+              data = text.encode('utf-8')
+              assert hashlib.sha256(data).hexdigest() == expected[name][1], ('result mismatch', name)
+              Path(name).write_bytes(data)
+              if name.endswith('.sh'):
+                  subprocess.run(['bash', '-n', name], check=True)
+          subprocess.run(['git', 'diff', '--check'], check=True)
+          PY
+      - name: Store content-addressed blobs without moving a branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, os, urllib.request
+          records = []
+          for name in ('README.md', 'tests/integration.sh', 'tests/device.sh'):
+              data = Path(name).read_bytes()
+              sha = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+              request = urllib.request.Request(
+                  'https://api.github.com/repos/quidra-lang/math/git/blobs',
+                  data=json.dumps({'content': data.decode('utf-8'), 'encoding': 'utf-8'}).encode(),
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                           'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'},
+                  method='POST')
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  stored = json.load(response)
+              assert stored['sha'] == sha, ('blob mismatch', name)
+              records.append({'path': name, 'sha': sha, 'sha256': hashlib.sha256(data).hexdigest()})
+          Path('source-objects.json').write_text(json.dumps(records, indent=2) + '\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: array-test-source-objects
+          path: source-objects.json
+          if-no-files-found: error
+          retention-days: 1
