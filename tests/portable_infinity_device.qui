@@ -1,0 +1,13 @@
+import math
+import implementation = "../internal.qui"
+
+real64 infinity = 1.0 / 0.0
+tensor<real64> odd = tensor.ones<real64>([1, 7])
+odd[0, 6] = infinity
+tensor<real64> on_gpu = odd.gpu(0).track()
+tensor<real64> portable = implementation.sum_all_nonempty<real64>(on_gpu, 7)
+print(portable.untrack().cpu().item() == infinity)
+print(NL)
+portable.backward(&on_gpu)
+print(on_gpu.grad.cpu()[0, 0].item() == 1.0 and on_gpu.grad.cpu()[0, 6].item() == 1.0)
+print(NL)

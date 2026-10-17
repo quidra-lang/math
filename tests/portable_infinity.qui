@@ -1,0 +1,26 @@
+import math
+import implementation = "../internal.qui"
+
+bool same_order(int count)
+    tensor<real32> values = tensor.zeros<real32>([nat(count)])
+    for 0 <= int i < count
+        real32 sample = real32((i * 131 + count * 17) % 79)
+        values[i] = sample / real32(43) - real32(1)
+    real32 portable = implementation.sum_all_nonempty<real32>(values, count).item()
+    real32 native = math.sum(values).item()
+    return portable.string() == native.string()
+
+int[] counts = [3, 5, 6, 7, 11, 15, 17, 33]
+for int length = counts[]
+    print(same_order(length))
+    print(NL)
+
+real32 infinity = real32(1) / real32(0)
+tensor<real32> odd = tensor.ones<real32>([1, 3])
+odd[0, 2] = infinity
+print(implementation.sum_all_nonempty<real32>(odd, 3).item() == infinity)
+print(NL)
+tensor<real32> tracked = odd.track()
+implementation.sum_all_nonempty<real32>(tracked, 3).backward(&tracked)
+print(tracked.grad[0, 0].item() == real32(1) and tracked.grad[0, 2].item() == real32(1))
+print(NL)

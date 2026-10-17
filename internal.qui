@@ -101,48 +101,50 @@ tensor<T> native_linear_data<T: floating>(tensor<T> value)
         alias = alias.untrack()
     return alias.contiguous()
 
+// Balanced pairwise reduction with explicit odd tails. Padding with
+// right * zero would turn a valid infinity into NaN. Keeping a stack of
+// trailing scalars preserves the same parenthesization and autograd path,
+// without masked arithmetic or a host readback on the GPU.
 tensor<T> sum_all_nonempty<T: numeric>(
     tensor<T> value,
-    int count,
-    int device
+    int count
 )
     int[] identity = array(nat(count), fill = 0)
     for 0 <= int index < count
         identity[index] = index
     tensor<T> current = value.gather(identity, [count])
+    tensor<T>[] tails = []
     int length = count
 
     while length > 1
-        int pairs = (length + 1) / 2
+        int pairs = length / 2
         int[] left_indices = array(nat(pairs), fill = 0)
         int[] right_indices = array(nat(pairs), fill = 0)
         for 0 <= int pair < pairs
-            int left_index = pair * 2
-            int right_index = left_index + 1
-            if right_index >= length
-                right_index = left_index
-            left_indices[pair] = left_index
-            right_indices[pair] = right_index
+            left_indices[pair] = pair * 2
+            right_indices[pair] = pair * 2 + 1
 
+        if length % 2 == 1
+            tails = tails.append(current.gather([length - 1], []))
         tensor<T> left = current.gather(left_indices, [pairs])
         tensor<T> right = current.gather(right_indices, [pairs])
-        if length % 2 == 1
-            tensor<T> mask = ones_vector_on<T>(pairs, device)
-            T zero = zeros_scalar_on<T>(device).item()
-            mask[pairs - 1] = zero
-            current = left + right * mask
-        else
-            current = left + right
+        current = left + right
         length = pairs
 
-    return current.gather([0], [])
+    tensor<T> result = current.gather([0], [])
+    if len(tails) > 0
+        tensor<T> remaining = tails[0]
+        for 1 <= int index < int(len(tails))
+            remaining = tails[index] + remaining
+        result = result + remaining
+    return result
 
 tensor<T> sum_all<T: integer>(tensor<T> value)
     int count = logical_count(int(value.shape()), "sum")
     int device = value.device()
     if count == 0
         return zeros_scalar_on<T>(device)
-    return sum_all_nonempty<T>(value, count, device)
+    return sum_all_nonempty<T>(value, count)
 
 tensor<T> sum_all<T: floating>(tensor<T> value)
     int count = logical_count(int(value.shape()), "sum")
@@ -160,7 +162,7 @@ tensor<T> sum_all<T: floating>(tensor<T> value)
         tensor<T> total = native_output<T>([], device)
         if native.reduce<T>(source, value, &total, int32(1)) == int32(0)
             return total
-    return sum_all_nonempty<T>(value, count, device)
+    return sum_all_nonempty<T>(value, count)
 
 tensor<T> positive_count_scalar<T: floating>(int count, int device)
     tensor<T> result = zeros_scalar_on<T>(device)
