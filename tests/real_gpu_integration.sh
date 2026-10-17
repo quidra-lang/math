@@ -1282,7 +1282,9 @@ expect_deferred_domain_failure "Metal sqrt domain failure at a host read" \
     "$TMP/sqrt-domain-real-gpu.qui" \
     "math.sqrt requires nonnegative tensor elements" "7:" "queued"
 
-cat > "$TMP/log-domain-real-gpu.qui" <<QUI
+# log(0) is -infinity, so the call and following synchronization must succeed
+# under both native Metal execution paths (with and without Core streaming).
+cat > "$TMP/log-zero-real-gpu.qui" <<QUI
 import math
 
 tensor<real32> source = tensor.ones<real32>([3])
@@ -1290,11 +1292,54 @@ source[1] = real32(0)
 tensor<real32> logs = math.log(source.gpu($GPU_INDEX))
 print("queued{NL}")
 gpu.sync($GPU_INDEX)
+tensor<real32> host = logs.cpu()
+print(host[1].item() == real32(-inf) and host[0].item() == real32(0))
+print(NL)
+QUI
+for stream in 1 0; do
+    set +e
+    QUIDRA_METAL_STREAM=$stream QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" \
+        "$QUIDRA" run "$TMP/log-zero-real-gpu.qui" >"$TMP/log-zero.out" 2>"$TMP/log-zero.err"
+    log_zero_status=$?
+    set -e
+    if [[ "$log_zero_status" -ne 0 || "$(cat "$TMP/log-zero.out")" != 
+cat > "$TMP/exit-domain-real-gpu.qui" <<QUI
+import math
+
+tensor<real32> source = tensor.ones<real32>([3])
+source[0] = real32(-2)
+tensor<real32> roots = math.sqrt(source.gpu($GPU_INDEX))
+QUI
+expect_deferred_domain_failure "Metal domain failure at program exit" \
+    "$TMP/exit-domain-real-gpu.qui" \
+    "math.sqrt requires nonnegative tensor elements" "" ""
+
+fi
+
+bash "$REPOSITORY_ROOT/tests/finite_results.sh" "$QUIDRA" "$GPU_INDEX"
+
+echo "math real GPU integration: ok on gpu($GPU_INDEX)"
+queued\ntrue' || -s "$TMP/log-zero.err" ]]; then
+        echo "Metal log(0) must preserve -inf after gpu.sync (QUIDRA_METAL_STREAM=$stream, status=$log_zero_status):" >&2
+        cat "$TMP/log-zero.out" "$TMP/log-zero.err" >&2
+        exit 1
+    fi
+done
+
+# Strictly negative values remain domain errors, reported at next sync.
+cat > "$TMP/log-domain-real-gpu.qui" <<QUI
+import math
+
+tensor<real32> source = tensor.ones<real32>([3])
+source[1] = real32(-1)
+tensor<real32> logs = math.log(source.gpu($GPU_INDEX))
+print("queued{NL}")
+gpu.sync($GPU_INDEX)
 print("synchronized{NL}")
 QUI
 expect_deferred_domain_failure "Metal log domain failure at gpu.sync" \
     "$TMP/log-domain-real-gpu.qui" \
-    "math.log requires positive tensor elements" "7:" "queued"
+    "math.log requires nonnegative tensor elements" "7:" "queued"
 
 cat > "$TMP/exit-domain-real-gpu.qui" <<QUI
 import math
