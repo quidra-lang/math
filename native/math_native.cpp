@@ -1802,11 +1802,12 @@ struct RowReduceMetadata {
 
 static_assert(sizeof(RowReduceMetadata) == 40, "stable Math metadata layout");
 
-// The portable composition carries an odd trailing element to the next level
-// as `x + x * 0`: the identity for finite values, NaN for infinities. Math
-// keeps that definition on every path.
+// The odd-element carry is an identity. Keep the historical signed-zero
+// rounding behavior for finite values while preserving signed infinities:
+// x * 0 would turn an otherwise valid infinity into NaN.
 template <typename T>
 T pairwise_carry(T value) {
+    if (std::isinf(value)) return value;
     return value + value * T(0);
 }
 

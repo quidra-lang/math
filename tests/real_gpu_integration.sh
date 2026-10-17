@@ -695,14 +695,10 @@ print(NL)
 QUI
 expect_real_division_failure "Math invalid wide whole-tensor NaN construction" "$TMP/native-wide-all-invalid.qui"
 
-# Whole-tensor sums keep the portable odd-carry definition on the device.
+# Infinity survives native odd-element carry paths on the device.
 cat > "$TMP/native-sum-carry-real-gpu.qui" <<QUI
 import math
 
-bool is_nan(real32 value)
-    return value != value
-
-// 1: odd-carry definition on the device (bit-identical to the CPU tree).
 real32 infinity = real32(1) / real32(0)
 tensor<real32> carried = tensor.ones<real32>([1, 3])
 carried[0, 2] = infinity
@@ -710,10 +706,10 @@ tensor<real32> long_carried = tensor.ones<real32>([1, 4097])
 long_carried[0, 4096] = infinity
 tensor<real32> paired = tensor.ones<real32>([1, 4096])
 paired[0, 4095] = infinity
-print(is_nan(math.sum(carried.gpu($GPU_INDEX)).cpu().item()) and is_nan(math.mean(long_carried.gpu($GPU_INDEX)).cpu().item()) and is_nan(math.sum(long_carried).item()) and math.sum(paired.gpu($GPU_INDEX)).cpu().item() == infinity)
+print(math.sum(carried.gpu($GPU_INDEX)).cpu().item() == infinity and math.mean(long_carried.gpu($GPU_INDEX)).cpu().item() == infinity and math.sum(long_carried).item() == infinity and math.sum(paired.gpu($GPU_INDEX)).cpu().item() == infinity)
 print(NL)
 QUI
-expect_real_division_failure "Math invalid real-GPU infinity construction" "$TMP/native-sum-carry-real-gpu.qui"
+expect_true_lines "Math real-GPU positive infinity carry" "$TMP/native-sum-carry-real-gpu.qui" 1
 
 # Metal-only checks: Math serves Metal real32 through its own kernels (CUDA
 # and HIP keep their existing paths, so these checks do not apply there).

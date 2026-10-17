@@ -868,10 +868,10 @@ kernel void row_broadcast(
     output[index] = sums[index / p.output_width];
 }
 
-// The portable composition carries an odd trailing element of a level with
-// more than one element as `x + x * 0` (identity for finite values, NaN for
-// infinities); the kernels keep that definition.
+// An odd trailing element carries unchanged. Keep the existing signed-zero
+// floating-point behavior for finite values; avoid infinity * 0 -> NaN.
 inline float pairwise_carry(float value) {
+    if (isinf(value)) return value;
     return value + value * 0.0f;
 }
 
