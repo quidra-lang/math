@@ -13,11 +13,11 @@ The first boundary moved here is matrix multiplication.
 ```quidra
 import math
 
-tensor<real32> a = tensor.ones<real32>([2, 3])
-tensor<real32> b = tensor.ones<real32>([3, 4])
-tensor<real32> c = math.matmul(a, b)
+tensor<real32> a := tensor.ones<real32>([2, 3])
+tensor<real32> b := tensor.ones<real32>([3, 4])
+tensor<real32> c := math.matmul(a, b)
 
-real32 d = math.dot(
+real32 d := math.dot(
     tensor.ones<real32>([3]),
     tensor.ones<real32>([3])
 )
@@ -32,9 +32,9 @@ the matrix output width. Two vectors therefore produce a rank-0 tensor.
 `math.sum(value)`, `math.mean(value)`, `math.max_all(value)`, and `math.min_all(value)` also accept numeric arrays. Array `sum` adds left to right from a zero of the element type and returns that type, including for an empty array. It supports every integer, real, and complex type, preserving the scalar addition's checked overflow and rounding. Array `mean` returns an exact `real` for integer arrays, accumulating exactly before division; real and complex arrays keep their element type and divide their left-to-right sum by the length converted to that type. Array `min_all`/`max_all` accept ordered numeric elements (integers and reals), return the element type, and keep the first occurrence of ties. Empty array `mean`, `min_all`, and `max_all` report `MATH_SHAPE`, as their tensor counterparts do. Array comprehensions work directly:
 
 ```quidra
-int[] values = [-2, 1, 2, 3]
-int squares = math.sum([for auto x = values[] if x > 0 then x * x])
-real average = math.mean(values)
+int[] values := [-2, 1, 2, 3]
+int squares := math.sum([for x := values[] if x > 0 then x * x])
+real average := math.mean(values)
 ```
 
 The tensor forms own whole-tensor numerical reduction semantics. Integer `sum` is untracked; floating reductions preserve the original differentiable path. Whole-tensor `sum`/`mean` add elements with a level-by-level pairwise tree (adjacent pairs; an odd trailing element is carried without masked multiplication, preserving signed infinity and the same parenthesization on native and portable backends), and `mean` divides by the element count accumulated in the tensor's dtype from powers of two. Whole-tensor `max_all`/`min_all` use strict comparison, so ties are first-occurrence and a NaN never displaces an earlier winner. Empty floating `sum` keeps differentiability through a Math-owned zero-Jacobian custom operation; empty `mean`, `max_all`, and `min_all` are domain errors.
@@ -278,11 +278,11 @@ resolved extension methods. Both forms call the same implementation:
 
 ```quidra
 import math
-real64[] values = [1.0, 4.0, 9.0]
-real64[] roots = values.sqrt()      // math.sqrt(values)
-int[] a = [1, 2, 3]
-int result = a.sum()                // math.sum(a)
-int product = a.dot(a)             // math.dot(a, a)
+real64[] values := [1.0, 4.0, 9.0]
+real64[] roots := values.sqrt()      // math.sqrt(values)
+int[] a := [1, 2, 3]
+int result := a.sum()                // math.sum(a)
+int product := a.dot(a)             // math.dot(a, a)
 ```
 
 Scalar, array and tensor overloads share the existing precision, error,
@@ -293,7 +293,7 @@ Ranges, masks, array operators, and methods compose directly:
 
 ```quidra
 import math
-int[] values = [1, -2, 3, -4, 5]
-int positive_square_sum = (values[values > 0] ^ 2).sum() // 35
-int range_square_sum = (:9 ^ 2).sum()                    // 285
+int[] values := [1, -2, 3, -4, 5]
+int positive_square_sum := (values[values > 0] ^ 2).sum() // 35
+int range_square_sum := (:9 ^ 2).sum()                    // 285
 ```

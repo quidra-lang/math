@@ -13,17 +13,17 @@ bash "$REPOSITORY_ROOT/tests/array_reductions.sh" "$QUIDRA"
 cat > "$TMP/math.qui" <<'QUI'
 import math
 
-real64 pi_fast = math.pi
-real pi_exact = math.pi
-real64 e_fast = math.e
-real e_exact = math.e
+real64 pi_fast := math.pi
+real pi_exact := math.pi
+real64 e_fast := math.e
+real e_exact := math.e
 print.line(pi_fast > 3.0)
 print.line(pi_exact > real(3))
 print.line(e_fast > 2.0)
 print.line(e_exact > real(2))
 print.line(pi_exact > e_exact)
-real exact_sqrt = math.sqrt(real(4))
-real exact_log = math.log(real(1))
+real exact_sqrt := math.sqrt(real(4))
+real exact_log := math.log(real(1))
 print.line(exact_sqrt.string() == "2.0")
 print.line(math.sin(real(0)).string() == "0.0")
 print.line(math.cos(real(0)).string() == "1.0")
@@ -31,36 +31,36 @@ print.line(math.tan(real(0)).string() == "0.0")
 print.line(exact_log.string() == "0.0")
 print.line(math.exp(real(0)).string() == "1.0")
 
-tensor<real32> left = tensor.ones<real32>([2, 3])
-tensor<real32> right = tensor.ones<real32>([3, 2])
-tensor<real32> product = math.matmul(left, right)
+tensor<real32> left := tensor.ones<real32>([2, 3])
+tensor<real32> right := tensor.ones<real32>([3, 2])
+tensor<real32> product := math.matmul(left, right)
 print.line(product.shape()[0] == 2 and product.shape()[1] == 2)
 print.line(product[1, 1].item() == real32(3))
 
-tensor<int32> integer_left = tensor.ones<int32>([1, 2])
-tensor<int32> integer_right = tensor.ones<int32>([2, 1])
-tensor<int32> integer_product = math.matmul(integer_left, integer_right)
+tensor<int32> integer_left := tensor.ones<int32>([1, 2])
+tensor<int32> integer_right := tensor.ones<int32>([2, 1])
+tensor<int32> integer_product := math.matmul(integer_left, integer_right)
 print.line(integer_product[0, 0].item() == int32(2))
 
-tensor<int32> integer_vector = tensor.ones<int32>([2])
+tensor<int32> integer_vector := tensor.ones<int32>([2])
 print.line(math.dot(integer_vector, integer_vector) == int32(2))
 
-tensor<real32> vector = tensor.ones<real32>([3])
+tensor<real32> vector := tensor.ones<real32>([3])
 print.line(math.dot(vector, vector) == real32(3))
 
 print.line(math.abs(real64(-5.0)) == real64(5.0))
-real64 sqrt64 = math.sqrt(real64(9.0))
-real32 sqrt32 = math.sqrt(real32(9.0))
+real64 sqrt64 := math.sqrt(real64(9.0))
+real32 sqrt32 := math.sqrt(real32(9.0))
 print.line(sqrt64 == real64(3.0))
 print.line(sqrt32 == real32(3.0))
 print.line(math.min(real64(2.0), real64(3.0)) == real64(2.0))
 print.line(math.max(real64(2.0), real64(3.0)) == real64(3.0))
 print.line(math.is_finite(real64(1.0)))
-int truncated = math.trunc(real64(-1.75))
-int rounded_positive = math.round(real64(1.5))
-int rounded_negative = math.round(real64(-1.5))
-int floored = math.floor(real64(-1.25))
-int ceiled = math.ceil(real64(-1.25))
+int truncated := math.trunc(real64(-1.75))
+int rounded_positive := math.round(real64(1.5))
+int rounded_negative := math.round(real64(-1.5))
+int floored := math.floor(real64(-1.25))
+int ceiled := math.ceil(real64(-1.25))
 print.line(truncated == int(-1))
 print.line(rounded_positive == int(2))
 print.line(rounded_negative == int(-2))
@@ -68,153 +68,153 @@ print.line(floored == int(-2))
 print.line(ceiled == int(-1))
 print.line(math.pow(real64(2.0), real64(3.0)) == real64(8.0))
 
-tensor<real32> unary_values = tensor.zeros<real32>([4])
+tensor<real32> unary_values := tensor.zeros<real32>([4])
 unary_values[0] = real32(2)
 unary_values[1] = real32(4)
 unary_values[2] = real32(1)
 unary_values[3] = real32(0)
 print.line(math.abs(unary_values)[0].item() == real32(2))
 print.line(math.sqrt(unary_values)[1].item() == real32(2))
-tensor<real32> log_values = tensor.ones<real32>([3])
+tensor<real32> log_values := tensor.ones<real32>([3])
 log_values[0] = real32(2)
 log_values[1] = real32(4)
 print.line(math.log(log_values)[2].item() == real32(0))
 print.line(math.exp(unary_values)[3].item() == real32(1))
 
-tensor<real32> abs_source = tensor.zeros<real32>([1])
+tensor<real32> abs_source := tensor.zeros<real32>([1])
 abs_source[0] = real32(-2)
-tensor<real32> abs_tracked = abs_source.track()
+tensor<real32> abs_tracked := abs_source.track()
 math.sum(math.abs(abs_tracked)).backward(&abs_tracked)
 print.line(abs_tracked.grad[0].item() == real32(-1))
 
-tensor<real32> sqrt_source = tensor.zeros<real32>([1])
+tensor<real32> sqrt_source := tensor.zeros<real32>([1])
 sqrt_source[0] = real32(4)
-tensor<real32> sqrt_tracked = sqrt_source.track()
+tensor<real32> sqrt_tracked := sqrt_source.track()
 math.sum(math.sqrt(sqrt_tracked)).backward(&sqrt_tracked)
 print.line(sqrt_tracked.grad[0].item() == real32(0.25))
 
-tensor<real32> log_source = tensor.zeros<real32>([1])
+tensor<real32> log_source := tensor.zeros<real32>([1])
 log_source[0] = real32(2)
-tensor<real32> log_tracked = log_source.track()
+tensor<real32> log_tracked := log_source.track()
 math.sum(math.log(log_tracked)).backward(&log_tracked)
 print.line(log_tracked.grad[0].item() == real32(0.5))
 
-tensor<real32> exp_source = tensor.zeros<real32>([1]).track()
+tensor<real32> exp_source := tensor.zeros<real32>([1]).track()
 math.sum(math.exp(exp_source)).backward(&exp_source)
 print.line(exp_source.grad[0].item() == real32(1))
 
-tensor<real32> higher_unary = tensor.ones<real32>([]).track()
+tensor<real32> higher_unary := tensor.ones<real32>([]).track()
 math.log(higher_unary).backward(&higher_unary, track = true)
-tensor<real32> higher_unary_first = higher_unary.grad
+tensor<real32> higher_unary_first := higher_unary.grad
 print.line(higher_unary_first.is_tracked())
 print.line(higher_unary_first.untrack().item() == real32(1))
 .higher_unary.clear_grad()
 higher_unary_first.backward(&higher_unary)
 print.line(higher_unary.grad.untrack().item() == real32(-1))
 
-tensor<real32> higher_exp = tensor.zeros<real32>([]).track()
+tensor<real32> higher_exp := tensor.zeros<real32>([]).track()
 math.exp(higher_exp).backward(&higher_exp, track = true)
-tensor<real32> higher_exp_first = higher_exp.grad
+tensor<real32> higher_exp_first := higher_exp.grad
 print.line(higher_exp_first.is_tracked())
 print.line(higher_exp_first.untrack().item() == real32(1))
 .higher_exp.clear_grad()
 higher_exp_first.backward(&higher_exp)
 print.line(higher_exp.grad.untrack().item() == real32(1))
 
-tensor<real32> higher_sqrt = (tensor.ones<real32>([]) * real32(4)).track()
+tensor<real32> higher_sqrt := (tensor.ones<real32>([]) * real32(4)).track()
 math.sqrt(higher_sqrt).backward(&higher_sqrt, track = true)
-tensor<real32> higher_sqrt_first = higher_sqrt.grad
+tensor<real32> higher_sqrt_first := higher_sqrt.grad
 print.line(higher_sqrt_first.is_tracked())
 print.line(higher_sqrt_first.untrack().item() == real32(0.25))
 .higher_sqrt.clear_grad()
 higher_sqrt_first.backward(&higher_sqrt)
 print.line(higher_sqrt.grad.untrack().item() == real32(-0.03125))
 
-tensor<real32> higher_abs = (tensor.ones<real32>([]) * real32(-2)).track()
+tensor<real32> higher_abs := (tensor.ones<real32>([]) * real32(-2)).track()
 math.abs(higher_abs).backward(&higher_abs, track = true)
-tensor<real32> higher_abs_first = higher_abs.grad
+tensor<real32> higher_abs_first := higher_abs.grad
 print.line(higher_abs_first.is_tracked())
 print.line(higher_abs_first.untrack().item() == real32(-1))
 .higher_abs.clear_grad()
 higher_abs_first.backward(&higher_abs)
 print.line(higher_abs.grad.untrack().item() == real32(0))
 
-tensor<real32> reduction_values = tensor.ones<real32>([2, 3])
+tensor<real32> reduction_values := tensor.ones<real32>([2, 3])
 print.line(math.sum(reduction_values).item() == real32(6))
 print.line(math.mean(reduction_values).item() == real32(1))
 print.line(math.sum_last(reduction_values)[0, 0].item() == real32(3))
 
-tensor<int32> integer_sum_values = tensor.ones<int32>([2, 3])
+tensor<int32> integer_sum_values := tensor.ones<int32>([2, 3])
 print.line(math.sum(integer_sum_values).item() == int32(6))
 
-tensor<real32> empty_sum_values = tensor.zeros<real32>([0])
+tensor<real32> empty_sum_values := tensor.zeros<real32>([0])
 print.line(math.sum(empty_sum_values).item() == real32(0))
 
-tensor<real32> empty_tracked = tensor.zeros<real32>([0]).track()
-tensor<real32> empty_total = math.sum(empty_tracked)
+tensor<real32> empty_tracked := tensor.zeros<real32>([0]).track()
+tensor<real32> empty_total := math.sum(empty_tracked)
 empty_total.backward(&empty_tracked, track = true)
 print.line(empty_tracked.grad.is_tracked())
 print.line(empty_tracked.grad.shape()[0] == 0)
 
-tensor<real32> tracked_whole = tensor.ones<real32>([2, 3]).track()
+tensor<real32> tracked_whole := tensor.ones<real32>([2, 3]).track()
 (math.sum(tracked_whole) * math.sum(tracked_whole)).backward(
     &tracked_whole,
     track = true
 )
-tensor<real32> tracked_whole_first = tracked_whole.grad
+tensor<real32> tracked_whole_first := tracked_whole.grad
 print.line(tracked_whole_first.is_tracked())
 print.line(tracked_whole_first.untrack()[1, 2].item() == real32(12))
 .tracked_whole.clear_grad()
 math.mean(tracked_whole_first).backward(&tracked_whole)
 print.line(tracked_whole.grad.untrack()[0, 0].item() == real32(2))
 
-tensor<int32> integer_reduction = tensor.ones<int32>([2, 2])
+tensor<int32> integer_reduction := tensor.ones<int32>([2, 2])
 print.line(math.max_last(integer_reduction)[1, 1].item() == int32(1))
 print.line(math.min_last(integer_reduction)[0, 0].item() == int32(1))
 
-tensor<real32> tie_values = tensor.zeros<real32>([1, 3])
+tensor<real32> tie_values := tensor.zeros<real32>([1, 3])
 tie_values[0, 0] = real32(2)
 tie_values[0, 1] = real32(2)
 tie_values[0, 2] = real32(1)
-tensor<real32> tie_tracked = tie_values.track()
+tensor<real32> tie_tracked := tie_values.track()
 math.mean(math.max_last(tie_tracked)).backward(&tie_tracked)
 print.line(tie_tracked.grad[0, 0].item() == real32(1))
 print.line(tie_tracked.grad[0, 1].item() == real32(0))
 
-tensor<real32> sum_tracked = tensor.ones<real32>([1, 3]).track()
+tensor<real32> sum_tracked := tensor.ones<real32>([1, 3]).track()
 math.mean(math.sum_last(sum_tracked)).backward(&sum_tracked)
-tensor<real32> sum_last_grad = sum_tracked.grad.untrack()
+tensor<real32> sum_last_grad := sum_tracked.grad.untrack()
 print.line(sum_last_grad[0, 2].item() == real32(1))
 
-tensor<real32> higher_extrema_values = tensor.zeros<real32>([2])
+tensor<real32> higher_extrema_values := tensor.zeros<real32>([2])
 higher_extrema_values[0] = real32(2)
 higher_extrema_values[1] = real32(1)
-tensor<real32> higher_extrema = higher_extrema_values.track()
-tensor<real32> higher_max = math.max_last(higher_extrema)
+tensor<real32> higher_extrema := higher_extrema_values.track()
+tensor<real32> higher_max := math.max_last(higher_extrema)
 math.mean((higher_max * higher_max)).backward(&higher_extrema, track = true)
-tensor<real32> higher_max_first = higher_extrema.grad
+tensor<real32> higher_max_first := higher_extrema.grad
 print.line(higher_max_first.is_tracked())
 print.line(higher_max_first.untrack()[0].item() == real32(4))
 print.line(higher_max_first.untrack()[1].item() == real32(0))
 math.mean(higher_max_first).backward(&higher_extrema)
-tensor<real32> higher_max_accumulated = higher_extrema.grad.untrack()
+tensor<real32> higher_max_accumulated := higher_extrema.grad.untrack()
 print.line(higher_max_accumulated[0].item() == real32(5))
 print.line(higher_max_accumulated[1].item() == real32(0))
 
-tensor<real32> scalar_product = math.matmul(vector, vector)
+tensor<real32> scalar_product := math.matmul(vector, vector)
 print.line(len(scalar_product.shape()) == 0)
 print.line(scalar_product.item() == real32(3))
 
-tensor<real32> tracked_left = tensor.ones<real32>([2, 3]).track()
-tensor<real32> tracked_right = tensor.ones<real32>([3, 2]).track()
-tensor<real32> tracked_product = math.matmul(tracked_left, tracked_right)
+tensor<real32> tracked_left := tensor.ones<real32>([2, 3]).track()
+tensor<real32> tracked_right := tensor.ones<real32>([3, 2]).track()
+tensor<real32> tracked_product := math.matmul(tracked_left, tracked_right)
 math.mean(tracked_product).backward(&tracked_left, &tracked_right)
 print.line(tracked_left.grad[0, 0].item() == real32(0.5))
 print.line(tracked_right.grad[0, 0].item() == real32(0.5))
 
-tensor<real32> fc_input = tensor.ones<real32>([1, 3]).track()
-tensor<real32> fc_weight = tensor.ones<real32>([2, 3]).track()
-tensor<real32> fc_product = math.matmul(
+tensor<real32> fc_input := tensor.ones<real32>([1, 3]).track()
+tensor<real32> fc_weight := tensor.ones<real32>([2, 3]).track()
+tensor<real32> fc_product := math.matmul(
     fc_input,
     fc_weight.transpose(0, 1)
 )
@@ -222,17 +222,17 @@ math.mean(fc_product).backward(&fc_input, &fc_weight)
 print.line(fc_input.grad[0, 0].item() == real32(1))
 print.line(fc_weight.grad[0, 0].item() == real32(0.5))
 
-tensor<real32> batched_left = tensor.ones<real32>([2, 2, 3]).track()
-tensor<real32> batched_right = tensor.ones<real32>([3, 4]).track()
-tensor<real32> batched = math.matmul(batched_left, batched_right)
+tensor<real32> batched_left := tensor.ones<real32>([2, 2, 3]).track()
+tensor<real32> batched_right := tensor.ones<real32>([3, 4]).track()
+tensor<real32> batched := math.matmul(batched_left, batched_right)
 math.mean(batched).backward(&batched_left, &batched_right)
 print.line(batched.shape()[0] == 2 and batched.shape()[1] == 2 and batched.shape()[2] == 4)
 print.line(batched_left.grad[1, 1, 2].item() == real32(0.25))
 print.line(batched_right.grad[2, 3].item() == real32(0.25))
 
-tensor<real32> higher_left = tensor.ones<real32>([1, 2]).track()
-tensor<real32> higher_right = tensor.ones<real32>([2, 1]).track()
-tensor<real32> higher = math.matmul(higher_left, higher_right)
+tensor<real32> higher_left := tensor.ones<real32>([1, 2]).track()
+tensor<real32> higher_right := tensor.ones<real32>([2, 1]).track()
+tensor<real32> higher := math.matmul(higher_left, higher_right)
 math.mean((higher * higher)).backward(&higher_left, &higher_right, track = true)
 print.line(higher_left.grad.is_tracked())
 .higher_right.clear_grad()
@@ -271,7 +271,7 @@ fi
 
 cat > "$TMP/round-range.qui" <<'QUI'
 import math
-int value = math.trunc(real64(1.0e30))
+int value := math.trunc(real64(1.0e30))
 print.line(value)
 QUI
 set +e
@@ -286,8 +286,8 @@ fi
 
 cat > "$TMP/integer-transcendental.qui" <<'QUI'
 import math
-int value = 1
-auto result = math.sin(value)
+int value := 1
+result := math.sin(value)
 print.line(result)
 QUI
 set +e
@@ -304,31 +304,31 @@ fi
 cat > "$TMP/whole-extrema.qui" <<'QUI'
 import math
 
-tensor<int32> integer_values = tensor.zeros<int32>([3])
+tensor<int32> integer_values := tensor.zeros<int32>([3])
 integer_values[0] = int32(5)
 integer_values[1] = int32(-2)
 integer_values[2] = int32(4)
 print.line(math.max_all(integer_values).item() == int32(5))
 print.line(math.min_all(integer_values).item() == int32(-2))
 
-tensor<real32> tie_values = tensor.zeros<real32>([3])
+tensor<real32> tie_values := tensor.zeros<real32>([3])
 tie_values[0] = real32(2)
 tie_values[1] = real32(2)
 tie_values[2] = real32(1)
-tensor<real32> tracked = tie_values.track()
-tensor<real32> maximum = math.max_all(tracked)
+tensor<real32> tracked := tie_values.track()
+tensor<real32> maximum := math.max_all(tracked)
 print.line(maximum.untrack().item() == real32(2))
 maximum.backward(&tracked, track = true)
-tensor<real32> first = tracked.grad
+tensor<real32> first := tracked.grad
 print.line(first.is_tracked())
 print.line(first.untrack()[0].item() == real32(1))
 print.line(first.untrack()[1].item() == real32(0))
 
-tensor<real32> minimum_values = tensor.zeros<real32>([3])
+tensor<real32> minimum_values := tensor.zeros<real32>([3])
 minimum_values[0] = real32(1)
 minimum_values[1] = real32(-3)
 minimum_values[2] = real32(-3)
-tensor<real32> tracked_min = minimum_values.track()
+tensor<real32> tracked_min := minimum_values.track()
 math.min_all(tracked_min).backward(&tracked_min)
 print.line(tracked_min.grad[1].item() == real32(1))
 print.line(tracked_min.grad[2].item() == real32(0))
@@ -373,8 +373,8 @@ done
 for operation in max min; do
     cat > "$TMP/empty-extrema.qui" <<QUI
 import math
-tensor<real32> empty = tensor.zeros<real32>([0])
-tensor<real32> value = math.${operation}_all(empty)
+tensor<real32> empty := tensor.zeros<real32>([0])
+tensor<real32> value := math.${operation}_all(empty)
 print.line(value.item())
 QUI
     set +e
@@ -414,9 +414,9 @@ fi
 cat > "$TMP/compiler-alias.qui" <<'QUI'
 import numerical = math
 
-tensor<real32> left = tensor.ones<real32>([1, 2])
-tensor<real32> right = tensor.ones<real32>([2, 1])
-tensor<real32> product = numerical.matmul(left, right)
+tensor<real32> left := tensor.ones<real32>([1, 2])
+tensor<real32> right := tensor.ones<real32>([2, 1])
+tensor<real32> product := numerical.matmul(left, right)
 print.line(product[0, 0].item())
 QUI
 set +e
@@ -470,20 +470,20 @@ import math
 
 // Deterministic, non-symmetric test data.
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
+    tensor<real64> value := tensor.zeros<real64>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            real64 converted = real64(h)
+            int h := (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            real64 converted := real64(h)
             value[i, j] = converted / real64(48.0) - real64(1.0)
     return value
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            real32 converted = real32(h)
+            int h := (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            real32 converted := real32(h)
             value[i, j] = converted / real32(48) - real32(1)
     return value
 
@@ -495,19 +495,19 @@ real64 loss64(tensor<real64> a, tensor<real64> b, tensor<real64> w)
 
 // Central differences of loss64 with respect to every element of `a` (or `b`).
 tensor<real64> numeric_gradient(tensor<real64> a, tensor<real64> b, tensor<real64> w, bool left)
-    tensor<real64> target = b
+    tensor<real64> target := b
     if left
         target = a
-    int rows = int(target.shape()[0])
-    int columns = int(target.shape()[1])
-    tensor<real64> result = tensor.zeros<real64>([nat(rows), nat(columns)])
-    real64 eps = 0.000001
+    int rows := int(target.shape()[0])
+    int columns := int(target.shape()[1])
+    tensor<real64> result := tensor.zeros<real64>([nat(rows), nat(columns)])
+    real64 eps := 0.000001
     for 0 <= int i < rows
         for 0 <= int j < columns
-            tensor<real64> step = tensor.zeros<real64>([nat(rows), nat(columns)])
+            tensor<real64> step := tensor.zeros<real64>([nat(rows), nat(columns)])
             step[i, j] = eps
-            real64 plus = 0.0
-            real64 minus = 0.0
+            real64 plus := 0.0
+            real64 minus := 0.0
             if left
                 plus = loss64(a + step, b, w)
                 minus = loss64(a - step, b, w)
@@ -518,119 +518,119 @@ tensor<real64> numeric_gradient(tensor<real64> a, tensor<real64> b, tensor<real6
     return result
 
 // 1-3: first-order gradients (both tracked) match finite differences.
-tensor<real64> a64 = pattern64(3, 4, 1)
-tensor<real64> b64 = pattern64(4, 5, 2)
-tensor<real64> w64 = pattern64(3, 5, 3)
-tensor<real64> ta = a64.track()
-tensor<real64> tb = b64.track()
+tensor<real64> a64 := pattern64(3, 4, 1)
+tensor<real64> b64 := pattern64(4, 5, 2)
+tensor<real64> w64 := pattern64(3, 5, 3)
+tensor<real64> ta := a64.track()
+tensor<real64> tb := b64.track()
 math.sum(math.matmul(ta, tb) * w64).backward(&ta, &tb)
 print.line(max_abs64(ta.grad - numeric_gradient(a64, b64, w64, true)) < 0.000001)
 print.line(max_abs64(tb.grad - numeric_gradient(a64, b64, w64, false)) < 0.000001)
 print.line(math.matmul(ta, tb).is_tracked())
 
 // 4-5: one side tracked.
-tensor<real64> only_a = a64.track()
+tensor<real64> only_a := a64.track()
 math.sum(math.matmul(only_a, b64) * w64).backward(&only_a)
 print.line(max_abs64(only_a.grad - numeric_gradient(a64, b64, w64, true)) < 0.000001)
-tensor<real64> only_b = b64.track()
+tensor<real64> only_b := b64.track()
 math.sum(math.matmul(a64, only_b) * w64).backward(&only_b)
 print.line(max_abs64(only_b.grad - numeric_gradient(a64, b64, w64, false)) < 0.000001)
 
 // 6-7: FC/Conv pattern -- tracked right operand is a transposed view.
-tensor<real64> weight64 = pattern64(5, 4, 4)
-tensor<real64> tw = weight64.track()
-tensor<real64> tx = a64.track()
+tensor<real64> weight64 := pattern64(5, 4, 4)
+tensor<real64> tw := weight64.track()
+tensor<real64> tx := a64.track()
 math.sum(math.matmul(tx, tw.transpose(0, 1)) * w64).backward(&tx, &tw)
-tensor<real64> weight_numeric = numeric_gradient(a64, weight64.transpose(0, 1).contiguous(), w64, false)
+tensor<real64> weight_numeric := numeric_gradient(a64, weight64.transpose(0, 1).contiguous(), w64, false)
 print.line(max_abs64(tw.grad - weight_numeric.transpose(0, 1)) < 0.000001)
 print.line(max_abs64(tx.grad - numeric_gradient(a64, weight64.transpose(0, 1).contiguous(), w64, true)) < 0.000001)
 
 // 8: tracked transposed left operand.
-tensor<real64> left_storage = pattern64(4, 3, 5).track()
+tensor<real64> left_storage := pattern64(4, 3, 5).track()
 math.sum(math.matmul(left_storage.transpose(0, 1), b64) * w64).backward(&left_storage)
-tensor<real64> left_numeric = numeric_gradient(left_storage.untrack().transpose(0, 1).contiguous(), b64, w64, true)
+tensor<real64> left_numeric := numeric_gradient(left_storage.untrack().transpose(0, 1).contiguous(), b64, w64, true)
 print.line(max_abs64(left_storage.grad - left_numeric.transpose(0, 1)) < 0.000001)
 
 // 9: a tracked rank-3 view (not a rank-2 transpose) is read natively through
 // a value-only contiguous copy while the view stays the autograd parent, so
 // its gradient flows back through the view.
-tensor<real64> cube = tensor.ones<real64>([2, 3, 4]).track()
-tensor<real64> cube_view = cube.transpose(0, 2)
-tensor<real64> cube_right = pattern64(2, 3, 6)
+tensor<real64> cube := tensor.ones<real64>([2, 3, 4]).track()
+tensor<real64> cube_view := cube.transpose(0, 2)
+tensor<real64> cube_right := pattern64(2, 3, 6)
 math.sum(math.matmul(cube_view, cube_right)).backward(&cube)
 print.line(cube.grad[1, 2, 3].item() == cube_right[1, 0].item() + cube_right[1, 1].item() + cube_right[1, 2].item())
 
 // 10-11: backward(track = true) second derivatives (Hessian-vector product,
 // including the cross terms) match finite differences of the first gradient.
-tensor<real64> va = pattern64(3, 4, 7)
-tensor<real64> vb = pattern64(4, 5, 8)
-tensor<real64> ha = a64.track()
-tensor<real64> hb = b64.track()
-tensor<real64> hp = math.matmul(ha, hb)
+tensor<real64> va := pattern64(3, 4, 7)
+tensor<real64> vb := pattern64(4, 5, 8)
+tensor<real64> ha := a64.track()
+tensor<real64> hb := b64.track()
+tensor<real64> hp := math.matmul(ha, hb)
 math.sum(hp * hp * w64).backward(&ha, &hb, track = true)
-tensor<real64> ga = ha.grad
-tensor<real64> gb = hb.grad
+tensor<real64> ga := ha.grad
+tensor<real64> gb := hb.grad
 .ha.clear_grad()
 .hb.clear_grad()
 (math.sum(ga * va) + math.sum(gb * vb)).backward(&ha, &hb)
-real64 eps = 0.000001
-tensor<real64> pa = (a64 + va * eps).track()
-tensor<real64> pb = (b64 + vb * eps).track()
-tensor<real64> pp = math.matmul(pa, pb)
+real64 eps := 0.000001
+tensor<real64> pa := (a64 + va * eps).track()
+tensor<real64> pb := (b64 + vb * eps).track()
+tensor<real64> pp := math.matmul(pa, pb)
 math.sum(pp * pp * w64).backward(&pa, &pb)
-tensor<real64> ma = (a64 - va * eps).track()
-tensor<real64> mb = (b64 - vb * eps).track()
-tensor<real64> mp = math.matmul(ma, mb)
+tensor<real64> ma := (a64 - va * eps).track()
+tensor<real64> mb := (b64 - vb * eps).track()
+tensor<real64> mp := math.matmul(ma, mb)
 math.sum(mp * mp * w64).backward(&ma, &mb)
-tensor<real64> hessian_a = (pa.grad - ma.grad) / (2.0 * eps)
-tensor<real64> hessian_b = (pb.grad - mb.grad) / (2.0 * eps)
+tensor<real64> hessian_a := (pa.grad - ma.grad) / (2.0 * eps)
+tensor<real64> hessian_b := (pb.grad - mb.grad) / (2.0 * eps)
 print.line(max_abs64(ha.grad.untrack() - hessian_a) < 0.00001)
 print.line(max_abs64(hb.grad.untrack() - hessian_b) < 0.00001)
 
 // 12: third order stays available (tracked second gradient).
-tensor<real64> cubic = tensor.ones<real64>([1, 1]).track()
-tensor<real64> scale = tensor.ones<real64>([1, 1]) * 3.0
-tensor<real64> cubic_value = math.matmul(math.matmul(cubic, cubic), math.matmul(cubic, scale))
+tensor<real64> cubic := tensor.ones<real64>([1, 1]).track()
+tensor<real64> scale := tensor.ones<real64>([1, 1]) * 3.0
+tensor<real64> cubic_value := math.matmul(math.matmul(cubic, cubic), math.matmul(cubic, scale))
 math.sum(cubic_value).backward(&cubic, track = true)
-tensor<real64> first_cubic = cubic.grad
+tensor<real64> first_cubic := cubic.grad
 .cubic.clear_grad()
 math.sum(first_cubic).backward(&cubic, track = true)
-tensor<real64> second_cubic = cubic.grad
+tensor<real64> second_cubic := cubic.grad
 .cubic.clear_grad()
 math.sum(second_cubic).backward(&cubic)
 print.line(first_cubic.untrack()[0, 0].item() == 9.0 and second_cubic.untrack()[0, 0].item() == 18.0 and cubic.grad[0, 0].item() == 18.0)
 
 // 13-16: rank rules.
-tensor<real32> vector3 = tensor.ones<real32>([3])
+tensor<real32> vector3 := tensor.ones<real32>([3])
 print.line(len(math.matmul(vector3, vector3).shape()) == 0)
-tensor<real32> matrix23 = pattern32(2, 3, 1)
-tensor<real32> mv = math.matmul(matrix23, vector3)
+tensor<real32> matrix23 := pattern32(2, 3, 1)
+tensor<real32> mv := math.matmul(matrix23, vector3)
 print.line(len(mv.shape()) == 1 and mv.shape()[0] == 2)
-tensor<real32> batched = math.matmul(tensor.ones<real32>([2, 5, 3]), pattern32(3, 4, 2))
+tensor<real32> batched := math.matmul(tensor.ones<real32>([2, 5, 3]), pattern32(3, 4, 2))
 print.line(len(batched.shape()) == 3 and batched.shape()[0] == 2 and batched.shape()[1] == 5 and batched.shape()[2] == 4)
-tensor<real32> batched_vector = math.matmul(tensor.ones<real32>([2, 5, 3]), vector3)
+tensor<real32> batched_vector := math.matmul(tensor.ones<real32>([2, 5, 3]), vector3)
 print.line(len(batched_vector.shape()) == 2 and batched_vector.shape()[1] == 5)
 
 // 17: CPU products equal the portable "round each product, add k in order"
 // semantics bit for bit.
-tensor<real32> exact_left = pattern32(7, 19, 3)
-tensor<real32> exact_right = pattern32(19, 11, 4)
-tensor<real32> exact_product = math.matmul(exact_left, exact_right)
-bool exact_ok = true
+tensor<real32> exact_left := pattern32(7, 19, 3)
+tensor<real32> exact_right := pattern32(19, 11, 4)
+tensor<real32> exact_product := math.matmul(exact_left, exact_right)
+bool exact_ok := true
 for 0 <= nat i < 7
     for 0 <= nat j < 11
-        real32 total = exact_left[i, 0].item() * exact_right[0, j].item()
+        real32 total := exact_left[i, 0].item() * exact_right[0, j].item()
         for 1 <= nat k < 19
-            real32 product = exact_left[i, k].item() * exact_right[k, j].item()
+            real32 product := exact_left[i, k].item() * exact_right[k, j].item()
             total = total + product
         if exact_product[i, j].item() != total
             exact_ok = false
 print.line(exact_ok)
 
 // 18-19: untracked non-contiguous operands are read in place / materialized.
-tensor<real32> transposed_input = pattern32(3, 7, 5).transpose(0, 1)
-tensor<real32> via_view = math.matmul(transposed_input, pattern32(3, 2, 6))
-tensor<real32> via_copy = math.matmul(transposed_input.contiguous(), pattern32(3, 2, 6))
+tensor<real32> transposed_input := pattern32(3, 7, 5).transpose(0, 1)
+tensor<real32> via_view := math.matmul(transposed_input, pattern32(3, 2, 6))
+tensor<real32> via_copy := math.matmul(transposed_input.contiguous(), pattern32(3, 2, 6))
 print.line(math.max_all(math.abs(via_view - via_copy)).item() == real32(0))
 print.line(math.dot(pattern32(1, 4, 1).reshape([4]), pattern32(4, 1, 2).reshape([4])) == math.matmul(pattern32(1, 4, 1), pattern32(4, 1, 2))[0, 0].item())
 QUI
@@ -643,20 +643,20 @@ import math
 
 // Deterministic, non-symmetric test data.
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
+    tensor<real64> value := tensor.zeros<real64>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            real64 converted = real64(h)
+            int h := (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            real64 converted := real64(h)
             value[i, j] = converted / real64(48.0) - real64(1.0)
     return value
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            real32 converted = real32(h)
+            int h := (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            real32 converted := real32(h)
             value[i, j] = converted / real32(48) - real32(1)
     return value
 
@@ -664,18 +664,18 @@ real64 max_abs64(tensor<real64> value)
     return math.max_all(math.abs(value)).item()
 
 // 1-3: whole-tensor sum/mean keep the portable pairwise tree.
-tensor<real32> pairwise = tensor.zeros<real32>([4])
+tensor<real32> pairwise := tensor.zeros<real32>([4])
 pairwise[0] = real32(100000000)
 pairwise[1] = real32(1)
 pairwise[2] = real32(-100000000)
 pairwise[3] = real32(1)
 print.line(math.sum(pairwise).item() == real32(0))
 print.line(math.mean(pairwise).item() == real32(0))
-tensor<real32> odd = tensor.ones<real32>([7]) * real32(0.1)
+tensor<real32> odd := tensor.ones<real32>([7]) * real32(0.1)
 print.line(math.sum(odd).item() == ((real32(0.1) + real32(0.1)) + (real32(0.1) + real32(0.1))) + ((real32(0.1) + real32(0.1)) + real32(0.1)))
 
 // 4: mean backward is upstream / N as one node.
-tensor<real64> mean_input = pattern64(3, 5, 9).track()
+tensor<real64> mean_input := pattern64(3, 5, 9).track()
 math.mean(mean_input).backward(&mean_input)
 print.line(max_abs64(mean_input.grad - tensor.ones<real64>([3, 5]) / 15.0) == 0.0)
 QUI
@@ -707,32 +707,32 @@ import math
 
 // Deterministic, non-symmetric test data.
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
+    tensor<real64> value := tensor.zeros<real64>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            real64 converted = real64(h)
+            int h := (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            real64 converted := real64(h)
             value[i, j] = converted / real64(48.0) - real64(1.0)
     return value
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            real32 converted = real32(h)
+            int h := (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            real32 converted := real32(h)
             value[i, j] = converted / real32(48) - real32(1)
     return value
 
 // 1-2: sum_last keeps the input shape and adds each row left to right.
-tensor<real32> row_values = pattern32(3, 4, 2)
-tensor<real32> row_sums = math.sum_last(row_values)
+tensor<real32> row_values := pattern32(3, 4, 2)
+tensor<real32> row_sums := math.sum_last(row_values)
 print.line(len(row_sums.shape()) == 2 and row_sums.shape()[0] == 3 and row_sums.shape()[1] == 4)
-real32 row1 = ((row_values[1, 0].item() + row_values[1, 1].item()) + row_values[1, 2].item()) + row_values[1, 3].item()
+real32 row1 := ((row_values[1, 0].item() + row_values[1, 1].item()) + row_values[1, 2].item()) + row_values[1, 3].item()
 print.line(row_sums[1, 0].item() == row1 and row_sums[1, 3].item() == row1)
 
 // 3-5: first-occurrence ties with strict comparison and winner gradients.
-tensor<real32> ties = tensor.zeros<real32>([2, 4])
+tensor<real32> ties := tensor.zeros<real32>([2, 4])
 ties[0, 0] = real32(1)
 ties[0, 1] = real32(5)
 ties[0, 2] = real32(5)
@@ -741,22 +741,22 @@ ties[1, 0] = real32(-3)
 ties[1, 1] = real32(-3)
 ties[1, 2] = real32(4)
 ties[1, 3] = real32(-3)
-tensor<real32> tied = ties.track()
+tensor<real32> tied := ties.track()
 math.sum(math.max_last(tied) * pattern32(2, 4, 1)).backward(&tied)
-tensor<real32> upstream = pattern32(2, 4, 1)
-real32 row0_upstream = ((upstream[0, 0].item() + upstream[0, 1].item()) + upstream[0, 2].item()) + upstream[0, 3].item()
+tensor<real32> upstream := pattern32(2, 4, 1)
+real32 row0_upstream := ((upstream[0, 0].item() + upstream[0, 1].item()) + upstream[0, 2].item()) + upstream[0, 3].item()
 print.line(tied.grad[0, 1].item() == row0_upstream and tied.grad[0, 2].item() == real32(0) and tied.grad[0, 0].item() == real32(0))
-tensor<real32> tied_min = ties.track()
+tensor<real32> tied_min := ties.track()
 math.sum(math.min_last(tied_min)).backward(&tied_min)
 print.line(tied_min.grad[1, 0].item() == real32(4) and tied_min.grad[1, 1].item() == real32(0) and tied_min.grad[1, 3].item() == real32(0))
-tensor<real32> whole = pattern32(4, 6, 3)
-tensor<real32> whole_tracked = whole.track()
+tensor<real32> whole := pattern32(4, 6, 3)
+tensor<real32> whole_tracked := whole.track()
 math.min_all(whole_tracked).backward(&whole_tracked)
 print.line(math.sum(whole_tracked.grad).item() == real32(1) and whole_tracked.grad[0, 0].item() + real32(1) == real32(1) + whole_tracked.grad[0, 0].item())
 
 // 6: float64 last-axis sums add left to right.
-tensor<real64> doubles = pattern64(5, 8, 2)
-real64 double_row = doubles[2, 0].item()
+tensor<real64> doubles := pattern64(5, 8, 2)
+real64 double_row := doubles[2, 0].item()
 for 1 <= nat k < 8
     double_row = double_row + doubles[2, k].item()
 print.line(math.sum_last(doubles)[2, 5].item() == double_row)
@@ -768,16 +768,16 @@ expect_true_lines "Math native last-axis reductions" "$TMP/native-last-axis.qui"
 cat > "$TMP/native-last-axis-invalid-first.qui" <<'QUI'
 import math
 
-tensor<real32> nan_values = tensor.zeros<real32>([2, 3])
-real32 zero32 = real32(0)
+tensor<real32> nan_values := tensor.zeros<real32>([2, 3])
+real32 zero32 := real32(0)
 nan_values[0, 0] = zero32 / zero32
 QUI
 expect_real_division_failure "Math first invalid NaN construction" "$TMP/native-last-axis-invalid-first.qui"
 cat > "$TMP/native-last-axis-invalid-later.qui" <<'QUI'
 import math
 
-tensor<real32> nan_values = tensor.zeros<real32>([2, 3])
-real32 zero32 = real32(0)
+tensor<real32> nan_values := tensor.zeros<real32>([2, 3])
+real32 zero32 := real32(0)
 nan_values[0, 1] = real32(7)
 nan_values[1, 0] = real32(2)
 nan_values[1, 1] = zero32 / zero32
@@ -791,36 +791,36 @@ import math
 
 // Deterministic, non-symmetric test data.
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
+    tensor<real64> value := tensor.zeros<real64>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            real64 converted = real64(h)
+            int h := (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            real64 converted := real64(h)
             value[i, j] = converted / real64(48.0) - real64(1.0)
     return value
 
 // 1-2: higher-order through sum_last and max_last stays package-owned.
-tensor<real64> hx = pattern64(2, 3, 4).track()
-tensor<real64> hs = math.sum_last(hx)
+tensor<real64> hx := pattern64(2, 3, 4).track()
+tensor<real64> hs := math.sum_last(hx)
 math.sum(hs * hs).backward(&hx, track = true)
-tensor<real64> hx_first = hx.grad
+tensor<real64> hx_first := hx.grad
 .hx.clear_grad()
 math.sum(hx_first).backward(&hx)
 print.line(hx_first.is_tracked() and hx.grad[0, 0].item() == 18.0)
-tensor<real64> mx = pattern64(2, 3, 4).track()
-tensor<real64> mm = math.max_last(mx)
+tensor<real64> mx := pattern64(2, 3, 4).track()
+tensor<real64> mm := math.max_last(mx)
 math.sum(mm * mm).backward(&mx, track = true)
-tensor<real64> mx_first = mx.grad
+tensor<real64> mx_first := mx.grad
 .mx.clear_grad()
 math.sum(mx_first).backward(&mx)
 print.line(mx_first.is_tracked() and math.sum(mx.grad).item() == 12.0)
 
 // 3: whole-tensor extrema: second derivative of min_all(x)^2 through the
 // scatter/select adjoint pair.
-tensor<real64> ex = pattern64(3, 4, 5).track()
-tensor<real64> smallest = math.min_all(ex)
+tensor<real64> ex := pattern64(3, 4, 5).track()
+tensor<real64> smallest := math.min_all(ex)
 (smallest * smallest).backward(&ex, track = true)
-tensor<real64> ex_first = ex.grad
+tensor<real64> ex_first := ex.grad
 .ex.clear_grad()
 math.sum(ex_first).backward(&ex)
 print.line(ex_first.is_tracked() and math.sum(ex.grad).item() == 2.0 and math.max_all(ex.grad).item() == 2.0)
@@ -835,11 +835,11 @@ cat > "$TMP/native-views.qui" <<'QUI'
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            real32 converted = real32(h)
+            int h := (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            real32 converted := real32(h)
             value[i, j] = converted / real32(48) - real32(1)
     return value
 
@@ -847,11 +847,11 @@ tensor<real32> pattern3(int a, int b, int c, int seed)
     return pattern32(a * b, c, seed).reshape([nat(a), nat(b), nat(c)])
 
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
+    tensor<real64> value := tensor.zeros<real64>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (int(i) * 131 + int(j) * 71 + seed * 17) % 97
-            real64 converted = real64(h)
+            int h := (int(i) * 131 + int(j) * 71 + seed * 17) % 97
+            real64 converted := real64(h)
             value[i, j] = converted / real64(48.0) - real64(1.0)
     return value
 
@@ -864,63 +864,63 @@ bool same64(tensor<real64> left, tensor<real64> right)
 // 1-2: a tracked rank-3 transposed left operand (neither contiguous nor a
 // transposed matrix) keeps its graph; values and gradients equal the
 // contiguous reference.
-tensor<real32> x_data = pattern3(3, 4, 2, 1)
-tensor<real32> w_data = pattern32(3, 5, 2)
-tensor<real32> up = pattern3(2, 4, 5, 3)
-tensor<real32> x = x_data.track()
-tensor<real32> w = w_data.track()
-tensor<real32> y = math.matmul(x.transpose(0, 2), w)
+tensor<real32> x_data := pattern3(3, 4, 2, 1)
+tensor<real32> w_data := pattern32(3, 5, 2)
+tensor<real32> up := pattern3(2, 4, 5, 3)
+tensor<real32> x := x_data.track()
+tensor<real32> w := w_data.track()
+tensor<real32> y := math.matmul(x.transpose(0, 2), w)
 math.sum(y * up).backward(&x, &w)
-tensor<real32> xr = x_data.transpose(0, 2).contiguous().track()
-tensor<real32> wr = w_data.track()
-tensor<real32> yr = math.matmul(xr, wr)
+tensor<real32> xr := x_data.transpose(0, 2).contiguous().track()
+tensor<real32> wr := w_data.track()
+tensor<real32> yr := math.matmul(xr, wr)
 math.sum(yr * up).backward(&xr, &wr)
 print.line(y.is_tracked() and same32(y.untrack(), yr.untrack()) and same32(w.grad, wr.grad))
 print.line(same32(x.grad.transpose(0, 2), xr.grad))
 
 // 3: backward(track = true) through the non-contiguous operand: the
 // Hessian-vector product equals the contiguous reference.
-tensor<real64> hx_data = pattern64(6, 4, 4).reshape([2, 3, 4])
-tensor<real64> hw_data = pattern64(2, 3, 5)
-tensor<real64> hx = hx_data.track()
-tensor<real64> hw = hw_data.track()
-tensor<real64> hy = math.matmul(hx.transpose(0, 2), hw)
+tensor<real64> hx_data := pattern64(6, 4, 4).reshape([2, 3, 4])
+tensor<real64> hw_data := pattern64(2, 3, 5)
+tensor<real64> hx := hx_data.track()
+tensor<real64> hw := hw_data.track()
+tensor<real64> hy := math.matmul(hx.transpose(0, 2), hw)
 math.sum(hy * hy).backward(&hx, &hw, track = true)
-tensor<real64> hw_first = hw.grad
+tensor<real64> hw_first := hw.grad
 .hx.clear_grad()
 math.sum(hw_first * hw_first).backward(&hx)
-tensor<real64> rx = hx_data.transpose(0, 2).contiguous().track()
-tensor<real64> rw = hw_data.track()
-tensor<real64> ry = math.matmul(rx, rw)
+tensor<real64> rx := hx_data.transpose(0, 2).contiguous().track()
+tensor<real64> rw := hw_data.track()
+tensor<real64> ry := math.matmul(rx, rw)
 math.sum(ry * ry).backward(&rx, &rw, track = true)
-tensor<real64> rw_first = rw.grad
+tensor<real64> rw_first := rw.grad
 .rx.clear_grad()
 math.sum(rw_first * rw_first).backward(&rx)
 print.line(hw_first.is_tracked() and same64(hw_first.untrack(), rw_first.untrack()) and same64(hx.grad.transpose(0, 2), rx.grad))
 
 // 4-5: every reduction of a tracked transposed input equals the contiguous
 // reference, values and gradients.
-tensor<real32> r_data = pattern32(6, 5, 4)
-tensor<real32> weights = pattern32(5, 6, 5)
-tensor<real32> r = r_data.track()
-tensor<real32> rv = r.transpose(0, 1)
-tensor<real32> rc = r_data.transpose(0, 1).contiguous().track()
+tensor<real32> r_data := pattern32(6, 5, 4)
+tensor<real32> weights := pattern32(5, 6, 5)
+tensor<real32> r := r_data.track()
+tensor<real32> rv := r.transpose(0, 1)
+tensor<real32> rc := r_data.transpose(0, 1).contiguous().track()
 print.line(same32(math.sum_last(rv).untrack(), math.sum_last(rc).untrack()) and same32(math.max_last(rv).untrack(), math.max_last(rc).untrack()) and same32(math.min_last(rv).untrack(), math.min_last(rc).untrack()) and math.sum(rv).untrack().item() == math.sum(rc).untrack().item() and math.mean(rv).untrack().item() == math.mean(rc).untrack().item() and math.max_all(rv).untrack().item() == math.max_all(rc).untrack().item() and math.min_all(rv).untrack().item() == math.min_all(rc).untrack().item())
-tensor<real32> view_loss = math.sum(math.sum_last(rv) * weights) + math.sum(math.max_last(rv) * weights) - math.sum(math.min_last(rv) * weights) + math.mean(rv) + math.sum(rv) + math.min_all(rv) * real32(3) + math.max_all(rv)
+tensor<real32> view_loss := math.sum(math.sum_last(rv) * weights) + math.sum(math.max_last(rv) * weights) - math.sum(math.min_last(rv) * weights) + math.mean(rv) + math.sum(rv) + math.min_all(rv) * real32(3) + math.max_all(rv)
 view_loss.backward(&r)
-tensor<real32> copy_loss = math.sum(math.sum_last(rc) * weights) + math.sum(math.max_last(rc) * weights) - math.sum(math.min_last(rc) * weights) + math.mean(rc) + math.sum(rc) + math.min_all(rc) * real32(3) + math.max_all(rc)
+tensor<real32> copy_loss := math.sum(math.sum_last(rc) * weights) + math.sum(math.max_last(rc) * weights) - math.sum(math.min_last(rc) * weights) + math.mean(rc) + math.sum(rc) + math.min_all(rc) * real32(3) + math.max_all(rc)
 copy_loss.backward(&rc)
 print.line(same32(r.grad.transpose(0, 1), rc.grad))
 
 // 6: results consumed through transposed views send the right gradients.
-tensor<real32> q_data = pattern32(4, 7, 6)
-tensor<real32> across = pattern32(7, 4, 7)
-tensor<real32> square = pattern32(4, 4, 8)
-tensor<real32> q = q_data.track()
-tensor<real32> view_sum = math.sum(math.max_last(q).transpose(0, 1) * across) + math.sum(math.sum_last(q).transpose(0, 1) * across) + math.sum(math.matmul(q, q.transpose(0, 1)).transpose(0, 1) * square)
+tensor<real32> q_data := pattern32(4, 7, 6)
+tensor<real32> across := pattern32(7, 4, 7)
+tensor<real32> square := pattern32(4, 4, 8)
+tensor<real32> q := q_data.track()
+tensor<real32> view_sum := math.sum(math.max_last(q).transpose(0, 1) * across) + math.sum(math.sum_last(q).transpose(0, 1) * across) + math.sum(math.matmul(q, q.transpose(0, 1)).transpose(0, 1) * square)
 view_sum.backward(&q)
-tensor<real32> qr = q_data.track()
-tensor<real32> plain_sum = math.sum(math.max_last(qr) * across.transpose(0, 1)) + math.sum(math.sum_last(qr) * across.transpose(0, 1)) + math.sum(math.matmul(qr, qr.transpose(0, 1)) * square.transpose(0, 1))
+tensor<real32> qr := q_data.track()
+tensor<real32> plain_sum := math.sum(math.max_last(qr) * across.transpose(0, 1)) + math.sum(math.sum_last(qr) * across.transpose(0, 1)) + math.sum(math.matmul(qr, qr.transpose(0, 1)) * square.transpose(0, 1))
 plain_sum.backward(&qr)
 print.line(same32(q.grad, qr.grad))
 QUI
@@ -965,30 +965,30 @@ write_shape_case() {
     printf 'import math\n%s\n' "$body" > "$TMP/$name.qui"
 }
 
-write_shape_case inner-mismatch 'tensor<real32> c = math.matmul(tensor.ones<real32>([2, 3]), tensor.ones<real32>([4, 5]))
+write_shape_case inner-mismatch 'tensor<real32> c := math.matmul(tensor.ones<real32>([2, 3]), tensor.ones<real32>([4, 5]))
 print("{c.shape()[0]} {c.shape()[1]} {c.gather([0], []).item()}{NL}")'
 expect_diagnostic_or_output "matmul inner mismatch" "$TMP/inner-mismatch.qui" \
     "math.matmul inner dimensions do not match" "2 5 3.0"
-write_shape_case inner-mismatch-tracked 'tensor<real32> a = tensor.ones<real32>([2, 3]).track()
-tensor<real32> b = tensor.ones<real32>([4, 5]).track()
+write_shape_case inner-mismatch-tracked 'tensor<real32> a := tensor.ones<real32>([2, 3]).track()
+tensor<real32> b := tensor.ones<real32>([4, 5]).track()
 math.sum(math.matmul(a, b)).backward(&a, &b)
 print("{a.grad.gather([0], []).item()} {b.grad.gather([0], []).item()}{NL}")'
 expect_diagnostic_or_output "tracked matmul inner mismatch" "$TMP/inner-mismatch-tracked.qui" \
     "math.matmul inner dimensions do not match" "5.0 2.0"
 # Zero extents never produce a native result: they stop with an error.
-write_shape_case zero-rows 'tensor<real32> c = math.matmul(tensor.ones<real32>([0, 3]), tensor.ones<real32>([3, 2]))
+write_shape_case zero-rows 'tensor<real32> c := math.matmul(tensor.ones<real32>([0, 3]), tensor.ones<real32>([3, 2]))
 print("{c.shape()[0]}{NL}")'
 expect_diagnostic_or_output "matmul zero rows" "$TMP/zero-rows.qui" \
     "math.matmul requires positive tensor extents" ""
-write_shape_case zero-inner 'tensor<real32> c = math.matmul(tensor.ones<real32>([2, 0]), tensor.ones<real32>([0, 2]))
+write_shape_case zero-inner 'tensor<real32> c := math.matmul(tensor.ones<real32>([2, 0]), tensor.ones<real32>([0, 2]))
 print("{c.shape()[0]}{NL}")'
 expect_diagnostic_or_output "matmul zero inner" "$TMP/zero-inner.qui" \
     "math.matmul inner dimensions do not match" ""
-write_shape_case zero-columns 'tensor<real32> c = math.matmul(tensor.ones<real32>([2, 3]), tensor.ones<real32>([3, 0]))
+write_shape_case zero-columns 'tensor<real32> c := math.matmul(tensor.ones<real32>([2, 3]), tensor.ones<real32>([3, 0]))
 print("{c.shape()[0]}{NL}")'
 expect_diagnostic_or_output "matmul zero columns" "$TMP/zero-columns.qui" \
     "math.matmul requires a positive output width" ""
-write_shape_case empty-max 'tensor<real32> m = math.max_all(tensor.ones<real32>([0, 3]))
+write_shape_case empty-max 'tensor<real32> m := math.max_all(tensor.ones<real32>([0, 3]))
 print("after{NL}")'
 expect_diagnostic_or_output "max_all of an empty tensor" "$TMP/empty-max.qui" \
     "math.max requires at least one element" ""
@@ -998,18 +998,18 @@ expect_diagnostic_or_output "max_all of an empty tensor" "$TMP/empty-max.qui" \
 cat > "$TMP/native-empty.qui" <<'QUI'
 import math
 
-tensor<real32> rows_empty = tensor.ones<real32>([0, 3])
-tensor<real32> s = math.sum_last(rows_empty)
-tensor<real32> m = math.max_last(rows_empty)
-tensor<real32> n = math.min_last(rows_empty)
+tensor<real32> rows_empty := tensor.ones<real32>([0, 3])
+tensor<real32> s := math.sum_last(rows_empty)
+tensor<real32> m := math.max_last(rows_empty)
+tensor<real32> n := math.min_last(rows_empty)
 print.line(s.shape()[0] == 0 and s.shape()[1] == 3 and m.shape()[1] == 3 and n.shape()[1] == 3)
-tensor<real32> tracked_empty = tensor.ones<real32>([0, 3]).track()
+tensor<real32> tracked_empty := tensor.ones<real32>([0, 3]).track()
 print.line(math.sum_last(tracked_empty).is_tracked() and math.max_last(tracked_empty).is_tracked())
-tensor<real32> width_empty = tensor.ones<real32>([3, 0])
-tensor<real32> ws = math.sum_last(width_empty)
-tensor<real32> wm = math.max_last(width_empty)
+tensor<real32> width_empty := tensor.ones<real32>([3, 0])
+tensor<real32> ws := math.sum_last(width_empty)
+tensor<real32> wm := math.max_last(width_empty)
 print.line(ws.shape()[0] == 3 and ws.shape()[1] == 0 and wm.shape()[0] == 3 and wm.shape()[1] == 0)
-tensor<real32> total = math.sum(tracked_empty)
+tensor<real32> total := math.sum(tracked_empty)
 total.backward(&tracked_empty)
 print.line(total.untrack().item() == real32(0) and tracked_empty.grad.shape()[0] == 0 and tracked_empty.grad.shape()[1] == 3)
 QUI
@@ -1044,18 +1044,18 @@ bool negative_zero32(real32 x)
 // Column j: all +0 (j % 4 == 0), all -0 (1), mixed signed zeros (2), or
 // small positive integers (3), so every sum is exact in any order.
 tensor<real32> signed_left32(int rows, int inner)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(inner)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(inner)])
     for 0 <= int i < rows
         for 0 <= int k < inner
-            real32 magnitude = real32(1 + (i + k) % 5)
+            real32 magnitude := real32(1 + (i + k) % 5)
             if i % 3 == 0 or (i % 3 == 2 and k % 2 == 0)
                 magnitude = -magnitude
             value[i, k] = magnitude
     return value
 
 tensor<real32> signed_right32(int inner, int columns)
-    tensor<real32> value = tensor.zeros<real32>([nat(inner), nat(columns)])
-    real32 negative_zero = real32(0) * real32(-1)
+    tensor<real32> value := tensor.zeros<real32>([nat(inner), nat(columns)])
+    real32 negative_zero := real32(0) * real32(-1)
     for 0 <= int k < inner
         for 0 <= int j < columns
             if j % 4 == 1 or (j % 4 == 2 and k % 3 == 0)
@@ -1065,66 +1065,66 @@ tensor<real32> signed_right32(int inner, int columns)
     return value
 
 bool fold_matches32(tensor<real32> left, tensor<real32> right, tensor<real32> product)
-    int rows = int(left.shape()[0])
-    int inner = int(left.shape()[1])
-    int columns = int(right.shape()[1])
+    int rows := int(left.shape()[0])
+    int inner := int(left.shape()[1])
+    int columns := int(right.shape()[1])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            real32 total = left[i, 0].item() * right[0, j].item()
+            real32 total := left[i, 0].item() * right[0, j].item()
             for 1 <= int k < inner
-                real32 term = left[i, k].item() * right[k, j].item()
+                real32 term := left[i, k].item() * right[k, j].item()
                 total = total + term
             if not same_bits32(product[i, j].item(), total)
                 return false
     return negative_zero32(product[0, 0].item())
 
 tensor<real64> widen(tensor<real32> value)
-    int rows = int(value.shape()[0])
-    int columns = int(value.shape()[1])
-    tensor<real64> result = tensor.zeros<real64>([nat(rows), nat(columns)])
+    int rows := int(value.shape()[0])
+    int columns := int(value.shape()[1])
+    tensor<real64> result := tensor.zeros<real64>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
             result[i, j] = real64(value[i, j].item())
     return result
 
 bool fold_matches64(tensor<real64> left, tensor<real64> right, tensor<real64> product)
-    int rows = int(left.shape()[0])
-    int inner = int(left.shape()[1])
-    int columns = int(right.shape()[1])
+    int rows := int(left.shape()[0])
+    int inner := int(left.shape()[1])
+    int columns := int(right.shape()[1])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            real64 total = left[i, 0].item() * right[0, j].item()
+            real64 total := left[i, 0].item() * right[0, j].item()
             for 1 <= int k < inner
-                real64 term = left[i, k].item() * right[k, j].item()
+                real64 term := left[i, k].item() * right[k, j].item()
                 total = total + term
             if not same_bits64(product[i, j].item(), total)
                 return false
     return product[0, 0].item().string() == "-0.0"
 
 // 1-2: untracked and tracked real32, short inner axis.
-tensor<real32> l3 = signed_left32(6, 3)
-tensor<real32> r3 = signed_right32(3, 8)
+tensor<real32> l3 := signed_left32(6, 3)
+tensor<real32> r3 := signed_right32(3, 8)
 print.line(fold_matches32(l3, r3, math.matmul(l3, r3)))
 print.line(fold_matches32(l3, r3, math.matmul(l3.track(), r3).untrack()))
 
 // 3-4: an inner axis longer than one depth block, tracked right operand read
 // through its transposed storage.
-tensor<real32> l300 = signed_left32(6, 300)
-tensor<real32> r300 = signed_right32(300, 8)
+tensor<real32> l300 := signed_left32(6, 300)
+tensor<real32> r300 := signed_right32(300, 8)
 print.line(fold_matches32(l300, r300, math.matmul(l300, r300.track()).untrack()))
-tensor<real32> r300_storage = r300.transpose(0, 1).contiguous().track()
+tensor<real32> r300_storage := r300.transpose(0, 1).contiguous().track()
 print.line(fold_matches32(l300, r300, math.matmul(l300, r300_storage.transpose(0, 1)).untrack()))
 
 // 5: float64, tracked and untracked.
-tensor<real64> l64 = widen(l300)
-tensor<real64> r64 = widen(r300)
+tensor<real64> l64 := widen(l300)
+tensor<real64> r64 := widen(r300)
 print.line(fold_matches64(l64, r64, math.matmul(l64, r64)) and fold_matches64(l64, r64, math.matmul(l64.track(), r64.track()).untrack()))
 
 // 6: matrix x vector and dot keep -0 for all -0 products.
-tensor<real32> negative_zeros = r3.transpose(0, 1).contiguous().gather([3, 4, 5], [3])
-tensor<real32> mv = math.matmul(l3, negative_zeros)
-tensor<real32> negative_row = l3.gather([0, 1, 2], [3])
-tensor<real32> plus_zeros = tensor.zeros<real32>([3])
+tensor<real32> negative_zeros := r3.transpose(0, 1).contiguous().gather([3, 4, 5], [3])
+tensor<real32> mv := math.matmul(l3, negative_zeros)
+tensor<real32> negative_row := l3.gather([0, 1, 2], [3])
+tensor<real32> plus_zeros := tensor.zeros<real32>([3])
 print.line(negative_zero32(mv[1].item()) and not negative_zero32(mv[0].item()) and not negative_zero32(mv[2].item()) and negative_zero32(math.dot(negative_row, plus_zeros)) and negative_zero32(math.matmul(l3.track(), plus_zeros).untrack()[0].item()))
 QUI
 expect_true_lines "Math native signed zeros" "$TMP/native-signed-zero.qui" 6
@@ -1171,35 +1171,35 @@ cat > "$TMP/native-dispatch.qui" <<'QUI'
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int64 h = int64((i * 131 + j * 71 + seed * 17) % 97)
+            int64 h := int64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = real32(h) / real32(48) - real32(1)
     return value
 
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
+    tensor<real64> value := tensor.zeros<real64>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int64 h = int64((i * 131 + j * 71 + seed * 17) % 97)
+            int64 h := int64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = real64(h) / 48.0 - 1.0
     return value
 
 // 1: real32 first order through every native forward and backward.
-tensor<real32> x = pattern32(6, 5, 1).track()
-tensor<real32> w = pattern32(4, 5, 2).track()
-tensor<real32> y = math.matmul(x, w.transpose(0, 1))
+tensor<real32> x := pattern32(6, 5, 1).track()
+tensor<real32> w := pattern32(4, 5, 2).track()
+tensor<real32> y := math.matmul(x, w.transpose(0, 1))
 (math.sum(math.max_last(y)) + math.sum(math.min_last(y)) + math.max_all(y) - math.min_all(y) + math.mean(math.sum_last(y))).backward(&x, &w)
 print.line(x.grad.shape()[0] == 6 and w.grad.shape()[0] == 4)
 
 // 2: float64 second order: tracked backward of every node family, then the
 // backward of the nodes it attached.
-tensor<real64> a = pattern64(3, 4, 3).track()
-tensor<real64> b = pattern64(4, 2, 4).track()
-tensor<real64> p = math.matmul(a, b)
+tensor<real64> a := pattern64(3, 4, 3).track()
+tensor<real64> b := pattern64(4, 2, 4).track()
+tensor<real64> p := math.matmul(a, b)
 (math.sum(p * p) + math.max_all(p) + math.mean(math.sum_last(p))).backward(&a, &b, track = true)
-tensor<real64> ga = a.grad
+tensor<real64> ga := a.grad
 .a.clear_grad()
 .b.clear_grad()
 math.sum(ga * ga).backward(&a, &b)
@@ -1222,16 +1222,16 @@ expect_native_events "Math native CPU dispatch" "$TMP/native-dispatch.qui" 2 \
 cat > "$TMP/native-dispatch-views.qui" <<'QUI'
 import math
 
-tensor<real32> base = tensor.zeros<real32>([5, 6])
+tensor<real32> base := tensor.zeros<real32>([5, 6])
 for 0 <= nat i < 5
     for 0 <= nat j < 6
-        int64 h = int64((i * 7 + j * 3) % 11)
+        int64 h := int64((i * 7 + j * 3) % 11)
         base[i, j] = real32(h) - real32(5)
-tensor<real32> tracked = base.track()
-tensor<real32> view = tracked.transpose(0, 1)
-tensor<real32> cube = tensor.ones<real32>([2, 3, 4]).track()
-tensor<real32> right = tensor.ones<real32>([2, 3])
-tensor<real32> loss = math.sum(view) + math.mean(view) + math.sum_last(view).gather([7], []) + math.max_last(view).gather([3], []) + math.min_last(view).gather([11], []) + math.max_all(view) + math.min_all(view) + math.matmul(cube.transpose(0, 2), right).gather([5], [])
+tensor<real32> tracked := base.track()
+tensor<real32> view := tracked.transpose(0, 1)
+tensor<real32> cube := tensor.ones<real32>([2, 3, 4]).track()
+tensor<real32> right := tensor.ones<real32>([2, 3])
+tensor<real32> loss := math.sum(view) + math.mean(view) + math.sum_last(view).gather([7], []) + math.max_last(view).gather([3], []) + math.min_last(view).gather([11], []) + math.max_all(view) + math.min_all(view) + math.matmul(cube.transpose(0, 2), right).gather([5], [])
 loss.backward(&tracked, &cube)
 print.line(tracked.grad.shape()[0] == 5 and cube.grad[0, 0, 0].item() == real32(0))
 QUI
@@ -1254,13 +1254,13 @@ for operation in 'math.sum(t)' 'math.mean(t)' 'math.sum_last(t)' 'math.max_last(
     cat > "$TMP/uninitialized-$uninitialized_case.qui" <<QUI
 import math
 
-tensor<real32> t = tensor<real32>([2, 3])
+tensor<real32> t := tensor<real32>([2, 3])
 t[0, 0] = real32(1)
 t[0, 1] = real32(2)
 t[0, 2] = real32(3)
 t[1, 0] = real32(4)
 t[1, 1] = real32(5)
-tensor<real32> result = $operation
+tensor<real32> result := $operation
 print.line("unexpected success")
 QUI
     set +e
@@ -1279,7 +1279,7 @@ done
 cat > "$TMP/math-error-codes.qui" <<'QUI'
 import math
 
-real64 | error root = math.sqrt(real64(-1.0))
+real64 | error root := math.sqrt(real64(-1.0))
 match root
     real64
         print(false)
@@ -1287,7 +1287,7 @@ match root
         print(problem.code == "MATH_DOMAIN")
 print.line()
 
-int | error rounded = math.round(real64(1.0e40))
+int | error rounded := math.round(real64(1.0e40))
 match rounded
     int
         print(false)
@@ -1314,34 +1314,34 @@ cat > "$TMP/thread-count$PLACEMENT_SUFFIX.qui" <<QUI
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            real32 sample = real32((i * 131 + j * 71 + seed * 17) % 97)
+            real32 sample := real32((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
 tensor<real64> pattern64(int rows, int columns, int seed)
-    tensor<real64> value = tensor.zeros<real64>([nat(rows), nat(columns)])
+    tensor<real64> value := tensor.zeros<real64>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            real64 sample = real64((i * 131 + j * 71 + seed * 17) % 97)
+            real64 sample := real64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = sample / 48.0 - 1.0
     return value
 
 void sample32(string label, tensor<real32> value)
-    tensor<real32> flat = value.untrack().cpu().contiguous()
-    int count = 1
-    for auto extent = flat.shape()[]
+    tensor<real32> flat := value.untrack().cpu().contiguous()
+    int count := 1
+    for extent := flat.shape()[]
         count = count * int(extent)
     flat = flat.reshape([nat(count)])
     for 0 <= int index < count step 29
         print.line("{label} {index} {flat[index].item()}")
 
 void sample64(string label, tensor<real64> value)
-    tensor<real64> flat = value.untrack().cpu().contiguous()
-    int count = 1
-    for auto extent = flat.shape()[]
+    tensor<real64> flat := value.untrack().cpu().contiguous()
+    int count := 1
+    for extent := flat.shape()[]
         count = count * int(extent)
     flat = flat.reshape([nat(count)])
     for 0 <= int index < count step 29
@@ -1349,15 +1349,15 @@ void sample64(string label, tensor<real64> value)
 
 // Products, last-axis reductions and unary kernels large enough to split
 // into several parallel chunks, with their gradients.
-tensor<real32> a = pattern32(200, 64, 1)$PLACEMENT.track()
-tensor<real32> w = pattern32(64, 40, 2)$PLACEMENT.track()
-tensor<real32> z = pattern32(300, 200, 3)$PLACEMENT.track()
-tensor<real32> y = math.matmul(a, w)
-tensor<real32> e = math.exp(z * 0.5)
-tensor<real32> s = math.sum_last(e)
-tensor<real32> m = math.max_last(z)
-tensor<real32> r = math.sqrt(math.abs(z) + 1.0)
-tensor<real32> l = math.log(e)
+tensor<real32> a := pattern32(200, 64, 1)$PLACEMENT.track()
+tensor<real32> w := pattern32(64, 40, 2)$PLACEMENT.track()
+tensor<real32> z := pattern32(300, 200, 3)$PLACEMENT.track()
+tensor<real32> y := math.matmul(a, w)
+tensor<real32> e := math.exp(z * 0.5)
+tensor<real32> s := math.sum_last(e)
+tensor<real32> m := math.max_last(z)
+tensor<real32> r := math.sqrt(math.abs(z) + 1.0)
+tensor<real32> l := math.log(e)
 (math.mean(y * y) + math.mean(s) + math.mean(m) + math.sum(r) + math.sum(l)).backward(&a, &w, &z)
 sample32("y", y)
 sample32("e", e)
@@ -1368,8 +1368,8 @@ sample32("a.grad", a.grad)
 sample32("w.grad", w.grad)
 sample32("z.grad", z.grad)
 
-tensor<real64> b = pattern64(160, 96, 4)$PLACEMENT.track()
-tensor<real64> v = pattern64(96, 48, 5)$PLACEMENT.track()
+tensor<real64> b := pattern64(160, 96, 4)$PLACEMENT.track()
+tensor<real64> v := pattern64(96, 48, 5)$PLACEMENT.track()
 math.sum(math.matmul(b, v)).backward(&b, &v)
 sample64("b.grad", b.grad)
 sample64("v.grad", v.grad)

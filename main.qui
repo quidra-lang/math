@@ -3,15 +3,15 @@ import native = "./native.qui"
 
 // Package-owned mathematical constants. Core only provides the generic
 // package-constant and exact-real atom mechanisms.
-const literal real pi = real.atom("math", 1)
-const literal real e = real.atom("math", 2)
+const literal real pi := real.atom("math", 1)
+const literal real e := real.atom("math", 2)
 
 // Repeated public names form ordinary Quidra generic specialization families.
 // The generic members are real definitions, not prototypes: prototypes require
 // one exact later definition and do not declare overload families.
 
 T abs<T: numeric>(extend T value)
-    T zero = T(0)
+    T zero := T(0)
     if value < zero
         return zero - value
     return value
@@ -27,7 +27,7 @@ T max<T: numeric>(T left, T right)
     return right
 
 T | error sqrt<T: floating>(extend T value)
-    T zero = T(0)
+    T zero := T(0)
     if value < zero
         return error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
     return value ^ 0.5
@@ -42,7 +42,7 @@ T | error tan<T: floating>(T value)
     return T(native.tan_f32(real32(value)))
 
 T | error log<T: floating>(extend T value)
-    T zero = T(0)
+    T zero := T(0)
     if value < zero
         return error("math.log requires a nonnegative value", code = "MATH_DOMAIN")
     return T(native.log_f32(real32(value)))
@@ -57,25 +57,25 @@ bool is_finite<T: floating>(T value)
     return value != T(inf) and value != T(-inf)
 
 int | error trunc<T: floating>(T value)
-    real32 widened = real32(value)
+    real32 widened := real32(value)
     if native.round_valid_f32(widened, int32(1)) != int32(1)
         return error("math.trunc requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(widened, int32(1)))
 
 int | error round<T: floating>(T value)
-    real32 widened = real32(value)
+    real32 widened := real32(value)
     if native.round_valid_f32(widened, int32(2)) != int32(1)
         return error("math.round requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(widened, int32(2)))
 
 int | error floor<T: floating>(T value)
-    real32 widened = real32(value)
+    real32 widened := real32(value)
     if native.round_valid_f32(widened, int32(3)) != int32(1)
         return error("math.floor requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(widened, int32(3)))
 
 int | error ceil<T: floating>(T value)
-    real32 widened = real32(value)
+    real32 widened := real32(value)
     if native.round_valid_f32(widened, int32(4)) != int32(1)
         return error("math.ceil requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(widened, int32(4)))
@@ -266,7 +266,7 @@ private void .array_abs<T>(T &value)
         .array_abs(&value[index])
 
 private void | error .array_sqrt<T: numeric>(T &value)
-    T | error mapped = sqrt(value)
+    T | error mapped := sqrt(value)
     value = try mapped
     return
 
@@ -276,7 +276,7 @@ private void | error .array_sqrt<T>(T &value)
     return
 
 private void | error .array_log<T: numeric>(T &value)
-    T | error mapped = log(value)
+    T | error mapped := log(value)
     value = try mapped
     return
 
@@ -286,7 +286,7 @@ private void | error .array_log<T>(T &value)
     return
 
 private void | error .array_exp<T: numeric>(T &value)
-    T | error mapped = exp(value)
+    T | error mapped := exp(value)
     value = try mapped
     return
 
@@ -296,28 +296,28 @@ private void | error .array_exp<T>(T &value)
     return
 
 T[] abs<T>(extend T[] value)
-    T[] result = value
+    T[] result := value
     .array_abs(&result)
     return result
 
 T[] | error sqrt<T>(extend T[] value)
-    T[] result = value
+    T[] result := value
     try .array_sqrt(&result)
     return result
 
 T[] | error log<T>(extend T[] value)
-    T[] result = value
+    T[] result := value
     try .array_log(&result)
     return result
 
 T[] | error exp<T>(extend T[] value)
-    T[] result = value
+    T[] result := value
     try .array_exp(&result)
     return result
 
 T sum<T: numeric>(extend T[] value)
-    T total = T(0)
-    for auto element = value[]
+    T total := T(0)
+    for element := value[]
         total = total + element
     return total
 
@@ -330,15 +330,15 @@ tensor<T> sum<T: floating>(extend tensor<T> value)
 T mean<T: numeric>(extend T[] value)
     if len(value) == 0
         error("math.mean requires at least one element", code = "MATH_SHAPE")
-    T total = sum<T>(value)
-    T count = T(len(value))
+    T total := sum<T>(value)
+    T count := T(len(value))
     return total / count
 
 real mean<T: integer>(extend T[] value)
     if len(value) == 0
         error("math.mean requires at least one element", code = "MATH_SHAPE")
-    real total = 0.0
-    for auto element = value[]
+    real total := 0.0
+    for element := value[]
         total = total + real(element)
     return total / real(len(value))
 
@@ -363,9 +363,9 @@ tensor<T> min_last<T: floating>(extend tensor<T> value)
 T max_all<T: ordered>(extend T[] value)
     if len(value) == 0
         error("math.max requires at least one element", code = "MATH_SHAPE")
-    T best = value[0]
+    T best := value[0]
     for 1 <= nat index < len(value)
-        T candidate = value[index]
+        T candidate := value[index]
         if candidate > best
             best = candidate
     return best
@@ -373,9 +373,9 @@ T max_all<T: ordered>(extend T[] value)
 T min_all<T: ordered>(extend T[] value)
     if len(value) == 0
         error("math.min requires at least one element", code = "MATH_SHAPE")
-    T best = value[0]
+    T best := value[0]
     for 1 <= nat index < len(value)
-        T candidate = value[index]
+        T candidate := value[index]
         if candidate < best
             best = candidate
     return best
@@ -398,14 +398,14 @@ tensor<T> min_all<T: floating>(extend tensor<T> value)
 T dot<T: numeric>(extend T[] a, T[] b)
     if len(a) != len(b)
         error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
-    T total = T(0)
+    T total := T(0)
     for 0 <= nat index < len(a)
         total += a[index] * b[index]
     return total
 
 real32 dot(extend tensor<real32> a, tensor<real32> b)
-    int[] a_shape = int(a.shape())
-    int[] b_shape = int(b.shape())
+    int[] a_shape := int(a.shape())
+    int[] b_shape := int(b.shape())
     if len(a_shape) != 1 or len(b_shape) != 1
         error("math.dot requires two rank-1 tensors", code = "MATH_SHAPE")
     if a_shape[0] != b_shape[0]
@@ -413,8 +413,8 @@ real32 dot(extend tensor<real32> a, tensor<real32> b)
     return internal.matmul_native<real32>(a, b).item()
 
 real64 dot(extend tensor<real64> a, tensor<real64> b)
-    int[] a_shape = int(a.shape())
-    int[] b_shape = int(b.shape())
+    int[] a_shape := int(a.shape())
+    int[] b_shape := int(b.shape())
     if len(a_shape) != 1 or len(b_shape) != 1
         error("math.dot requires two rank-1 tensors", code = "MATH_SHAPE")
     if a_shape[0] != b_shape[0]
@@ -422,8 +422,8 @@ real64 dot(extend tensor<real64> a, tensor<real64> b)
     return internal.matmul_native<real64>(a, b).item()
 
 T dot<T: integer>(extend tensor<T> a, tensor<T> b)
-    int[] a_shape = int(a.shape())
-    int[] b_shape = int(b.shape())
+    int[] a_shape := int(a.shape())
+    int[] b_shape := int(b.shape())
     if len(a_shape) != 1 or len(b_shape) != 1
         error("math.dot requires two rank-1 tensors", code = "MATH_SHAPE")
     if a_shape[0] != b_shape[0]
@@ -434,10 +434,10 @@ tensor<T> matmul<T: integer>(extend tensor<T> a, tensor<T> b)
     return internal.matmul<T>(a, b)
 
 tensor<real32> matmul(extend tensor<real32> a, tensor<real32> b)
-    int[] a_shape = int(a.shape())
-    int[] b_shape = int(b.shape())
-    int a_rank = int(len(a_shape))
-    int b_rank = int(len(b_shape))
+    int[] a_shape := int(a.shape())
+    int[] b_shape := int(b.shape())
+    int a_rank := int(len(a_shape))
+    int b_rank := int(len(b_shape))
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
         error("math.matmul requires left rank >= 1 and right rank 1 or 2", code = "MATH_SHAPE")
@@ -447,10 +447,10 @@ tensor<real32> matmul(extend tensor<real32> a, tensor<real32> b)
     if b_rank == 2 and b_shape[1] <= 0
         error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
-    int output_rank = a_rank
+    int output_rank := a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape = array(nat(output_rank), fill = 1)
+    int[] output_shape := array(nat(output_rank), fill = 1)
     for 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
@@ -458,16 +458,16 @@ tensor<real32> matmul(extend tensor<real32> a, tensor<real32> b)
 
     // CUDA keeps its untracked cuBLAS path unchanged.
     if not a.is_tracked() and not b.is_tracked()
-        int32 left_cuda = native.cuda_device_f32(a)
-        int32 right_cuda = native.cuda_device_f32(b)
+        int32 left_cuda := native.cuda_device_f32(a)
+        int32 right_cuda := native.cuda_device_f32(b)
         if left_cuda >= int32(0) and right_cuda == left_cuda
-            tensor<real32> left = a
-            tensor<real32> right = b
+            tensor<real32> left := a
+            tensor<real32> right := b
             if not left.is_contiguous()
                 left = left.contiguous()
             if not right.is_contiguous()
                 right = right.contiguous()
-            tensor<real32> output = tensor.zeros<real32>(
+            tensor<real32> output := tensor.zeros<real32>(
                 nat(output_shape),
                 gpu = nat(left_cuda)
             )

@@ -97,8 +97,8 @@ fi
 # Ordinary array dot rejects unequal input lengths without partial results.
 cat >"$TMP/dot-length.qui" <<'QUI'
 import math
-int[] left = [1, 2, 3]
-int[] right = [4, 5]
+int[] left := [1, 2, 3]
+int[] right := [4, 5]
 print(math.dot(left, right))
 QUI
 dot_status=0
@@ -114,7 +114,7 @@ expect_numeric_error() {
     local name="$1" type="$2" values="$3" code="$4" operation="${5:-sum}"
     cat >"$TMP/$name.qui" <<QUI
 import math
-$type[] values = $values
+$type[] values := $values
 print(math.$operation(values))
 QUI
     local status=0
@@ -139,7 +139,7 @@ for operation_type in 'mean real32' 'mean int8' 'mean com32' 'min_all real32' 'm
     read -r operation element_type <<<"$operation_type"
     cat >"$TMP/empty-$operation.qui" <<QUI
 import math
-$element_type[] values = []
+$element_type[] values := []
 print(math.$operation(values))
 QUI
     status=0
@@ -155,7 +155,7 @@ done
 for operation in sum mean min_all max_all; do
     cat >"$TMP/nonnumeric.qui" <<QUI
 import math
-bool[] values = [true, false]
+bool[] values := [true, false]
 print(math.$operation(values))
 QUI
     if "$QUIDRA" check "$TMP/nonnumeric.qui" >"$TMP/nonnumeric.out" 2>&1; then
@@ -167,7 +167,7 @@ done
 for operation in min_all max_all; do
     cat >"$TMP/complex.qui" <<QUI
 import math
-com32[] values = [1.0 + 2.0i]
+com32[] values := [1.0 + 2.0i]
 print(math.$operation(values))
 QUI
     if "$QUIDRA" check "$TMP/complex.qui" >"$TMP/complex.out" 2>&1; then

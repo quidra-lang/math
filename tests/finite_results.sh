@@ -22,8 +22,8 @@ for OP in exp sum matmul; do
     esac
     cat > "$TMP/$OP.qui" <<QUI
 import math
-tensor<real32> value = ($VALUE)$PLACEMENT
-tensor<real32> result = $EXPR
+tensor<real32> value := ($VALUE)$PLACEMENT
+tensor<real32> result := $EXPR
 print.line(result.cpu().shape()[0])
 QUI
     set +e

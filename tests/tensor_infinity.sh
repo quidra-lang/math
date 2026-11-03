@@ -19,15 +19,15 @@ esac
 # NaN, including when the input is a tracked transposed view.
 cat > "$TMP/paired.qui" <<QUI
 import math
-real32 infinity = real32(1) / real32(0)
-tensor<real32> paired_host = tensor.ones<real32>([1, 2])
+real32 infinity := real32(1) / real32(0)
+tensor<real32> paired_host := tensor.ones<real32>([1, 2])
 paired_host[0, 1] = infinity
-tensor<real32> leading_host = tensor.ones<real32>([1, 5])
+tensor<real32> leading_host := tensor.ones<real32>([1, 5])
 leading_host[0, 0] = infinity
-tensor<real32> paired = paired_host${placement}
-tensor<real32> leading = leading_host${placement}
-tensor<real32> zero_input = tensor.zeros<real32>([1, 2])${placement}
-tensor<real32> logs = math.log(zero_input).cpu()
+tensor<real32> paired := paired_host${placement}
+tensor<real32> leading := leading_host${placement}
+tensor<real32> zero_input := tensor.zeros<real32>([1, 2])${placement}
+tensor<real32> logs := math.log(zero_input).cpu()
 print.line(logs[0, 0].item() == -infinity and logs[0, 1].item() == -infinity)
 print.line(math.sum(paired).cpu().item() == infinity and math.mean(paired).cpu().item() == infinity)
 print.line(math.sum(leading).cpu().item() == infinity and math.mean(leading).cpu().item() == infinity)
@@ -55,11 +55,11 @@ for operation in sum mean; do
         fi
         cat > "$TMP/carried.qui" <<QUI
 import math
-real32 infinity = real32(1) / real32(0)
-tensor<real32> host = tensor.ones<real32>([1, 3])
+real32 infinity := real32(1) / real32(0)
+tensor<real32> host := tensor.ones<real32>([1, 3])
 host[0, 2] = infinity
-tensor<real32> carried = host${placement}${view}
-tensor<real32> result = math.${operation}(carried)
+tensor<real32> carried := host${placement}${view}
+tensor<real32> result := math.${operation}(carried)
 print.line(result${untrack}.cpu().item() == infinity)
 QUI
         QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" check "$TMP/carried.qui"
@@ -74,13 +74,13 @@ QUI
     # *after* the preceding user-visible print, not on construction.
     cat > "$TMP/opposed.qui" <<QUI
 import math
-real32 infinity = real32(1) / real32(0)
-tensor<real32> host = tensor.ones<real32>([1, 2])
+real32 infinity := real32(1) / real32(0)
+tensor<real32> host := tensor.ones<real32>([1, 2])
 host[0, 0] = infinity
 host[0, 1] = -infinity
-tensor<real32> opposed = host${placement}
+tensor<real32> opposed := host${placement}
 print.line("before")
-tensor<real32> result = math.${operation}(opposed)
+tensor<real32> result := math.${operation}(opposed)
 print("after")
 QUI
     QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" check "$TMP/opposed.qui"

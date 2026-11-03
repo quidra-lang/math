@@ -12,19 +12,19 @@ cat > "$TMP/math-aot.qui" <<'QUI'
 import math
 
 int | error run()
-    real64 root = math.sqrt(real64(9.0))
+    real64 root := math.sqrt(real64(9.0))
     print.line(root == real64(3.0))
 
-    tensor<real32> values = tensor.ones<real32>([2]) * real32(4)
-    tensor<real32> roots = math.sqrt(values)
+    tensor<real32> values := tensor.ones<real32>([2]) * real32(4)
+    tensor<real32> roots := math.sqrt(values)
     print.line(roots[0].item() == real32(2))
     print.line(roots[1].item() == real32(2))
     return 0
 
-auto | error result = run()
+int | error result := run()
 match result
     int
-        int ignored = result
+        int ignored := result
     error problem
         print.line(problem)
 QUI
@@ -92,9 +92,9 @@ check_native_aot() {
 cat > "$TMP/math-native-matmul-aot.qui" <<'QUI'
 import math
 
-tensor<real32> x = tensor.ones<real32>([3, 4]).track()
-tensor<real32> w = (tensor.ones<real32>([2, 4]) * real32(0.5)).track()
-tensor<real32> y = math.matmul(x, w.transpose(0, 1))
+tensor<real32> x := tensor.ones<real32>([3, 4]).track()
+tensor<real32> w := (tensor.ones<real32>([2, 4]) * real32(0.5)).track()
+tensor<real32> y := math.matmul(x, w.transpose(0, 1))
 (y * y).gather([5], []).backward(&x, &w)
 print.line(y.untrack()[2, 1].item() == real32(2))
 print.line(w.grad[1, 0].item() == real32(4) and w.grad[0, 0].item() == real32(0))
@@ -107,11 +107,11 @@ check_native_aot math-native-matmul-aot 3 \
 cat > "$TMP/math-native-reductions-aot.qui" <<'QUI'
 import math
 
-tensor<real32> x = tensor.ones<real32>([3, 4]).track()
-tensor<real32> w = (tensor.ones<real32>([2, 4]) * real32(0.5)).track()
-tensor<real32> logits = math.matmul(x, w.transpose(0, 1))
-tensor<real32> shifted = logits - math.max_last(logits)
-tensor<real32> loss = math.mean(math.sum_last(shifted * shifted) + math.sum_last(logits))
+tensor<real32> x := tensor.ones<real32>([3, 4]).track()
+tensor<real32> w := (tensor.ones<real32>([2, 4]) * real32(0.5)).track()
+tensor<real32> logits := math.matmul(x, w.transpose(0, 1))
+tensor<real32> shifted := logits - math.max_last(logits)
+tensor<real32> loss := math.mean(math.sum_last(shifted * shifted) + math.sum_last(logits))
 loss.backward(&x, &w)
 print.line(loss.untrack().item() == real32(4))
 print.line(w.grad[1, 3].item() == real32(1))
@@ -128,14 +128,14 @@ check_native_aot math-native-reductions-aot 4 \
 cat > "$TMP/math-native-views-aot.qui" <<'QUI'
 import math
 
-tensor<real32> x = tensor.ones<real32>([4, 3]).track()
-tensor<real32> xv = x.transpose(0, 1)
-tensor<real32> loss = math.sum(math.max_last(xv)) + math.sum(math.sum_last(x).transpose(0, 1))
+tensor<real32> x := tensor.ones<real32>([4, 3]).track()
+tensor<real32> xv := x.transpose(0, 1)
+tensor<real32> loss := math.sum(math.max_last(xv)) + math.sum(math.sum_last(x).transpose(0, 1))
 loss.backward(&x)
 print.line(loss.untrack().item() == real32(48))
 print.line(x.grad[0, 0].item() == real32(7) and x.grad[1, 0].item() == real32(3) and x.grad[3, 2].item() == real32(3))
-tensor<real32> z = tensor.ones<real32>([2, 3, 2]).track()
-tensor<real32> product = math.matmul(z.transpose(0, 2), tensor.ones<real32>([2, 5]))
+tensor<real32> z := tensor.ones<real32>([2, 3, 2]).track()
+tensor<real32> product := math.matmul(z.transpose(0, 2), tensor.ones<real32>([2, 5]))
 math.sum(product).backward(&z)
 print.line(product.untrack()[1, 2, 4].item() == real32(2) and z.grad[1, 2, 0].item() == real32(5))
 QUI

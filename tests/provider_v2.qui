@@ -1,7 +1,7 @@
 import math
 
 real checked_real(real | error result)
-    real value = result
+    real value := result
     return value
 
 print.line(real(math.pi).string() == "π")

@@ -56,8 +56,8 @@ fi
 if grep -Eiq 'backend: (METAL|CUDA)' <<<"$gpu_block"; then
     cat > "$TMP/math-device-dtype.qui" <<QUI
 import math
-tensor<real64> value = tensor.zeros<real64>([1]).gpu($GPU_INDEX)
-tensor<real64> result = math.exp(value)
+tensor<real64> value := tensor.zeros<real64>([1]).gpu($GPU_INDEX)
+tensor<real64> result := math.exp(value)
 print.line(result.cpu()[0].item())
 QUI
     set +e
@@ -77,7 +77,7 @@ fi
 cat > "$TMP/math-real-gpu.qui" <<QUI
 import math
 
-tensor<real32> left = tensor.zeros<real32>([2, 3])
+tensor<real32> left := tensor.zeros<real32>([2, 3])
 left[0, 0] = real32(1)
 left[0, 1] = real32(2)
 left[0, 2] = real32(3)
@@ -85,7 +85,7 @@ left[1, 0] = real32(4)
 left[1, 1] = real32(5)
 left[1, 2] = real32(6)
 
-tensor<real32> right = tensor.zeros<real32>([3, 2])
+tensor<real32> right := tensor.zeros<real32>([3, 2])
 right[0, 0] = real32(7)
 right[0, 1] = real32(8)
 right[1, 0] = real32(9)
@@ -93,7 +93,7 @@ right[1, 1] = real32(10)
 right[2, 0] = real32(11)
 right[2, 1] = real32(12)
 
-tensor<real32> gpu_product = math.matmul(
+tensor<real32> gpu_product := math.matmul(
     left.gpu($GPU_INDEX),
     right.gpu($GPU_INDEX)
 ).cpu()
@@ -102,76 +102,76 @@ print.line(gpu_product[0, 1].item() == real32(64))
 print.line(gpu_product[1, 0].item() == real32(139))
 print.line(gpu_product[1, 1].item() == real32(154))
 
-tensor<real32> vector = tensor.zeros<real32>([3])
+tensor<real32> vector := tensor.zeros<real32>([3])
 vector[0] = real32(1)
 vector[1] = real32(2)
 vector[2] = real32(3)
-tensor<real32> gpu_vector_product = math.matmul(
+tensor<real32> gpu_vector_product := math.matmul(
     left.gpu($GPU_INDEX),
     vector.gpu($GPU_INDEX)
 ).cpu()
 print.line(gpu_vector_product[0].item() == real32(14))
 print.line(gpu_vector_product[1].item() == real32(32))
 
-tensor<real32> tracked_left = tensor.ones<real32>([1, 2], gpu = $GPU_INDEX).track()
-tensor<real32> tracked_right = tensor.ones<real32>([2, 1], gpu = $GPU_INDEX).track()
-tensor<real32> tracked_product = math.matmul(tracked_left, tracked_right)
+tensor<real32> tracked_left := tensor.ones<real32>([1, 2], gpu = $GPU_INDEX).track()
+tensor<real32> tracked_right := tensor.ones<real32>([2, 1], gpu = $GPU_INDEX).track()
+tensor<real32> tracked_product := math.matmul(tracked_left, tracked_right)
 math.mean(tracked_product).backward(&tracked_left, &tracked_right)
 print.line(tracked_left.grad.cpu()[0, 0].item() == real32(1))
 print.line(tracked_right.grad.cpu()[0, 0].item() == real32(1))
 
-tensor<real32> reduction_source = tensor.zeros<real32>([1, 3])
+tensor<real32> reduction_source := tensor.zeros<real32>([1, 3])
 reduction_source[0, 0] = real32(5)
 reduction_source[0, 1] = real32(-2)
 reduction_source[0, 2] = real32(4)
-tensor<real32> reduction_gpu = reduction_source.gpu($GPU_INDEX)
-tensor<real32> reduced_sum = math.sum_last(reduction_gpu).cpu()
-tensor<real32> reduced_max = math.max_last(reduction_gpu).cpu()
-tensor<real32> reduced_min = math.min_last(reduction_gpu).cpu()
+tensor<real32> reduction_gpu := reduction_source.gpu($GPU_INDEX)
+tensor<real32> reduced_sum := math.sum_last(reduction_gpu).cpu()
+tensor<real32> reduced_max := math.max_last(reduction_gpu).cpu()
+tensor<real32> reduced_min := math.min_last(reduction_gpu).cpu()
 print.line(reduced_sum[0, 1].item() == real32(7))
 print.line(reduced_max[0, 2].item() == real32(5))
 print.line(reduced_min[0, 0].item() == real32(-2))
 
-tensor<real32> tracked_reduction = reduction_source.gpu($GPU_INDEX).track()
+tensor<real32> tracked_reduction := reduction_source.gpu($GPU_INDEX).track()
 math.mean(math.max_last(tracked_reduction)).backward(&tracked_reduction)
-tensor<real32> reduction_gradient = tracked_reduction.grad.cpu()
+tensor<real32> reduction_gradient := tracked_reduction.grad.cpu()
 print.line(reduction_gradient[0, 0].item() == real32(1))
 print.line(reduction_gradient[0, 1].item() == real32(0))
 print.line(reduction_gradient[0, 2].item() == real32(0))
 
-tensor<real32> whole_maximum = math.max_all(reduction_gpu).cpu()
-tensor<real32> whole_minimum = math.min_all(reduction_gpu).cpu()
+tensor<real32> whole_maximum := math.max_all(reduction_gpu).cpu()
+tensor<real32> whole_minimum := math.min_all(reduction_gpu).cpu()
 print.line(whole_maximum.item() == real32(5))
 print.line(whole_minimum.item() == real32(-2))
 
 .tracked_reduction.clear_grad()
 math.max_all(tracked_reduction).backward(&tracked_reduction)
-tensor<real32> whole_gradient = tracked_reduction.grad.cpu()
+tensor<real32> whole_gradient := tracked_reduction.grad.cpu()
 print.line(whole_gradient[0, 0].item() == real32(1))
 print.line(whole_gradient[0, 1].item() == real32(0))
 
-tensor<real32> unary_source = tensor.zeros<real32>([2])
+tensor<real32> unary_source := tensor.zeros<real32>([2])
 unary_source[0] = real32(4)
 unary_source[1] = real32(1)
-tensor<real32> unary_gpu = unary_source.gpu($GPU_INDEX)
-tensor<real32> unary_sqrt = math.sqrt(unary_gpu).cpu()
+tensor<real32> unary_gpu := unary_source.gpu($GPU_INDEX)
+tensor<real32> unary_sqrt := math.sqrt(unary_gpu).cpu()
 print.line(unary_sqrt[0].item() == real32(2) and unary_sqrt[1].item() == real32(1))
-tensor<real32> unary_log = math.log(unary_gpu).cpu()
+tensor<real32> unary_log := math.log(unary_gpu).cpu()
 print.line(unary_log[1].item() == real32(0))
-tensor<real32> unary_exp_input = tensor.zeros<real32>([1], gpu = $GPU_INDEX)
-tensor<real32> unary_exp = math.exp(unary_exp_input).cpu()
+tensor<real32> unary_exp_input := tensor.zeros<real32>([1], gpu = $GPU_INDEX)
+tensor<real32> unary_exp := math.exp(unary_exp_input).cpu()
 print.line(unary_exp[0].item() == real32(1))
 
-tensor<real32> abs_source = tensor.zeros<real32>([2])
+tensor<real32> abs_source := tensor.zeros<real32>([2])
 abs_source[0] = real32(-2)
 abs_source[1] = real32(3)
-tensor<real32> unary_abs = math.abs(abs_source.gpu($GPU_INDEX)).cpu()
+tensor<real32> unary_abs := math.abs(abs_source.gpu($GPU_INDEX)).cpu()
 print.line(unary_abs[0].item() == real32(2) and unary_abs[1].item() == real32(3))
 
-tensor<real32> exp_tracked = tensor.ones<real32>([2], gpu = $GPU_INDEX).track()
-tensor<real32> exp_tracked_output = math.exp(exp_tracked)
+tensor<real32> exp_tracked := tensor.ones<real32>([2], gpu = $GPU_INDEX).track()
+tensor<real32> exp_tracked_output := math.exp(exp_tracked)
 math.mean(exp_tracked_output).backward(&exp_tracked)
-tensor<real32> exp_gradient = exp_tracked.grad.cpu()
+tensor<real32> exp_gradient := exp_tracked.grad.cpu()
 print.line(
     exp_gradient[0].item() > real32(1.359) and
     exp_gradient[0].item() < real32(1.360) and
@@ -179,28 +179,28 @@ print.line(
     exp_gradient[1].item() < real32(1.360)
 )
 
-tensor<real32> abs_tracked = abs_source.gpu($GPU_INDEX).track()
+tensor<real32> abs_tracked := abs_source.gpu($GPU_INDEX).track()
 math.mean(math.abs(abs_tracked)).backward(&abs_tracked)
-tensor<real32> abs_gradient = abs_tracked.grad.cpu()
+tensor<real32> abs_gradient := abs_tracked.grad.cpu()
 print.line(abs_gradient[0].item() == real32(-0.5) and abs_gradient[1].item() == real32(0.5))
 
-tensor<real32> log_tracked = tensor.ones<real32>([2], gpu = $GPU_INDEX).track()
+tensor<real32> log_tracked := tensor.ones<real32>([2], gpu = $GPU_INDEX).track()
 math.mean(math.log(log_tracked)).backward(&log_tracked)
-tensor<real32> log_gradient = log_tracked.grad.cpu()
+tensor<real32> log_gradient := log_tracked.grad.cpu()
 print.line(log_gradient[0].item() == real32(0.5) and log_gradient[1].item() == real32(0.5))
 
-tensor<real32> sqrt_tracked = tensor.ones<real32>([2], gpu = $GPU_INDEX) * real32(4)
+tensor<real32> sqrt_tracked := tensor.ones<real32>([2], gpu = $GPU_INDEX) * real32(4)
 sqrt_tracked = sqrt_tracked.track()
 math.mean(math.sqrt(sqrt_tracked)).backward(&sqrt_tracked)
-tensor<real32> sqrt_gradient = sqrt_tracked.grad.cpu()
+tensor<real32> sqrt_gradient := sqrt_tracked.grad.cpu()
 print.line(sqrt_gradient[0].item() == real32(0.125) and sqrt_gradient[1].item() == real32(0.125))
 
-tensor<real32> noncontiguous = tensor.ones<real32>([2, 2], gpu = $GPU_INDEX).track()
-tensor<real32> transposed = noncontiguous.transpose(0, 1)
-tensor<real32> transposed_exp = math.exp(transposed)
+tensor<real32> noncontiguous := tensor.ones<real32>([2, 2], gpu = $GPU_INDEX).track()
+tensor<real32> transposed := noncontiguous.transpose(0, 1)
+tensor<real32> transposed_exp := math.exp(transposed)
 math.mean(transposed_exp).backward(&noncontiguous)
-tensor<real32> transposed_value = transposed_exp.untrack().cpu()
-tensor<real32> transposed_gradient = noncontiguous.grad.cpu()
+tensor<real32> transposed_value := transposed_exp.untrack().cpu()
+tensor<real32> transposed_gradient := noncontiguous.grad.cpu()
 print.line(transposed_value[1, 1].item() > real32(2.718) and transposed_value[1, 1].item() < real32(2.719))
 print.line(transposed_gradient[0, 0].item() > real32(0.679) and transposed_gradient[0, 0].item() < real32(0.680))
 QUI
@@ -245,11 +245,11 @@ import math
 extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            real32 sample = real32(h)
+            int h := (i * 131 + j * 71 + seed * 17) % 97
+            real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
@@ -263,13 +263,13 @@ bool same32(tensor<real32> left, tensor<real32> right)
 // backend: per-output (small), tiled, split-inner (few outputs, long inner),
 // and a large product (Math's tiled kernel on Metal by default).
 bool product_close(int m, int k, int n, int device)
-    tensor<real32> a = pattern32(m, k, 1)
-    tensor<real32> w = pattern32(n, k, 2)
-    tensor<real32> expected = math.matmul(a, w.transpose(0, 1))
-    tensor<real32> actual = math.matmul(a.gpu(nat(device)), w.gpu(nat(device)).transpose(0, 1))
+    tensor<real32> a := pattern32(m, k, 1)
+    tensor<real32> w := pattern32(n, k, 2)
+    tensor<real32> expected := math.matmul(a, w.transpose(0, 1))
+    tensor<real32> actual := math.matmul(a.gpu(nat(device)), w.gpu(nat(device)).transpose(0, 1))
     if actual.device() == device
-        real64 difference = real64(max_difference(actual.cpu(), expected))
-        real64 inner_real = real64(k)
+        real64 difference := real64(max_difference(actual.cpu(), expected))
+        real64 inner_real := real64(k)
         return difference < real64(0.00001) * inner_real
     return false
 
@@ -279,23 +279,23 @@ print.line(product_close(9, 3000, 4, $GPU_INDEX))
 print.line(product_close(256, 128, 192, $GPU_INDEX))
 
 // Tracked FC-pattern gradients on Metal agree with CPU.
-tensor<real32> a = pattern32(70, 33, 3)
-tensor<real32> w = pattern32(65, 33, 4)
-tensor<real32> g = pattern32(70, 65, 5)
-tensor<real32> ga = a.gpu($GPU_INDEX).track()
-tensor<real32> gw = w.gpu($GPU_INDEX).track()
+tensor<real32> a := pattern32(70, 33, 3)
+tensor<real32> w := pattern32(65, 33, 4)
+tensor<real32> g := pattern32(70, 65, 5)
+tensor<real32> ga := a.gpu($GPU_INDEX).track()
+tensor<real32> gw := w.gpu($GPU_INDEX).track()
 math.sum(math.matmul(ga, gw.transpose(0, 1)) * g.gpu($GPU_INDEX)).backward(&ga, &gw)
-tensor<real32> ca = a.track()
-tensor<real32> cw = w.track()
+tensor<real32> ca := a.track()
+tensor<real32> cw := w.track()
 math.sum(math.matmul(ca, cw.transpose(0, 1)) * g).backward(&ca, &cw)
 print.line(max_difference(ga.grad.cpu(), ca.grad) < real32(0.0001) and max_difference(gw.grad.cpu(), cw.grad) < real32(0.0001))
 
 // Deterministic policy: Math's own fixed-order kernels, bitwise repeatable.
 execution_policy(int32(1))
-tensor<real32> left = pattern32(256, 128, 10).gpu($GPU_INDEX)
-tensor<real32> right = pattern32(128, 192, 11).gpu($GPU_INDEX)
-tensor<real32> first = math.matmul(left, right).cpu()
-tensor<real32> second = math.matmul(left, right).cpu()
+tensor<real32> left := pattern32(256, 128, 10).gpu($GPU_INDEX)
+tensor<real32> right := pattern32(128, 192, 11).gpu($GPU_INDEX)
+tensor<real32> first := math.matmul(left, right).cpu()
+tensor<real32> second := math.matmul(left, right).cpu()
 execution_policy(int32(0))
 print.line(same32(first, second) and real64(max_difference(first, math.matmul(pattern32(256, 128, 10), pattern32(128, 192, 11)))) < real64(0.000001) * real64(128.0))
 QUI
@@ -308,11 +308,11 @@ import math
 extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            real32 sample = real32(h)
+            int h := (i * 131 + j * 71 + seed * 17) % 97
+            real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
@@ -324,14 +324,14 @@ bool same32(tensor<real32> left, tensor<real32> right)
 
 // Whole-tensor sum and mean run the same pairwise tree as the CPU: results are
 // bit-identical, and mean backward equals the CPU exactly.
-tensor<real32> big = pattern32(400, 257, 6)
-tensor<real32> big_gpu = big.gpu($GPU_INDEX)
+tensor<real32> big := pattern32(400, 257, 6)
+tensor<real32> big_gpu := big.gpu($GPU_INDEX)
 print.line(math.sum(big_gpu).cpu().item() == math.sum(big).item())
 print.line(math.mean(big_gpu).cpu().item() == math.mean(big).item())
-tensor<real32> r = pattern32(20, 48, 8)
-tensor<real32> mg = r.gpu($GPU_INDEX).track()
+tensor<real32> r := pattern32(20, 48, 8)
+tensor<real32> mg := r.gpu($GPU_INDEX).track()
 math.mean(mg).backward(&mg)
-tensor<real32> mc = r.track()
+tensor<real32> mc := r.track()
 math.mean(mc).backward(&mc)
 print.line(same32(mg.grad.cpu(), mc.grad))
 QUI
@@ -345,11 +345,11 @@ import math
 extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            real32 sample = real32(h)
+            int h := (i * 131 + j * 71 + seed * 17) % 97
+            real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
@@ -361,23 +361,23 @@ bool same32(tensor<real32> left, tensor<real32> right)
 
 // Last-axis sums add each row left to right and extrema are first-occurrence
 // with strict comparison on both backends: results and gradients are exact.
-tensor<real32> big = pattern32(400, 257, 6)
-tensor<real32> big_gpu = big.gpu($GPU_INDEX)
+tensor<real32> big := pattern32(400, 257, 6)
+tensor<real32> big_gpu := big.gpu($GPU_INDEX)
 print.line(same32(math.sum_last(big_gpu).cpu(), math.sum_last(big)))
 print.line(same32(math.max_last(big_gpu).cpu(), math.max_last(big)) and same32(math.min_last(big_gpu).cpu(), math.min_last(big)))
 print.line(math.max_all(big_gpu).cpu().item() == math.max_all(big).item() and math.min_all(big_gpu).cpu().item() == math.min_all(big).item())
 
 // Reduction gradients on Metal equal CPU exactly.
-tensor<real32> r = pattern32(20, 48, 8)
-tensor<real32> up = pattern32(20, 48, 9)
-tensor<real32> rg = r.gpu($GPU_INDEX).track()
+tensor<real32> r := pattern32(20, 48, 8)
+tensor<real32> up := pattern32(20, 48, 9)
+tensor<real32> rg := r.gpu($GPU_INDEX).track()
 math.sum(math.sum_last(rg) * up.gpu($GPU_INDEX)).backward(&rg)
-tensor<real32> rc = r.track()
+tensor<real32> rc := r.track()
 math.sum(math.sum_last(rc) * up).backward(&rc)
 print.line(same32(rg.grad.cpu(), rc.grad))
-tensor<real32> xg = r.gpu($GPU_INDEX).track()
+tensor<real32> xg := r.gpu($GPU_INDEX).track()
 math.sum(math.max_last(xg) * up.gpu($GPU_INDEX)).backward(&xg)
-tensor<real32> xc = r.track()
+tensor<real32> xc := r.track()
 math.sum(math.max_last(xc) * up).backward(&xc)
 print.line(same32(xg.grad.cpu(), xc.grad))
 QUI
@@ -409,11 +409,11 @@ import math
 extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            real32 sample = real32(h)
+            int h := (i * 131 + j * 71 + seed * 17) % 97
+            real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
@@ -424,20 +424,20 @@ bool same32(tensor<real32> left, tensor<real32> right)
     return max_difference(left, right) == real32(0)
 
 // Finite wide rows with ties match the sequential scan and winner gradients.
-tensor<real32> wide = pattern32(3, 600, 7)
-real32 zero = real32(0)
+tensor<real32> wide := pattern32(3, 600, 7)
+real32 zero := real32(0)
 wide[0, 0] = real32(5)
 wide[1, 300] = real32(5)
 wide[1, 450] = real32(5)
 wide[2, 599] = real32(-7)
 wide[2, 20] = real32(-7)
-tensor<real32> wide_gpu = wide.gpu($GPU_INDEX)
-tensor<real32> wide_max = math.max_last(wide_gpu).cpu()
-tensor<real32> wide_min = math.min_last(wide_gpu).cpu()
+tensor<real32> wide_gpu := wide.gpu($GPU_INDEX)
+tensor<real32> wide_max := math.max_last(wide_gpu).cpu()
+tensor<real32> wide_min := math.min_last(wide_gpu).cpu()
 print.line(wide_max[0, 5].item() == real32(5) and wide_max[1, 0].item() == real32(5) and wide_min[2, 3].item() == real32(-7))
-tensor<real32> wide_tracked = wide_gpu.track()
+tensor<real32> wide_tracked := wide_gpu.track()
 math.sum(math.max_last(wide_tracked)).backward(&wide_tracked)
-tensor<real32> wide_grad = wide_tracked.grad.cpu()
+tensor<real32> wide_grad := wide_tracked.grad.cpu()
 print.line(wide_grad[1, 300].item() == real32(600) and wide_grad[1, 450].item() == real32(0) and wide_grad[0, 0].item() == real32(600))
 QUI
 expect_true_lines "Math native real-GPU wide extrema" "$TMP/native-wide-extrema-real-gpu.qui" 2
@@ -448,11 +448,11 @@ import math
 extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            real32 sample = real32(h)
+            int h := (i * 131 + j * 71 + seed * 17) % 97
+            real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
@@ -463,21 +463,21 @@ bool same32(tensor<real32> left, tensor<real32> right)
     return max_difference(left, right) == real32(0)
 
 // Wide rows with ties and NaNs (group extrema kernel) match the sequential scan.
-tensor<real32> wide = pattern32(3, 600, 7)
-real32 zero = real32(0)
+tensor<real32> wide := pattern32(3, 600, 7)
+real32 zero := real32(0)
 wide[0, 0] = zero / zero
 wide[1, 10] = zero / zero
 wide[1, 300] = real32(5)
 wide[1, 450] = real32(5)
 wide[2, 599] = real32(-7)
 wide[2, 20] = real32(-7)
-tensor<real32> wide_gpu = wide.gpu($GPU_INDEX)
-tensor<real32> wide_max = math.max_last(wide_gpu).cpu()
-tensor<real32> wide_min = math.min_last(wide_gpu).cpu()
+tensor<real32> wide_gpu := wide.gpu($GPU_INDEX)
+tensor<real32> wide_max := math.max_last(wide_gpu).cpu()
+tensor<real32> wide_min := math.min_last(wide_gpu).cpu()
 print.line(not math.is_finite(wide_max[0, 5].item()) and wide_max[1, 0].item() == real32(5) and wide_min[2, 3].item() == real32(-7))
-tensor<real32> wide_tracked = wide_gpu.track()
+tensor<real32> wide_tracked := wide_gpu.track()
 math.sum(math.max_last(wide_tracked)).backward(&wide_tracked)
-tensor<real32> wide_grad = wide_tracked.grad.cpu()
+tensor<real32> wide_grad := wide_tracked.grad.cpu()
 print.line(wide_grad[1, 300].item() == real32(600) and wide_grad[1, 450].item() == real32(0) and wide_grad[0, 0].item() == real32(600))
 QUI
 expect_real_division_failure "Math first invalid wide-row NaN construction" "$TMP/native-wide-extrema-invalid-first.qui"
@@ -488,11 +488,11 @@ import math
 extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            real32 sample = real32(h)
+            int h := (i * 131 + j * 71 + seed * 17) % 97
+            real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
@@ -503,21 +503,21 @@ bool same32(tensor<real32> left, tensor<real32> right)
     return max_difference(left, right) == real32(0)
 
 // Wide rows with ties and NaNs (group extrema kernel) match the sequential scan.
-tensor<real32> wide = pattern32(3, 600, 7)
-real32 zero = real32(0)
+tensor<real32> wide := pattern32(3, 600, 7)
+real32 zero := real32(0)
 wide[0, 0] = real32(5)
 wide[1, 10] = zero / zero
 wide[1, 300] = real32(5)
 wide[1, 450] = real32(5)
 wide[2, 599] = real32(-7)
 wide[2, 20] = real32(-7)
-tensor<real32> wide_gpu = wide.gpu($GPU_INDEX)
-tensor<real32> wide_max = math.max_last(wide_gpu).cpu()
-tensor<real32> wide_min = math.min_last(wide_gpu).cpu()
+tensor<real32> wide_gpu := wide.gpu($GPU_INDEX)
+tensor<real32> wide_max := math.max_last(wide_gpu).cpu()
+tensor<real32> wide_min := math.min_last(wide_gpu).cpu()
 print.line(not math.is_finite(wide_max[0, 5].item()) and wide_max[1, 0].item() == real32(5) and wide_min[2, 3].item() == real32(-7))
-tensor<real32> wide_tracked = wide_gpu.track()
+tensor<real32> wide_tracked := wide_gpu.track()
 math.sum(math.max_last(wide_tracked)).backward(&wide_tracked)
-tensor<real32> wide_grad = wide_tracked.grad.cpu()
+tensor<real32> wide_grad := wide_tracked.grad.cpu()
 print.line(wide_grad[1, 300].item() == real32(600) and wide_grad[1, 450].item() == real32(0) and wide_grad[0, 0].item() == real32(600))
 QUI
 expect_real_division_failure "Math later invalid wide-row NaN construction" "$TMP/native-wide-extrema-invalid-later.qui"
@@ -530,11 +530,11 @@ cat > "$TMP/native-views-real-gpu.qui" <<QUI
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            real32 sample = real32(h)
+            int h := (i * 131 + j * 71 + seed * 17) % 97
+            real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
@@ -548,48 +548,48 @@ bool close32(tensor<real32> left, tensor<real32> right)
     return max_difference(left, right) < real32(0.00001)
 
 // 1: one side tracked: only that side receives a gradient, equal to the CPU.
-tensor<real32> a_data = pattern32(40, 24, 1)
-tensor<real32> w_data = pattern32(36, 24, 2)
-tensor<real32> up = pattern32(40, 36, 3)
-tensor<real32> left_only = a_data.gpu($GPU_INDEX).track()
+tensor<real32> a_data := pattern32(40, 24, 1)
+tensor<real32> w_data := pattern32(36, 24, 2)
+tensor<real32> up := pattern32(40, 36, 3)
+tensor<real32> left_only := a_data.gpu($GPU_INDEX).track()
 math.sum(math.matmul(left_only, w_data.gpu($GPU_INDEX).transpose(0, 1)) * up.gpu($GPU_INDEX)).backward(&left_only)
-tensor<real32> right_only = w_data.gpu($GPU_INDEX).track()
+tensor<real32> right_only := w_data.gpu($GPU_INDEX).track()
 math.sum(math.matmul(a_data.gpu($GPU_INDEX), right_only.transpose(0, 1)) * up.gpu($GPU_INDEX)).backward(&right_only)
-tensor<real32> host_left = a_data.track()
-tensor<real32> host_right = w_data.track()
+tensor<real32> host_left := a_data.track()
+tensor<real32> host_right := w_data.track()
 math.sum(math.matmul(host_left, host_right.transpose(0, 1)) * up).backward(&host_left, &host_right)
 print.line(close32(left_only.grad.cpu(), host_left.grad) and close32(right_only.grad.cpu(), host_right.grad))
 
 // 2-3: transposed matmul / sum_last / max_last / min_last results feed the
 // loss on the device.
-tensor<real32> p_data = pattern32(5, 6, 4)
-tensor<real32> q_data = pattern32(6, 7, 5)
-tensor<real32> across = pattern32(7, 5, 6)
-tensor<real32> gp = p_data.gpu($GPU_INDEX).track()
-tensor<real32> gq = q_data.gpu($GPU_INDEX).track()
+tensor<real32> p_data := pattern32(5, 6, 4)
+tensor<real32> q_data := pattern32(6, 7, 5)
+tensor<real32> across := pattern32(7, 5, 6)
+tensor<real32> gp := p_data.gpu($GPU_INDEX).track()
+tensor<real32> gq := q_data.gpu($GPU_INDEX).track()
 math.sum(math.matmul(gp, gq).transpose(0, 1) * across.gpu($GPU_INDEX)).backward(&gp, &gq)
-tensor<real32> cp = p_data.track()
-tensor<real32> cq = q_data.track()
+tensor<real32> cp := p_data.track()
+tensor<real32> cq := q_data.track()
 math.sum(math.matmul(cp, cq).transpose(0, 1) * across).backward(&cp, &cq)
 print.line(close32(gp.grad.cpu(), cp.grad) and close32(gq.grad.cpu(), cq.grad))
-tensor<real32> x_data = pattern32(5, 6, 7)
-tensor<real32> weights = pattern32(6, 5, 8)
-tensor<real32> gx = x_data.gpu($GPU_INDEX).track()
+tensor<real32> x_data := pattern32(5, 6, 7)
+tensor<real32> weights := pattern32(6, 5, 8)
+tensor<real32> gx := x_data.gpu($GPU_INDEX).track()
 math.sum((math.sum_last(gx) + math.max_last(gx) - math.min_last(gx)).transpose(0, 1) * weights.gpu($GPU_INDEX)).backward(&gx)
-tensor<real32> cx = x_data.track()
+tensor<real32> cx := x_data.track()
 math.sum((math.sum_last(cx) + math.max_last(cx) - math.min_last(cx)).transpose(0, 1) * weights).backward(&cx)
 print.line(same32(gx.grad.cpu(), cx.grad))
 
 // 4: tracked transposed inputs to every reduction: exact values and
 // gradients, computed on the device.
-tensor<real32> r_data = pattern32(48, 200, 9)
-tensor<real32> gr = r_data.gpu($GPU_INDEX).track()
-tensor<real32> gv = gr.transpose(0, 1)
-tensor<real32> device_loss = math.sum(math.max_last(gv)) - math.sum(math.min_last(gv)) + math.sum(math.sum_last(gv)) + math.mean(gv) + math.max_all(gv) + math.min_all(gv)
+tensor<real32> r_data := pattern32(48, 200, 9)
+tensor<real32> gr := r_data.gpu($GPU_INDEX).track()
+tensor<real32> gv := gr.transpose(0, 1)
+tensor<real32> device_loss := math.sum(math.max_last(gv)) - math.sum(math.min_last(gv)) + math.sum(math.sum_last(gv)) + math.mean(gv) + math.max_all(gv) + math.min_all(gv)
 device_loss.backward(&gr)
-tensor<real32> cr = r_data.track()
-tensor<real32> cv = cr.transpose(0, 1)
-tensor<real32> host_loss = math.sum(math.max_last(cv)) - math.sum(math.min_last(cv)) + math.sum(math.sum_last(cv)) + math.mean(cv) + math.max_all(cv) + math.min_all(cv)
+tensor<real32> cr := r_data.track()
+tensor<real32> cv := cr.transpose(0, 1)
+tensor<real32> host_loss := math.sum(math.max_last(cv)) - math.sum(math.min_last(cv)) + math.sum(math.sum_last(cv)) + math.mean(cv) + math.max_all(cv) + math.min_all(cv)
 host_loss.backward(&cr)
 print.line(gr.grad.device() == $GPU_INDEX and same32(gr.grad.cpu(), cr.grad))
 QUI
@@ -602,18 +602,18 @@ import math
 
 // 1: very wide whole-tensor extrema (span winners, then a merge) with ties,
 // signed zeros match the sequential scan, gradients included.
-tensor<real32> wide = tensor.zeros<real32>([1, 70001])
+tensor<real32> wide := tensor.zeros<real32>([1, 70001])
 for 0 <= nat i < 70001
-    real32 sample = real32((i * 131) % 9973)
+    real32 sample := real32((i * 131) % 9973)
     wide[0, i] = sample / real32(4096) - real32(1)
-real32 zero = real32(0)
+real32 zero := real32(0)
 wide[0, 5000] = real32(9)
 wide[0, 60000] = real32(9)
 wide[0, 30000] = real32(-9)
 wide[0, 40000] = real32(-9)
-tensor<real32> wide_gpu = wide.gpu($GPU_INDEX).track()
+tensor<real32> wide_gpu := wide.gpu($GPU_INDEX).track()
 (math.max_all(wide_gpu) - math.min_all(wide_gpu)).backward(&wide_gpu)
-tensor<real32> wide_grad = wide_gpu.grad.cpu()
+tensor<real32> wide_grad := wide_gpu.grad.cpu()
 print.line(math.max_all(wide.gpu($GPU_INDEX)).cpu().item() == real32(9) and wide_grad[0, 5000].item() == real32(1) and wide_grad[0, 60000].item() == real32(0) and wide_grad[0, 30000].item() == real32(-1) and wide_grad[0, 40000].item() == real32(0))
 QUI
 expect_true_lines "Math native real-GPU wide whole-tensor extrema" "$TMP/native-wide-all-real-gpu.qui" 1
@@ -623,19 +623,19 @@ import math
 
 // 1: very wide whole-tensor extrema (span winners, then a merge) with ties,
 // NaNs and signed zeros match the sequential scan, gradients included.
-tensor<real32> wide = tensor.zeros<real32>([1, 70001])
+tensor<real32> wide := tensor.zeros<real32>([1, 70001])
 for 0 <= nat i < 70001
-    real32 sample = real32((i * 131) % 9973)
+    real32 sample := real32((i * 131) % 9973)
     wide[0, i] = sample / real32(4096) - real32(1)
-real32 zero = real32(0)
+real32 zero := real32(0)
 wide[0, 17] = zero / zero
 wide[0, 5000] = real32(9)
 wide[0, 60000] = real32(9)
 wide[0, 30000] = real32(-9)
 wide[0, 40000] = real32(-9)
-tensor<real32> wide_gpu = wide.gpu($GPU_INDEX).track()
+tensor<real32> wide_gpu := wide.gpu($GPU_INDEX).track()
 (math.max_all(wide_gpu) - math.min_all(wide_gpu)).backward(&wide_gpu)
-tensor<real32> wide_grad = wide_gpu.grad.cpu()
+tensor<real32> wide_grad := wide_gpu.grad.cpu()
 print.line(math.max_all(wide.gpu($GPU_INDEX)).cpu().item() == real32(9) and wide_grad[0, 5000].item() == real32(1) and wide_grad[0, 60000].item() == real32(0) and wide_grad[0, 30000].item() == real32(-1) and wide_grad[0, 40000].item() == real32(0))
 QUI
 expect_real_division_failure "Math invalid wide whole-tensor NaN construction" "$TMP/native-wide-all-invalid.qui"
@@ -644,12 +644,12 @@ expect_real_division_failure "Math invalid wide whole-tensor NaN construction" "
 cat > "$TMP/native-sum-carry-real-gpu.qui" <<QUI
 import math
 
-real32 infinity = real32(1) / real32(0)
-tensor<real32> carried = tensor.ones<real32>([1, 3])
+real32 infinity := real32(1) / real32(0)
+tensor<real32> carried := tensor.ones<real32>([1, 3])
 carried[0, 2] = infinity
-tensor<real32> long_carried = tensor.ones<real32>([1, 4097])
+tensor<real32> long_carried := tensor.ones<real32>([1, 4097])
 long_carried[0, 4096] = infinity
-tensor<real32> paired = tensor.ones<real32>([1, 4096])
+tensor<real32> paired := tensor.ones<real32>([1, 4096])
 paired[0, 4095] = infinity
 print.line(math.sum(carried.gpu($GPU_INDEX)).cpu().item() == infinity and math.mean(long_carried.gpu($GPU_INDEX)).cpu().item() == infinity and math.sum(long_carried).item() == infinity and math.sum(paired.gpu($GPU_INDEX)).cpu().item() == infinity)
 QUI
@@ -713,18 +713,18 @@ bool same_bits32(real32 x, real32 y)
     return x == y
 
 tensor<real32> signed_left32(int rows, int inner)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(inner)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(inner)])
     for 0 <= int i < rows
         for 0 <= int k < inner
-            real32 magnitude = real32(1 + (i + k) % 5)
+            real32 magnitude := real32(1 + (i + k) % 5)
             if i % 3 == 0 or (i % 3 == 2 and k % 2 == 0)
                 magnitude = -magnitude
             value[i, k] = magnitude
     return value
 
 tensor<real32> signed_right32(int inner, int columns)
-    tensor<real32> value = tensor.zeros<real32>([nat(inner), nat(columns)])
-    real32 negative_zero = real32(0) * real32(-1)
+    tensor<real32> value := tensor.zeros<real32>([nat(inner), nat(columns)])
+    real32 negative_zero := real32(0) * real32(-1)
     for 0 <= int k < inner
         for 0 <= int j < columns
             if j % 4 == 1 or (j % 4 == 2 and k % 3 == 0)
@@ -734,24 +734,24 @@ tensor<real32> signed_right32(int inner, int columns)
     return value
 
 bool fold_matches32(int rows, int inner, int columns, bool tracked)
-    tensor<real32> left = signed_left32(rows, inner)
-    tensor<real32> right = signed_right32(inner, columns)
-    tensor<real32> device_left = left.gpu($GPU_INDEX)
+    tensor<real32> left := signed_left32(rows, inner)
+    tensor<real32> right := signed_right32(inner, columns)
+    tensor<real32> device_left := left.gpu($GPU_INDEX)
     if tracked
         device_left = device_left.track()
-    tensor<real32> device_product = math.matmul(device_left, right.gpu($GPU_INDEX))
+    tensor<real32> device_product := math.matmul(device_left, right.gpu($GPU_INDEX))
     if tracked
         device_product = device_product.untrack()
-    tensor<real32> product = device_product.cpu()
+    tensor<real32> product := device_product.cpu()
     for 0 <= int i < rows
         for 0 <= int j < columns
-            real32 total = left[i, 0].item() * right[0, j].item()
+            real32 total := left[i, 0].item() * right[0, j].item()
             for 1 <= int k < inner
-                real32 term = left[i, k].item() * right[k, j].item()
+                real32 term := left[i, k].item() * right[k, j].item()
                 total = total + term
             if not same_bits32(product[i, j].item(), total)
                 return false
-    real32 first_value = product[0, 0].item()
+    real32 first_value := product[0, 0].item()
     return first_value == real32(0) and first_value.string() == "-0.0"
 
 execution_policy(int32(1))
@@ -800,11 +800,11 @@ cat > "$TMP/native-gemm-numerics-real-gpu.qui" <<QUI
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            real32 sample = real32(h)
+            int h := (i * 131 + j * 71 + seed * 17) % 97
+            real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
@@ -819,8 +819,8 @@ bool within_scaled(tensor<real32> actual, tensor<real32> expected, tensor<real32
 
 // gamma(n) = n u / (1 - n u), u = 2^-24: n roundings in a row.
 real32 gamma(int n)
-    real32 count_real = real32(n)
-    real32 nu = count_real / real32(16777216)
+    real32 count_real := real32(n)
+    real32 nu := count_real / real32(16777216)
     return nu / (real32(1) - nu)
 
 // A-priori bound of the CPU's ascending fold (h = k) against the split-inner
@@ -830,10 +830,10 @@ real32 split_rtol(int k)
 
 // a[m, k] @ w[n, k]^T on the device equals the CPU bit for bit.
 bool product_same(int m, int k, int n)
-    tensor<real32> a = pattern32(m, k, 1)
-    tensor<real32> w = pattern32(n, k, 2)
-    tensor<real32> expected = math.matmul(a, w.transpose(0, 1))
-    tensor<real32> actual = math.matmul(a.gpu($GPU_INDEX), w.gpu($GPU_INDEX).transpose(0, 1))
+    tensor<real32> a := pattern32(m, k, 1)
+    tensor<real32> w := pattern32(n, k, 2)
+    tensor<real32> expected := math.matmul(a, w.transpose(0, 1))
+    tensor<real32> actual := math.matmul(a.gpu($GPU_INDEX), w.gpu($GPU_INDEX).transpose(0, 1))
     return actual.device() == $GPU_INDEX and same32(actual.cpu(), expected)
 
 // 1: per-output kernel, 2: tiled kernel, 3: large product (MPS-sized: rows and
@@ -844,57 +844,57 @@ print.line(product_same(256, 128, 192))
 
 // 4: tracked FC 128x128 -> 128 (every product MPS-sized): forward, dA = G W
 // and dW = G^T A on the tiled kernel equal the CPU bit for bit.
-tensor<real32> fa = pattern32(128, 128, 6)
-tensor<real32> fw = pattern32(128, 128, 7)
-tensor<real32> fg = pattern32(128, 128, 8)
-tensor<real32> ga = fa.gpu($GPU_INDEX).track()
-tensor<real32> gw = fw.gpu($GPU_INDEX).track()
-tensor<real32> gy = math.matmul(ga, gw.transpose(0, 1))
+tensor<real32> fa := pattern32(128, 128, 6)
+tensor<real32> fw := pattern32(128, 128, 7)
+tensor<real32> fg := pattern32(128, 128, 8)
+tensor<real32> ga := fa.gpu($GPU_INDEX).track()
+tensor<real32> gw := fw.gpu($GPU_INDEX).track()
+tensor<real32> gy := math.matmul(ga, gw.transpose(0, 1))
 math.sum(gy * fg.gpu($GPU_INDEX)).backward(&ga, &gw)
-tensor<real32> ca = fa.track()
-tensor<real32> cw = fw.track()
-tensor<real32> cy = math.matmul(ca, cw.transpose(0, 1))
+tensor<real32> ca := fa.track()
+tensor<real32> cw := fw.track()
+tensor<real32> cy := math.matmul(ca, cw.transpose(0, 1))
 math.sum(cy * fg).backward(&ca, &cw)
 print.line(same32(gy.untrack().cpu(), cy.untrack()) and same32(ga.grad.cpu(), ca.grad) and same32(gw.grad.cpu(), cw.grad))
 
 // 5: split-inner forward within split_rtol(3000), and bitwise repeatable.
-tensor<real32> sa = pattern32(9, 3000, 1)
-tensor<real32> sw = pattern32(4, 3000, 2)
-tensor<real32> split_cpu = math.matmul(sa, sw.transpose(0, 1))
-tensor<real32> split_scale = math.matmul(math.abs(sa), math.abs(sw).transpose(0, 1))
-tensor<real32> split_first = math.matmul(sa.gpu($GPU_INDEX), sw.gpu($GPU_INDEX).transpose(0, 1)).cpu()
-tensor<real32> split_second = math.matmul(sa.gpu($GPU_INDEX), sw.gpu($GPU_INDEX).transpose(0, 1)).cpu()
+tensor<real32> sa := pattern32(9, 3000, 1)
+tensor<real32> sw := pattern32(4, 3000, 2)
+tensor<real32> split_cpu := math.matmul(sa, sw.transpose(0, 1))
+tensor<real32> split_scale := math.matmul(math.abs(sa), math.abs(sw).transpose(0, 1))
+tensor<real32> split_first := math.matmul(sa.gpu($GPU_INDEX), sw.gpu($GPU_INDEX).transpose(0, 1)).cpu()
+tensor<real32> split_second := math.matmul(sa.gpu($GPU_INDEX), sw.gpu($GPU_INDEX).transpose(0, 1)).cpu()
 print.line(within_scaled(split_first, split_cpu, split_scale, split_rtol(3000)) and same32(split_first, split_second))
 
 // 6: split-inner FC weight gradient dW = G^T A over a batch of 1024 rows.
-tensor<real32> ba = pattern32(1024, 16, 3)
-tensor<real32> bw = pattern32(2, 16, 4)
-tensor<real32> bg = pattern32(1024, 2, 5)
-tensor<real32> device_weight = bw.gpu($GPU_INDEX).track()
+tensor<real32> ba := pattern32(1024, 16, 3)
+tensor<real32> bw := pattern32(2, 16, 4)
+tensor<real32> bg := pattern32(1024, 2, 5)
+tensor<real32> device_weight := bw.gpu($GPU_INDEX).track()
 math.sum(math.matmul(ba.gpu($GPU_INDEX), device_weight.transpose(0, 1)) * bg.gpu($GPU_INDEX)).backward(&device_weight)
-tensor<real32> host_weight = bw.track()
+tensor<real32> host_weight := bw.track()
 math.sum(math.matmul(ba, host_weight.transpose(0, 1)) * bg).backward(&host_weight)
-tensor<real32> weight_scale = math.matmul(math.abs(bg).transpose(0, 1), math.abs(ba))
+tensor<real32> weight_scale := math.matmul(math.abs(bg).transpose(0, 1), math.abs(ba))
 print.line(within_scaled(device_weight.grad.cpu(), host_weight.grad, weight_scale, split_rtol(1024)))
 
 // Same-sign inputs, where the CPU's ascending fold drifts furthest from the
 // split-inner order (a roughly fixed share of split_rtol(k) at every k).
 // 7: constant forward 9x3000 @ 3000x4 (a = 0.1, w = 1).
-tensor<real32> ka = tensor.ones<real32>([9, 3000]) * real32(0.1)
-tensor<real32> kw = tensor.ones<real32>([4, 3000])
-tensor<real32> constant_cpu = math.matmul(ka, kw.transpose(0, 1))
-tensor<real32> constant_metal = math.matmul(ka.gpu($GPU_INDEX), kw.gpu($GPU_INDEX).transpose(0, 1)).cpu()
+tensor<real32> ka := tensor.ones<real32>([9, 3000]) * real32(0.1)
+tensor<real32> kw := tensor.ones<real32>([4, 3000])
+tensor<real32> constant_cpu := math.matmul(ka, kw.transpose(0, 1))
+tensor<real32> constant_metal := math.matmul(ka.gpu($GPU_INDEX), kw.gpu($GPU_INDEX).transpose(0, 1)).cpu()
 print.line(within_scaled(constant_metal, constant_cpu, math.matmul(math.abs(ka), math.abs(kw).transpose(0, 1)), split_rtol(3000)))
 
 // 8: FC weight gradient of a mean loss over a batch of 4096 rows
 // (A = 0.1, G = 1 / 8192).
-tensor<real32> ma = tensor.ones<real32>([4096, 16]) * real32(0.1)
-tensor<real32> mw = tensor.ones<real32>([2, 16])
-tensor<real32> mean_device = mw.gpu($GPU_INDEX).track()
+tensor<real32> ma := tensor.ones<real32>([4096, 16]) * real32(0.1)
+tensor<real32> mw := tensor.ones<real32>([2, 16])
+tensor<real32> mean_device := mw.gpu($GPU_INDEX).track()
 math.mean(math.matmul(ma.gpu($GPU_INDEX), mean_device.transpose(0, 1))).backward(&mean_device)
-tensor<real32> mean_host = mw.track()
+tensor<real32> mean_host := mw.track()
 math.mean(math.matmul(ma, mean_host.transpose(0, 1))).backward(&mean_host)
-tensor<real32> mean_g = tensor.ones<real32>([4096, 2]) * (real32(1) / real32(8192))
+tensor<real32> mean_g := tensor.ones<real32>([4096, 2]) * (real32(1) / real32(8192))
 print.line(within_scaled(mean_device.grad.cpu(), mean_host.grad, math.matmul(math.abs(mean_g).transpose(0, 1), math.abs(ma)), split_rtol(4096)))
 QUI
 expect_native_events "Math native real-GPU GEMM numerics" "$TMP/native-gemm-numerics-real-gpu.qui" 8 \
@@ -917,11 +917,11 @@ import math
 extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            int h = (i * 131 + j * 71 + seed * 17) % 97
-            real32 sample = real32(h)
+            int h := (i * 131 + j * 71 + seed * 17) % 97
+            real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
@@ -936,57 +936,57 @@ bool within_scaled(tensor<real32> actual, tensor<real32> expected, tensor<real32
 
 // gamma(n) = n u / (1 - n u), u = 2^-24: n roundings in a row.
 real32 gamma(int n)
-    real32 count_real = real32(n)
-    real32 nu = count_real / real32(16777216)
+    real32 count_real := real32(n)
+    real32 nu := count_real / real32(16777216)
     return nu / (real32(1) - nu)
 
 // A-priori bound of the CPU's ascending fold against any order of k terms.
 real32 mps_rtol(int k)
     return real32(2) * gamma(k)
 
-tensor<real32> a = pattern32(256, 128, 1)
-tensor<real32> w = pattern32(192, 128, 2)
-tensor<real32> expected = math.matmul(a, w.transpose(0, 1))
-tensor<real32> scale = math.matmul(math.abs(a), math.abs(w).transpose(0, 1))
+tensor<real32> a := pattern32(256, 128, 1)
+tensor<real32> w := pattern32(192, 128, 2)
+tensor<real32> expected := math.matmul(a, w.transpose(0, 1))
+tensor<real32> scale := math.matmul(math.abs(a), math.abs(w).transpose(0, 1))
 
 // 1: fast policy, large product: MPS, within mps_rtol(128).
 print.line(within_scaled(math.matmul(a.gpu($GPU_INDEX), w.gpu($GPU_INDEX).transpose(0, 1)).cpu(), expected, scale, mps_rtol(128)))
 
 // 2: tracked FC 128x128 -> 128: forward, dA and dW through MPS, within
 // mps_rtol(128) (every product has an inner length of 128).
-tensor<real32> fa = pattern32(128, 128, 6)
-tensor<real32> fw = pattern32(128, 128, 7)
-tensor<real32> fg = pattern32(128, 128, 8)
-tensor<real32> ga = fa.gpu($GPU_INDEX).track()
-tensor<real32> gw = fw.gpu($GPU_INDEX).track()
-tensor<real32> gy = math.matmul(ga, gw.transpose(0, 1))
+tensor<real32> fa := pattern32(128, 128, 6)
+tensor<real32> fw := pattern32(128, 128, 7)
+tensor<real32> fg := pattern32(128, 128, 8)
+tensor<real32> ga := fa.gpu($GPU_INDEX).track()
+tensor<real32> gw := fw.gpu($GPU_INDEX).track()
+tensor<real32> gy := math.matmul(ga, gw.transpose(0, 1))
 math.sum(gy * fg.gpu($GPU_INDEX)).backward(&ga, &gw)
-tensor<real32> ca = fa.track()
-tensor<real32> cw = fw.track()
-tensor<real32> cy = math.matmul(ca, cw.transpose(0, 1))
+tensor<real32> ca := fa.track()
+tensor<real32> cw := fw.track()
+tensor<real32> cy := math.matmul(ca, cw.transpose(0, 1))
 math.sum(cy * fg).backward(&ca, &cw)
-bool forward_ok = within_scaled(gy.untrack().cpu(), cy.untrack(), math.matmul(math.abs(fa), math.abs(fw).transpose(0, 1)), mps_rtol(128))
-bool left_ok = within_scaled(ga.grad.cpu(), ca.grad, math.matmul(math.abs(fg), math.abs(fw)), mps_rtol(128))
-bool right_ok = within_scaled(gw.grad.cpu(), cw.grad, math.matmul(math.abs(fg).transpose(0, 1), math.abs(fa)), mps_rtol(128))
+bool forward_ok := within_scaled(gy.untrack().cpu(), cy.untrack(), math.matmul(math.abs(fa), math.abs(fw).transpose(0, 1)), mps_rtol(128))
+bool left_ok := within_scaled(ga.grad.cpu(), ca.grad, math.matmul(math.abs(fg), math.abs(fw)), mps_rtol(128))
+bool right_ok := within_scaled(gw.grad.cpu(), cw.grad, math.matmul(math.abs(fg).transpose(0, 1), math.abs(fa)), mps_rtol(128))
 print.line(forward_ok and left_ok and right_ok)
 
 // 3: near-constant same-sign product with a long inner axis, within
 // mps_rtol(8192).
-tensor<real32> na = pattern32(64, 8192, 1) * real32(0.001) + real32(0.1)
-tensor<real32> nw = pattern32(64, 8192, 2) * real32(0.001) + real32(1)
-tensor<real32> near_cpu = math.matmul(na, nw.transpose(0, 1))
-tensor<real32> near_mps = math.matmul(na.gpu($GPU_INDEX), nw.gpu($GPU_INDEX).transpose(0, 1)).cpu()
+tensor<real32> na := pattern32(64, 8192, 1) * real32(0.001) + real32(0.1)
+tensor<real32> nw := pattern32(64, 8192, 2) * real32(0.001) + real32(1)
+tensor<real32> near_cpu := math.matmul(na, nw.transpose(0, 1))
+tensor<real32> near_mps := math.matmul(na.gpu($GPU_INDEX), nw.gpu($GPU_INDEX).transpose(0, 1)).cpu()
 print.line(within_scaled(near_mps, near_cpu, math.matmul(math.abs(na), math.abs(nw).transpose(0, 1)), mps_rtol(8192)))
 
 // 4: small products stay on Math's kernels even when opted in: bitwise CPU.
-tensor<real32> sa = pattern32(45, 16, 3)
-tensor<real32> sw = pattern32(2, 16, 4)
+tensor<real32> sa := pattern32(45, 16, 3)
+tensor<real32> sw := pattern32(2, 16, 4)
 print.line(same32(math.matmul(sa.gpu($GPU_INDEX), sw.gpu($GPU_INDEX).transpose(0, 1)).cpu(), math.matmul(sa, sw.transpose(0, 1))))
 
 // 5: the deterministic policy never uses MPS, opted in or not: the large
 // product runs on the tiled kernel and equals the CPU bit for bit.
 execution_policy(int32(1))
-tensor<real32> deterministic = math.matmul(a.gpu($GPU_INDEX), w.gpu($GPU_INDEX).transpose(0, 1)).cpu()
+tensor<real32> deterministic := math.matmul(a.gpu($GPU_INDEX), w.gpu($GPU_INDEX).transpose(0, 1)).cpu()
 execution_policy(int32(0))
 print.line(same32(deterministic, expected))
 QUI
@@ -1003,24 +1003,24 @@ cat > "$TMP/native-dispatch-real-gpu.qui" <<QUI
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            real32 sample = real32((i * 131 + j * 71 + seed * 17) % 97)
+            real32 sample := real32((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
 // 1: every native forward and backward on the device.
-tensor<real32> x = pattern32(6, 5, 1).gpu($GPU_INDEX).track()
-tensor<real32> w = pattern32(4, 5, 2).gpu($GPU_INDEX).track()
-tensor<real32> y = math.matmul(x, w.transpose(0, 1))
+tensor<real32> x := pattern32(6, 5, 1).gpu($GPU_INDEX).track()
+tensor<real32> w := pattern32(4, 5, 2).gpu($GPU_INDEX).track()
+tensor<real32> y := math.matmul(x, w.transpose(0, 1))
 (math.sum(math.max_last(y)) + math.sum(math.min_last(y)) + math.max_all(y) - math.min_all(y) + math.mean(math.sum_last(y))).backward(&x, &w)
 print.line(x.grad.device() == $GPU_INDEX and w.grad.device() == $GPU_INDEX)
 
 // 2: a large product in the default (fast) policy stays on Math's own tiled
 // kernel; Apple's MPS is never used unless the process opts in.
-tensor<real32> big = pattern32(256, 128, 3).gpu($GPU_INDEX)
-tensor<real32> big_right = pattern32(128, 192, 4).gpu($GPU_INDEX)
+tensor<real32> big := pattern32(256, 128, 3).gpu($GPU_INDEX)
+tensor<real32> big_right := pattern32(128, 192, 4).gpu($GPU_INDEX)
 print.line(math.matmul(big, big_right).shape()[1] == 192)
 QUI
 expect_native_events "Math native real-GPU dispatch" "$TMP/native-dispatch-real-gpu.qui" 2 \
@@ -1036,16 +1036,16 @@ expect_native_events "Math native real-GPU dispatch" "$TMP/native-dispatch-real-
 cat > "$TMP/native-dispatch-views-real-gpu.qui" <<QUI
 import math
 
-tensor<real32> base = tensor.zeros<real32>([5, 6])
+tensor<real32> base := tensor.zeros<real32>([5, 6])
 for 0 <= nat i < 5
     for 0 <= nat j < 6
-        real32 sample = real32((i * 7 + j * 3) % 11)
+        real32 sample := real32((i * 7 + j * 3) % 11)
         base[i, j] = sample - real32(5)
-tensor<real32> tracked = base.gpu($GPU_INDEX).track()
-tensor<real32> view = tracked.transpose(0, 1)
-tensor<real32> cube = tensor.ones<real32>([2, 3, 4], gpu = $GPU_INDEX).track()
-tensor<real32> right = tensor.ones<real32>([2, 3], gpu = $GPU_INDEX)
-tensor<real32> loss = math.sum(view) + math.mean(view) + math.sum_last(view).gather([7], []) + math.max_last(view).gather([3], []) + math.min_last(view).gather([11], []) + math.max_all(view) + math.min_all(view) + math.matmul(cube.transpose(0, 2), right).gather([5], [])
+tensor<real32> tracked := base.gpu($GPU_INDEX).track()
+tensor<real32> view := tracked.transpose(0, 1)
+tensor<real32> cube := tensor.ones<real32>([2, 3, 4], gpu = $GPU_INDEX).track()
+tensor<real32> right := tensor.ones<real32>([2, 3], gpu = $GPU_INDEX)
+tensor<real32> loss := math.sum(view) + math.mean(view) + math.sum_last(view).gather([7], []) + math.max_last(view).gather([3], []) + math.min_last(view).gather([11], []) + math.max_all(view) + math.min_all(view) + math.matmul(cube.transpose(0, 2), right).gather([5], [])
 loss.backward(&tracked, &cube)
 print.line(tracked.grad.device() == $GPU_INDEX and cube.grad.cpu()[0, 0, 0].item() == real32(0))
 QUI
@@ -1063,20 +1063,20 @@ cat > "$TMP/native-masked-real-gpu.qui" <<QUI
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            real32 sample = real32((i * 131 + j * 71 + seed * 17) % 97)
+            real32 sample := real32((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
 bool same32(tensor<real32> left, tensor<real32> right)
     return math.max_all(math.abs(left - right)).item() == real32(0)
 
-tensor<real32> a = pattern32(6, 5, 1).gpu($GPU_INDEX).track()
-tensor<real32> b = pattern32(5, 4, 2).gpu($GPU_INDEX).track()
+tensor<real32> a := pattern32(6, 5, 1).gpu($GPU_INDEX).track()
+tensor<real32> b := pattern32(5, 4, 2).gpu($GPU_INDEX).track()
 math.sum(math.matmul(a, b)).backward(&a)
-tensor<real32> cpu_a = pattern32(6, 5, 1).track()
+tensor<real32> cpu_a := pattern32(6, 5, 1).track()
 math.sum(math.matmul(cpu_a, pattern32(5, 4, 2).track())).backward(&cpu_a)
 print.line(same32(a.grad.cpu(), cpu_a.grad))
 QUI
@@ -1111,18 +1111,18 @@ cat > "$TMP/stream-counters-real-gpu.qui" <<QUI
 import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
-    tensor<real32> value = tensor.zeros<real32>([nat(rows), nat(columns)])
+    tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
     for 0 <= int i < rows
         for 0 <= int j < columns
-            real32 sample = real32((i * 131 + j * 71 + seed * 17) % 97)
+            real32 sample := real32((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
-tensor<real32> x = pattern32(32, 16, 1).gpu($GPU_INDEX)
-tensor<real32> w = pattern32(16, 8, 2).gpu($GPU_INDEX).track()
+tensor<real32> x := pattern32(32, 16, 1).gpu($GPU_INDEX)
+tensor<real32> w := pattern32(16, 8, 2).gpu($GPU_INDEX).track()
 for 0 <= nat step < 4
-    tensor<real32> h = math.exp(math.matmul(x, w) * 0.01)
-    tensor<real32> loss = math.mean(math.sum_last(h)) + math.max_all(h) + math.sum(math.log(h))
+    tensor<real32> h := math.exp(math.matmul(x, w) * 0.01)
+    tensor<real32> loss := math.mean(math.sum_last(h)) + math.max_all(h) + math.sum(math.log(h))
     loss.backward(&w)
 print.line(w.grad.device() == $GPU_INDEX)
 QUI
@@ -1195,9 +1195,9 @@ expect_deferred_domain_failure() {
 cat > "$TMP/sqrt-domain-real-gpu.qui" <<QUI
 import math
 
-tensor<real32> source = tensor.ones<real32>([4])
+tensor<real32> source := tensor.ones<real32>([4])
 source[2] = real32(-1)
-tensor<real32> roots = math.sqrt(source.gpu($GPU_INDEX))
+tensor<real32> roots := math.sqrt(source.gpu($GPU_INDEX))
 print.line("queued")
 print(roots.cpu()[0].item())
 QUI
@@ -1210,12 +1210,12 @@ expect_deferred_domain_failure "Metal sqrt domain failure at a host read" \
 cat > "$TMP/log-zero-real-gpu.qui" <<QUI
 import math
 
-tensor<real32> source = tensor.ones<real32>([3])
+tensor<real32> source := tensor.ones<real32>([3])
 source[1] = real32(0)
-tensor<real32> logs = math.log(source.gpu($GPU_INDEX))
+tensor<real32> logs := math.log(source.gpu($GPU_INDEX))
 print.line("queued")
 gpu.sync($GPU_INDEX)
-tensor<real32> host = logs.cpu()
+tensor<real32> host := logs.cpu()
 print.line(host[1].item() == real32(-inf) and host[0].item() == real32(0))
 QUI
 for stream in 1 0; do
@@ -1224,24 +1224,7 @@ for stream in 1 0; do
         "$QUIDRA" run "$TMP/log-zero-real-gpu.qui" >"$TMP/log-zero.out" 2>"$TMP/log-zero.err"
     log_zero_status=$?
     set -e
-    if [[ "$log_zero_status" -ne 0 || "$(cat "$TMP/log-zero.out")" != 
-cat > "$TMP/exit-domain-real-gpu.qui" <<QUI
-import math
-
-tensor<real32> source = tensor.ones<real32>([3])
-source[0] = real32(-2)
-tensor<real32> roots = math.sqrt(source.gpu($GPU_INDEX))
-QUI
-expect_deferred_domain_failure "Metal domain failure at program exit" \
-    "$TMP/exit-domain-real-gpu.qui" \
-    "math.sqrt requires nonnegative tensor elements" "" ""
-
-fi
-
-bash "$REPOSITORY_ROOT/tests/finite_results.sh" "$QUIDRA" "$GPU_INDEX"
-
-echo "math real GPU integration: ok on gpu($GPU_INDEX)"
-queued\ntrue' || -s "$TMP/log-zero.err" ]]; then
+    if [[ "$log_zero_status" -ne 0 || "$(cat "$TMP/log-zero.out")" != $'queued\ntrue' || -s "$TMP/log-zero.err" ]]; then
         echo "Metal log(0) must preserve -inf after gpu.sync (QUIDRA_METAL_STREAM=$stream, status=$log_zero_status):" >&2
         cat "$TMP/log-zero.out" "$TMP/log-zero.err" >&2
         exit 1
@@ -1252,9 +1235,9 @@ done
 cat > "$TMP/log-domain-real-gpu.qui" <<QUI
 import math
 
-tensor<real32> source = tensor.ones<real32>([3])
+tensor<real32> source := tensor.ones<real32>([3])
 source[1] = real32(-1)
-tensor<real32> logs = math.log(source.gpu($GPU_INDEX))
+tensor<real32> logs := math.log(source.gpu($GPU_INDEX))
 print.line("queued")
 gpu.sync($GPU_INDEX)
 print.line("synchronized")
@@ -1266,9 +1249,9 @@ expect_deferred_domain_failure "Metal log domain failure at gpu.sync" \
 cat > "$TMP/exit-domain-real-gpu.qui" <<QUI
 import math
 
-tensor<real32> source = tensor.ones<real32>([3])
+tensor<real32> source := tensor.ones<real32>([3])
 source[0] = real32(-2)
-tensor<real32> roots = math.sqrt(source.gpu($GPU_INDEX))
+tensor<real32> roots := math.sqrt(source.gpu($GPU_INDEX))
 QUI
 expect_deferred_domain_failure "Metal domain failure at program exit" \
     "$TMP/exit-domain-real-gpu.qui" \
