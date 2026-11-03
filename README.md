@@ -13,11 +13,11 @@ The first boundary moved here is matrix multiplication.
 ```quidra
 import math
 
-tensor<real32> a := tensor.ones<real32>([2, 3])
-tensor<real32> b := tensor.ones<real32>([3, 4])
-tensor<real32> c := math.matmul(a, b)
+a := tensor.ones<real32>([2, 3])
+b := tensor.ones<real32>([3, 4])
+c := math.matmul(a, b)
 
-real32 d := math.dot(
+d := math.dot(
     tensor.ones<real32>([3]),
     tensor.ones<real32>([3])
 )
@@ -279,10 +279,10 @@ resolved extension methods. Both forms call the same implementation:
 ```quidra
 import math
 real64[] values := [1.0, 4.0, 9.0]
-real64[] roots := values.sqrt()      // math.sqrt(values)
+roots := values.sqrt()      // math.sqrt(values)
 int[] a := [1, 2, 3]
-int result := a.sum()                // math.sum(a)
-int product := a.dot(a)             // math.dot(a, a)
+result := a.sum()                // math.sum(a)
+product := a.dot(a)             // math.dot(a, a)
 ```
 
 Scalar, array and tensor overloads share the existing precision, error,
@@ -294,6 +294,6 @@ Ranges, masks, array operators, and methods compose directly:
 ```quidra
 import math
 int[] values := [1, -2, 3, -4, 5]
-int positive_square_sum := (values[values > 0] ^ 2).sum() // 35
-int range_square_sum := (:9 ^ 2).sum()                    // 285
+positive_square_sum := (values[values > 0] ^ 2).sum() // 35
+range_square_sum := (:9 ^ 2).sum()                    // 285
 ```
