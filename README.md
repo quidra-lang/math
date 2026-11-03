@@ -29,7 +29,15 @@ real32 d = math.dot(
 A right vector removes the contracted axis; a right matrix replaces it with
 the matrix output width. Two vectors therefore produce a rank-0 tensor.
 
-`math.sum(value)`, `math.mean(value)`, `math.max_all(value)`, and `math.min_all(value)` own whole-tensor numerical reduction semantics. Integer `sum` is untracked; floating reductions preserve the original differentiable path. Whole-tensor `sum`/`mean` add elements with a level-by-level pairwise tree (adjacent pairs; an odd trailing element is carried upward as `x + x * 0`, so an infinity in a carried position yields NaN on every path, as in the portable definition), and `mean` divides by the element count accumulated in the tensor's dtype from powers of two. Whole-tensor `max_all`/`min_all` use strict comparison, so ties are first-occurrence and a NaN never displaces an earlier winner. Empty floating `sum` keeps differentiability through a Math-owned zero-Jacobian custom operation; empty `mean`, `max_all`, and `min_all` are domain errors.
+`math.sum(value)`, `math.mean(value)`, `math.max_all(value)`, and `math.min_all(value)` also accept numeric arrays. Array `sum` adds left to right from a zero of the element type and returns that type, including for an empty array. It supports every integer, real, and complex type, preserving the scalar addition's checked overflow and rounding. Array `mean` returns an exact `real` for integer arrays, accumulating exactly before division; real and complex arrays keep their element type and divide their left-to-right sum by the length converted to that type. Array `min_all`/`max_all` accept ordered numeric elements (integers and reals), return the element type, and keep the first occurrence of ties. Empty array `mean`, `min_all`, and `max_all` report `MATH_SHAPE`, as their tensor counterparts do. Array comprehensions work directly:
+
+```quidra
+int[] values = [-2, 1, 2, 3]
+int squares = math.sum([for auto x = values[] if x > 0 then x * x])
+real average = math.mean(values)
+```
+
+The tensor forms own whole-tensor numerical reduction semantics. Integer `sum` is untracked; floating reductions preserve the original differentiable path. Whole-tensor `sum`/`mean` add elements with a level-by-level pairwise tree (adjacent pairs; an odd trailing element is carried without masked multiplication, preserving signed infinity and the same parenthesization on native and portable backends), and `mean` divides by the element count accumulated in the tensor's dtype from powers of two. Whole-tensor `max_all`/`min_all` use strict comparison, so ties are first-occurrence and a NaN never displaces an earlier winner. Empty floating `sum` keeps differentiability through a Math-owned zero-Jacobian custom operation; empty `mean`, `max_all`, and `min_all` are domain errors.
 
 The former Core tensor methods `sum_last()`, `max_last()`, and
 `min_last()` are package-owned here as `math.sum_last(value)`,
@@ -74,6 +82,27 @@ point. On Metal that is a host read such as `.cpu()` or `.item()`,
 `gpu.sync`, or program exit. Core's fake test GPU does not yet consume
 deferred checks at host reads, only at `gpu.sync` and program exit, so there a
 program can read a failed result and keep running until one of those.
+
+For ordinary arrays, `math.dot(a, b)` / `a.dot(b)` requires equal lengths
+and exactly matching numeric element types, returns that element type, and
+returns its zero for two empty arrays. It visits indices from left to right,
+computes each product with the scalar multiplication rules, then adds that
+rounded product to the running total with the scalar addition rules. The
+accumulator starts at the element type's zero. It does not reorder the sum,
+widen its accumulator, or contract multiplication and addition into FMA.
+`real16` and `real16b` scalar operations compute in `real32` and round each
+stored intermediate back to the element type. Exact `int`, `nat`, `real`
+and `com` retain their existing exact scalar semantics. Checked integer
+overflow and NaN-producing operations stop at the first failing multiplication
+or addition; real overflow to signed infinity is allowed, following Core's
+scalar contract. A later finite term cannot undo an earlier overflow to infinity.
+Array `log` accepts zero (including fixed-width negative zero) and returns
+negative infinity, while negative inputs retain their catchable `MATH_DOMAIN`
+error. Exact `real` displays infinity as `∞` or `-∞`; fixed-width reals use
+`inf` or `-inf`. Array mappings and selections preserve these values without
+modifying their inputs.
+Complex dot is bilinear (it does not conjugate either operand).
+This array contract is independent of the tensor matrix-product contract below.
 
 Floating `matmul` (and `dot`) on the CPU, the fake test GPU, and Metal
 (`real32`) runs through one backend-neutral native bridge for tracked and
@@ -219,10 +248,11 @@ once after the operation. Half tensor unary functions use differentiable
 floating casts, preserving the source gradient destination. The existing
 `real32` and `real64` arithmetic paths retain their operation order.
 
-Native unary, matrix-product and sum kernels validate finite outputs. CPU
+Native unary, matrix-product and sum kernels reject NaN outputs. CPU
 failures report `NONFINITE_RESULT`; device checks are consumed at the next
 synchronization with Core's code and the same Math message and origin.
-Extrema only select already finite inputs and declare finite preservation.
+Extrema only select existing NaN-free inputs and declare that preservation.
+Signed infinities remain valid unless an operation combines them into NaN.
 A zero-width last axis returns its original empty shape before width guards.
 
 The compiler descriptor uses version 2 and the current numeric type names.
@@ -233,3 +263,37 @@ Additional suites are `tests/provider_v2.sh`, `tests/finite_results.sh`
 (optional explicit GPU index), and `tests/half_math.sh`.
 `tests/exact_intervals.cpp` checks integer/interval invariants and independent
 rational brackets when linked with Core's native-extension runtime.
+
+## Extension methods
+
+Elementwise array `abs`, `sqrt`, `log`, and `exp` recurse through nested
+arrays, including unequal row lengths and empty rows. Each leaf uses the
+corresponding scalar specialization, so exact `real` remains exact and
+floating results keep the scalar function's rounding and domain rules.
+These functions preserve the array's shape and create independent values.
+Fixed inner extents are retained during recursive mapping.
+
+Importing Math makes its public mathematical functions usable as statically
+resolved extension methods. Both forms call the same implementation:
+
+```quidra
+import math
+real64[] values = [1.0, 4.0, 9.0]
+real64[] roots = values.sqrt()      // math.sqrt(values)
+int[] a = [1, 2, 3]
+int result = a.sum()                // math.sum(a)
+int product = a.dot(a)             // math.dot(a, a)
+```
+
+Scalar, array and tensor overloads share the existing precision, error,
+shape, CPU/GPU and autograd contracts. Methods never mutate their input
+unless a library author explicitly declares a writable extension receiver.
+
+Ranges, masks, array operators, and methods compose directly:
+
+```quidra
+import math
+int[] values = [1, -2, 3, -4, 5]
+int positive_square_sum = (values[values > 0] ^ 2).sum() // 35
+int range_square_sum = (:9 ^ 2).sum()                    // 285
+```
