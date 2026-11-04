@@ -435,6 +435,7 @@ expect_true_lines "Math native fake-GPU views" "$TMP/native-views-device.qui" 6
 
 # Device reductions obey the same infinity and odd-carry NaN contract.
 bash "$REPOSITORY_ROOT/tests/tensor_infinity.sh" "$QUIDRA" gpu
+bash "$REPOSITORY_ROOT/tests/finite_results.sh" "$QUIDRA" 0
 expect_true_lines "Math portable fake-GPU carries" "$REPOSITORY_ROOT/tests/portable_infinity_device.qui" 2
 
 # Shapes the native bridges do not claim keep the portable behaviour on the

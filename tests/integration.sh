@@ -928,6 +928,7 @@ expect_true_lines "Math native views" "$TMP/native-views.qui" 6
 
 # Infinity is allowed; only the odd-carry NaN result is fatal.
 bash "$REPOSITORY_ROOT/tests/tensor_infinity.sh" "$QUIDRA" cpu
+bash "$REPOSITORY_ROOT/tests/finite_results.sh" "$QUIDRA"
 expect_true_lines "Math portable pairwise carries" "$REPOSITORY_ROOT/tests/portable_infinity.qui" 10
 
 # Shapes the native bridges do not claim keep the portable behaviour. Until

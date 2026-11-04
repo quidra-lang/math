@@ -32,7 +32,7 @@ the matrix output width. Two vectors therefore produce a rank-0 tensor.
 `math.sum(value)`, `math.mean(value)`, `math.max_all(value)`, and `math.min_all(value)` also accept numeric arrays. Array `sum` adds left to right from a zero of the element type and returns that type, including for an empty array. It supports every integer, real, and complex type, preserving the scalar addition's checked overflow and rounding. Array `mean` returns an exact `real` for integer arrays, accumulating exactly before division; real and complex arrays keep their element type and divide their left-to-right sum by the length converted to that type. Array `min_all`/`max_all` accept ordered numeric elements (integers and reals), return the element type, and keep the first occurrence of ties. Empty array `mean`, `min_all`, and `max_all` report `MATH_SHAPE`, as their tensor counterparts do. Array comprehensions work directly:
 
 ```quidra
-int[] values := [-2, 1, 2, 3]
+values := [-2, 1, 2, 3]
 squares := math.sum([for x := values[] if x > 0 then x * x])
 average := math.mean(values)
 ```
@@ -260,7 +260,8 @@ Unary Metal programs compile in safe math with contraction disabled;
 `QUIDRA_METAL_FAST_MATH=1` remains an explicit comparison switch.
 
 Additional suites are `tests/provider_v2.sh`, `tests/finite_results.sh`
-(optional explicit GPU index), and `tests/half_math.sh`.
+(signed-infinity acceptance and NaN rejection, with an optional explicit GPU
+index), and `tests/half_math.sh`.
 `tests/exact_intervals.cpp` checks integer/interval invariants and independent
 rational brackets when linked with Core's native-extension runtime.
 
@@ -280,7 +281,7 @@ resolved extension methods. Both forms call the same implementation:
 import math
 real64[] values := [1.0, 4.0, 9.0]
 roots := values.sqrt()      // math.sqrt(values)
-int[] a := [1, 2, 3]
+a := [1, 2, 3]
 result := a.sum()                // math.sum(a)
 product := a.dot(a)             // math.dot(a, a)
 ```
@@ -293,7 +294,7 @@ Ranges, masks, array operators, and methods compose directly:
 
 ```quidra
 import math
-int[] values := [1, -2, 3, -4, 5]
+values := [1, -2, 3, -4, 5]
 positive_square_sum := (values[values > 0] ^ 2).sum() // 35
 range_square_sum := (:9 ^ 2).sum()                    // 285
 ```

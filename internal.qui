@@ -26,7 +26,7 @@ tensor<T> tensor_unary<T: floating>(tensor<T> value, int32 operation)
             if extent != 0 and count > 9223372036854775807 / extent
                 error("math tensor unary element count overflows int", code = "MATH_SIZE")
             count = count * extent
-        int[] identity := array(nat(count), fill = 0)
+        identity := array(nat(count), fill = 0)
         for 0 <= int index < count
             identity[index] = index
         source = source.gather(identity, source_shape)
@@ -109,7 +109,7 @@ tensor<T> sum_all_nonempty<T: numeric>(
     tensor<T> value,
     int count
 )
-    int[] identity := array(nat(count), fill = 0)
+    identity := array(nat(count), fill = 0)
     for 0 <= int index < count
         identity[index] = index
     current := value.gather(identity, [count])
@@ -118,8 +118,8 @@ tensor<T> sum_all_nonempty<T: numeric>(
 
     while length > 1
         pairs := length / 2
-        int[] left_indices := array(nat(pairs), fill = 0)
-        int[] right_indices := array(nat(pairs), fill = 0)
+        left_indices := array(nat(pairs), fill = 0)
+        right_indices := array(nat(pairs), fill = 0)
         for 0 <= int pair < pairs
             left_indices[pair] = pair * 2
             right_indices[pair] = pair * 2 + 1
@@ -205,7 +205,7 @@ tensor<T> sum_last<T: floating>(tensor<T> value)
         if native.reduce<T>(source, value, &sums, int32(3)) == 0
             return sums
 
-    int[] selected := array(nat(count), fill = 0)
+    selected := array(nat(count), fill = 0)
     for 0 <= int index < count
         selected[index] = (index / width) * width
     output := value.gather(selected, shape)
@@ -228,7 +228,7 @@ tensor<T> extrema_last_selected<T: numeric>(
         return value
     width := last_axis_width(shape, operation)
 
-    int[] selected := array(nat(count), fill = 0)
+    selected := array(nat(count), fill = 0)
     rows := count / width
     for 0 <= int row_index < rows
         base := row_index * width
@@ -390,7 +390,7 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     output_rank := a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape := array(nat(output_rank), fill = 1)
+    output_shape := array(nat(output_rank), fill = 1)
     for 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
@@ -400,7 +400,7 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
         error("math.matmul output size overflows int", code = "MATH_SIZE")
     output_count := rows * columns
 
-    int[] expanded_shape := array(nat(a_rank + 1), fill = 1)
+    expanded_shape := array(nat(a_rank + 1), fill = 1)
     for 0 <= int axis < a_rank - 1
         expanded_shape[axis] = a_shape[axis]
     expanded_shape[a_rank - 1] = 1
@@ -412,11 +412,11 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     else
         expanded = a.contiguous().reshape(nat(expanded_shape))
 
-    int[] right_shape := array(nat(a_rank + 1), fill = 1)
+    right_shape := array(nat(a_rank + 1), fill = 1)
     right_shape[a_rank - 1] = columns
     right_shape[a_rank] = inner
     right_count := columns * inner
-    int[] right_indices := array(nat(right_count), fill = 0)
+    right_indices := array(nat(right_count), fill = 0)
     for 0 <= int output_index < right_count
         column := output_index / inner
         inner_index := output_index % inner
@@ -427,7 +427,7 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     right_rows := b.gather(right_indices, right_shape)
 
     products := expanded * right_rows
-    int[] selected := array(nat(output_count), fill = 0)
+    selected := array(nat(output_count), fill = 0)
     for 0 <= int index < output_count
         selected[index] = index * inner
     output := products.gather(selected, output_shape)
@@ -469,7 +469,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     output_rank := a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape := array(nat(output_rank), fill = 1)
+    output_shape := array(nat(output_rank), fill = 1)
     for 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
@@ -479,7 +479,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
         error("math.matmul output size overflows int", code = "MATH_SIZE")
     output_count := rows * columns
 
-    int[] expanded_shape := array(nat(a_rank + 1), fill = 1)
+    expanded_shape := array(nat(a_rank + 1), fill = 1)
     for 0 <= int axis < a_rank - 1
         expanded_shape[axis] = a_shape[axis]
     expanded_shape[a_rank - 1] = 1
@@ -490,18 +490,18 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
         expanded = a.reshape(nat(expanded_shape))
     elif a.is_tracked()
         input_count := rows * inner
-        int[] identity := array(nat(input_count), fill = 0)
+        identity := array(nat(input_count), fill = 0)
         for 0 <= int index < input_count
             identity[index] = index
         expanded = a.gather(identity, expanded_shape)
     else
         expanded = a.contiguous().reshape(nat(expanded_shape))
 
-    int[] right_shape := array(nat(a_rank + 1), fill = 1)
+    right_shape := array(nat(a_rank + 1), fill = 1)
     right_shape[a_rank - 1] = columns
     right_shape[a_rank] = inner
     right_count := columns * inner
-    int[] right_indices := array(nat(right_count), fill = 0)
+    right_indices := array(nat(right_count), fill = 0)
     for 0 <= int output_index < right_count
         column := output_index / inner
         inner_index := output_index % inner
@@ -512,7 +512,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     right_rows := b.gather(right_indices, right_shape)
 
     products := expanded * right_rows
-    int[] selected := array(nat(output_count), fill = 0)
+    selected := array(nat(output_count), fill = 0)
     for 0 <= int index < output_count
         selected[index] = index * inner
     output := products.gather(selected, output_shape)
@@ -554,7 +554,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
     output_rank := a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape := array(nat(output_rank), fill = 1)
+    output_shape := array(nat(output_rank), fill = 1)
     for 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
@@ -564,7 +564,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
         error("math.matmul output size overflows int", code = "MATH_SIZE")
     output_count := rows * columns
 
-    int[] expanded_shape := array(nat(a_rank + 1), fill = 1)
+    expanded_shape := array(nat(a_rank + 1), fill = 1)
     for 0 <= int axis < a_rank - 1
         expanded_shape[axis] = a_shape[axis]
     expanded_shape[a_rank - 1] = 1
@@ -575,18 +575,18 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
         expanded = a.reshape(nat(expanded_shape))
     elif a.is_tracked()
         input_count := rows * inner
-        int[] identity := array(nat(input_count), fill = 0)
+        identity := array(nat(input_count), fill = 0)
         for 0 <= int index < input_count
             identity[index] = index
         expanded = a.gather(identity, expanded_shape)
     else
         expanded = a.contiguous().reshape(nat(expanded_shape))
 
-    int[] right_shape := array(nat(a_rank + 1), fill = 1)
+    right_shape := array(nat(a_rank + 1), fill = 1)
     right_shape[a_rank - 1] = columns
     right_shape[a_rank] = inner
     right_count := columns * inner
-    int[] right_indices := array(nat(right_count), fill = 0)
+    right_indices := array(nat(right_count), fill = 0)
     for 0 <= int output_index < right_count
         column := output_index / inner
         inner_index := output_index % inner
@@ -597,7 +597,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
     right_rows := b.gather(right_indices, right_shape)
 
     products := expanded * right_rows
-    int[] selected := array(nat(output_count), fill = 0)
+    selected := array(nat(output_count), fill = 0)
     for 0 <= int index < output_count
         selected[index] = index * inner
     output := products.gather(selected, output_shape)
@@ -683,7 +683,7 @@ tensor<T> matmul_native<T: floating>(tensor<T> a, tensor<T> b)
     output_rank := a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape := array(nat(output_rank), fill = 1)
+    output_shape := array(nat(output_rank), fill = 1)
     for 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2

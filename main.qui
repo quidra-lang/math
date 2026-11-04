@@ -450,7 +450,7 @@ tensor<real32> matmul(extend tensor<real32> a, tensor<real32> b)
     output_rank := a_rank
     if b_rank == 1
         output_rank = a_rank - 1
-    int[] output_shape := array(nat(output_rank), fill = 1)
+    output_shape := array(nat(output_rank), fill = 1)
     for 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
