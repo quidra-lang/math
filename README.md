@@ -37,7 +37,7 @@ squares := math.sum([for x := values[] if x > 0 then x * x])
 average := math.mean(values)
 ```
 
-The tensor forms own whole-tensor numerical reduction semantics. Integer `sum` is untracked; floating reductions preserve the original differentiable path. Whole-tensor `sum`/`mean` add elements with a level-by-level pairwise tree (adjacent pairs; an odd trailing element is carried without masked multiplication, preserving signed infinity and the same parenthesization on native and portable backends), and `mean` divides by the element count accumulated in the tensor's dtype from powers of two. Whole-tensor `max_all`/`min_all` use strict comparison, so ties are first-occurrence and a NaN never displaces an earlier winner. Empty floating `sum` keeps differentiability through a Math-owned zero-Jacobian custom operation; empty `mean`, `max_all`, and `min_all` are domain errors.
+The tensor forms own whole-tensor numerical reduction semantics. Integer `sum` is untracked; floating reductions preserve the original differentiable path. Whole-tensor `sum`/`mean` add elements with a level-by-level pairwise tree (adjacent pairs; an odd trailing element is carried without masked multiplication, preserving signed infinity and the same parenthesization on native and portable backends), and `mean` divides by the element count accumulated in the tensor's dtype from powers of two. Whole-tensor `max_all`/`min_all` use strict comparison, so ties are first-occurrence. Empty floating `sum` keeps differentiability through a Math-owned zero-Jacobian custom operation; empty `mean`, `max_all`, and `min_all` are domain errors.
 
 The former Core tensor methods `sum_last()`, `max_last()`, and
 `min_last()` are package-owned here as `math.sum_last(value)`,
@@ -78,10 +78,8 @@ so does Math's CUDA kernel, which still reads its check back at once. On Metal
 and the fake test GPU the check stays device-resident, as the language
 requires for GPU tensor checks: the call returns at once, and the same message
 is reported with the queuing statement at the device's next synchronization
-point. On Metal that is a host read such as `.cpu()` or `.item()`,
-`gpu.sync`, or program exit. Core's fake test GPU does not yet consume
-deferred checks at host reads, only at `gpu.sync` and program exit, so there a
-program can read a failed result and keep running until one of those.
+point: a host read such as `.cpu()` or `.item()`, `gpu.sync`, or program exit.
+The fake test GPU consumes deferred checks at these boundaries too.
 
 For ordinary arrays, `math.dot(a, b)` / `a.dot(b)` requires equal lengths
 and binds both arrays to the specialization's numeric element type, returns that type, and
