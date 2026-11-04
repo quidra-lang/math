@@ -337,7 +337,7 @@ T mean<T: numeric>(extend T[] value)
 real mean<T: integer>(extend T[] value)
     if len(value) == 0
         error("math.mean requires at least one element", code = "MATH_SHAPE")
-    real total := 0.0
+    total := 0.0
     for element := value[]
         total = total + element
     return total / len(value)

@@ -19,7 +19,7 @@ tensor<T> tensor_unary<T: floating>(tensor<T> value, int32 operation)
     source := value
     if not source.is_contiguous()
         source_shape := int(source.shape())
-        int count := 1
+        count := 1
         for extent := source_shape[]
             if extent < 0
                 error("math tensor unary encountered an invalid extent", code = "MATH_INTERNAL")
@@ -58,7 +58,7 @@ int last_axis_width(int[] shape, string operation)
     return width
 
 int logical_count(int[] shape, string operation)
-    int count := 1
+    count := 1
     for extent := shape[]
         if extent < 0
             error("math." + operation + " encountered an invalid extent", code = "MATH_INTERNAL")
@@ -313,7 +313,7 @@ tensor<T> extrema_all_selected<T: numeric>(
     if count == 0
         error("math." + operation + " requires at least one element", code = "MATH_SHAPE")
 
-    int best_index := 0
+    best_index := 0
     best := selector.gather([0], []).item()
     for 1 <= int index < count
         candidate := selector.gather([index], []).item()
@@ -372,13 +372,13 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     if inner <= 0 or b_shape[0] != inner
         error("math.matmul inner dimensions do not match", code = "MATH_SHAPE")
 
-    int columns := 1
+    columns := 1
     if b_rank == 2
         columns = b_shape[1]
         if columns <= 0
             error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
-    int rows := 1
+    rows := 1
     for 0 <= int axis < a_rank - 1
         dimension := a_shape[axis]
         if dimension <= 0
@@ -451,13 +451,13 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     if inner <= 0 or b_shape[0] != inner
         error("math.matmul inner dimensions do not match", code = "MATH_SHAPE")
 
-    int columns := 1
+    columns := 1
     if b_rank == 2
         columns = b_shape[1]
         if columns <= 0
             error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
-    int rows := 1
+    rows := 1
     for 0 <= int axis < a_rank - 1
         dimension := a_shape[axis]
         if dimension <= 0
@@ -536,13 +536,13 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
     if inner <= 0 or b_shape[0] != inner
         error("math.matmul inner dimensions do not match", code = "MATH_SHAPE")
 
-    int columns := 1
+    columns := 1
     if b_rank == 2
         columns = b_shape[1]
         if columns <= 0
             error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
-    int rows := 1
+    rows := 1
     for 0 <= int axis < a_rank - 1
         dimension := a_shape[axis]
         if dimension <= 0
@@ -646,12 +646,12 @@ tensor<T> matmul_native<T: floating>(tensor<T> a, tensor<T> b)
     inner := a_shape[a_rank - 1]
     if inner <= 0 or b_shape[0] != inner
         return matmul(a, b)
-    int columns := 1
+    columns := 1
     if b_rank == 2
         columns = b_shape[1]
     if columns <= 0
         return matmul(a, b)
-    int rows := 1
+    rows := 1
     for 0 <= int axis < a_rank - 1
         dimension := a_shape[axis]
         if dimension <= 0 or rows > 9223372036854775807 / dimension
