@@ -33,8 +33,8 @@ the matrix output width. Two vectors therefore produce a rank-0 tensor.
 
 ```quidra
 int[] values := [-2, 1, 2, 3]
-int squares := math.sum([for x := values[] if x > 0 then x * x])
-real average := math.mean(values)
+squares := math.sum([for x := values[] if x > 0 then x * x])
+average := math.mean(values)
 ```
 
 The tensor forms own whole-tensor numerical reduction semantics. Integer `sum` is untracked; floating reductions preserve the original differentiable path. Whole-tensor `sum`/`mean` add elements with a level-by-level pairwise tree (adjacent pairs; an odd trailing element is carried without masked multiplication, preserving signed infinity and the same parenthesization on native and portable backends), and `mean` divides by the element count accumulated in the tensor's dtype from powers of two. Whole-tensor `max_all`/`min_all` use strict comparison, so ties are first-occurrence and a NaN never displaces an earlier winner. Empty floating `sum` keeps differentiability through a Math-owned zero-Jacobian custom operation; empty `mean`, `max_all`, and `min_all` are domain errors.

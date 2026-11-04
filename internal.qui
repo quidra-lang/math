@@ -31,7 +31,7 @@ tensor<T> tensor_unary<T: floating>(tensor<T> value, int32 operation)
             identity[index] = index
         source = source.gather(identity, source_shape)
 
-    tensor<T> output := native_output<T>(int(source.shape()), device)
+    output := native_output<T>(int(source.shape()), device)
     // A CPU domain failure of sqrt or log is reported here (status 4). On a
     // GPU the check stays device-resident: the kernel stores the failure in a
     // Core status word, and Core reports the same message with this
