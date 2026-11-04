@@ -220,16 +220,16 @@ import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int64 h := int64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = real32(h) / real32(48) - real32(1)
     return value
 
 tensor<real64> pattern64(int rows, int columns, int seed)
     tensor<real64> value := tensor.zeros<real64>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int64 h := int64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = real64(h) / 48.0 - 1.0
     return value
@@ -274,16 +274,16 @@ import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int64 h := int64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = real32(h) / real32(48) - real32(1)
     return value
 
 tensor<real64> pattern64(int rows, int columns, int seed)
     tensor<real64> value := tensor.zeros<real64>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int64 h := int64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = real64(h) / 48.0 - 1.0
     return value
@@ -315,16 +315,16 @@ import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int64 h := int64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = real32(h) / real32(48) - real32(1)
     return value
 
 tensor<real64> pattern64(int rows, int columns, int seed)
     tensor<real64> value := tensor.zeros<real64>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int64 h := int64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = real64(h) / 48.0 - 1.0
     return value
@@ -377,8 +377,8 @@ import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int64 h := int64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = real32(h) / real32(48) - real32(1)
     return value
@@ -528,8 +528,8 @@ bool same_bits64(real64 x, real64 y)
 // Column j: all +0, all -0, mixed signed zeros, or small positive integers.
 tensor<real32> signed_left32(int rows, int inner)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(inner)])
-    for 0 <= int i < rows
-        for 0 <= int k < inner
+    for: 0 <= int i < rows
+        for: 0 <= int k < inner
             real32 magnitude := real32(1 + (i + k) % 5)
             if i % 3 == 0 or (i % 3 == 2 and k % 2 == 0)
                 magnitude = -magnitude
@@ -539,8 +539,8 @@ tensor<real32> signed_left32(int rows, int inner)
 tensor<real32> signed_right32(int inner, int columns)
     tensor<real32> value := tensor.zeros<real32>([nat(inner), nat(columns)])
     real32 negative_zero := real32(0) * real32(-1)
-    for 0 <= int k < inner
-        for 0 <= int j < columns
+    for: 0 <= int k < inner
+        for: 0 <= int j < columns
             if j % 4 == 1 or (j % 4 == 2 and k % 3 == 0)
                 value[k, j] = negative_zero
             if j % 4 == 3
@@ -550,10 +550,10 @@ tensor<real32> signed_right32(int inner, int columns)
 bool fold_matches32(tensor<real32> left, tensor<real32> right, tensor<real32> device_product)
     tensor<real32> product := device_product.cpu()
     int inner := int(left.shape()[1])
-    for 0 <= nat i < left.shape()[0]
-        for 0 <= nat j < right.shape()[1]
+    for: 0 <= nat i < left.shape()[0]
+        for: 0 <= nat j < right.shape()[1]
             real32 total := left[i, 0].item() * right[0, j].item()
-            for 1 <= int k < inner
+            for: 1 <= int k < inner
                 real32 term := left[i, k].item() * right[k, j].item()
                 total = total + term
             if not same_bits32(product[i, j].item(), total)
@@ -562,18 +562,18 @@ bool fold_matches32(tensor<real32> left, tensor<real32> right, tensor<real32> de
 
 tensor<real64> widen(tensor<real32> value)
     tensor<real64> result := tensor.zeros<real64>(value.shape())
-    for 0 <= nat i < value.shape()[0]
-        for 0 <= nat j < value.shape()[1]
+    for: 0 <= nat i < value.shape()[0]
+        for: 0 <= nat j < value.shape()[1]
             result[i, j] = real64(value[i, j].item())
     return result
 
 bool fold_matches64(tensor<real64> left, tensor<real64> right, tensor<real64> device_product)
     tensor<real64> product := device_product.cpu()
     int inner := int(left.shape()[1])
-    for 0 <= nat i < left.shape()[0]
-        for 0 <= nat j < right.shape()[1]
+    for: 0 <= nat i < left.shape()[0]
+        for: 0 <= nat j < right.shape()[1]
             real64 total := left[i, 0].item() * right[0, j].item()
-            for 1 <= int k < inner
+            for: 1 <= int k < inner
                 real64 term := left[i, k].item() * right[k, j].item()
                 total = total + term
             if not same_bits64(product[i, j].item(), total)
@@ -637,16 +637,16 @@ import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int64 h := int64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = real32(h) / real32(48) - real32(1)
     return value
 
 tensor<real64> pattern64(int rows, int columns, int seed)
     tensor<real64> value := tensor.zeros<real64>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int64 h := int64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = real64(h) / 48.0 - 1.0
     return value
@@ -683,8 +683,8 @@ cat > "$TMP/native-dispatch-views-device.qui" <<'QUI'
 import math
 
 tensor<real32> base := tensor.zeros<real32>([5, 6])
-for 0 <= nat i < 5
-    for 0 <= nat j < 6
+for: 0 <= nat i < 5
+    for: 0 <= nat j < 6
         int64 h := int64((i * 7 + j * 3) % 11)
         base[i, j] = real32(h) - real32(5)
 tensor<real32> tracked := base.gpu(0).track()
@@ -711,8 +711,8 @@ import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             real32 sample := real32((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = sample / real32(48) - real32(1)
     return value
@@ -745,16 +745,16 @@ import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             real32 sample := real32((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
 tensor<real64> pattern64(int rows, int columns, int seed)
     tensor<real64> value := tensor.zeros<real64>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             real64 sample := real64((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = sample / 48.0 - 1.0
     return value
@@ -765,7 +765,7 @@ void sample32(string label, tensor<real32> value)
     for extent := flat.shape()[]
         count = count * int(extent)
     flat = flat.reshape([nat(count)])
-    for 0 <= int index < count step 29
+    for: 0 <= int index < count step 29
         println("{label} {index} {flat[index].item()}")
 
 void sample64(string label, tensor<real64> value)
@@ -774,7 +774,7 @@ void sample64(string label, tensor<real64> value)
     for extent := flat.shape()[]
         count = count * int(extent)
     flat = flat.reshape([nat(count)])
-    for 0 <= int index < count step 29
+    for: 0 <= int index < count step 29
         println("{label} {index} {flat[index].item()}")
 
 // Products, last-axis reductions and unary kernels large enough to split

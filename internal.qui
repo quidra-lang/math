@@ -27,7 +27,7 @@ tensor<T> tensor_unary<T: floating>(tensor<T> value, int32 operation)
                 error("math tensor unary element count overflows int", code = "MATH_SIZE")
             count = count * extent
         identity := array(nat(count), fill = 0)
-        for 0 <= int index < count
+        for: 0 <= int index < count
             identity[index] = index
         source = source.gather(identity, source_shape)
 
@@ -110,7 +110,7 @@ tensor<T> sum_all_nonempty<T: numeric>(
     int count
 )
     identity := array(nat(count), fill = 0)
-    for 0 <= int index < count
+    for: 0 <= int index < count
         identity[index] = index
     current := value.gather(identity, [count])
     tensor<T>[] tails := []
@@ -120,7 +120,7 @@ tensor<T> sum_all_nonempty<T: numeric>(
         pairs := length / 2
         left_indices := array(nat(pairs), fill = 0)
         right_indices := array(nat(pairs), fill = 0)
-        for 0 <= int pair < pairs
+        for: 0 <= int pair < pairs
             left_indices[pair] = pair * 2
             right_indices[pair] = pair * 2 + 1
 
@@ -134,7 +134,7 @@ tensor<T> sum_all_nonempty<T: numeric>(
     result := current.gather([0], [])
     if len(tails) > 0
         remaining := tails[0]
-        for 1 <= int index < int(len(tails))
+        for: 1 <= int index < int(len(tails))
             remaining = tails[index] + remaining
         result = result + remaining
     return result
@@ -206,12 +206,12 @@ tensor<T> sum_last<T: floating>(tensor<T> value)
             return sums
 
     selected := array(nat(count), fill = 0)
-    for 0 <= int index < count
+    for: 0 <= int index < count
         selected[index] = (index / width) * width
     output := value.gather(selected, shape)
 
-    for 1 <= int offset < width
-        for 0 <= int index < count
+    for: 1 <= int offset < width
+        for: 0 <= int index < count
             selected[index] = (index / width) * width + offset
         output = output + value.gather(selected, shape)
     return output
@@ -230,11 +230,11 @@ tensor<T> extrema_last_selected<T: numeric>(
 
     selected := array(nat(count), fill = 0)
     rows := count / width
-    for 0 <= int row_index < rows
+    for: 0 <= int row_index < rows
         base := row_index * width
         best_index := base
         best := selector.gather([base], []).item()
-        for 1 <= int offset < width
+        for: 1 <= int offset < width
             candidate_index := base + offset
             candidate := selector.gather([candidate_index], []).item()
             better := candidate > best
@@ -243,7 +243,7 @@ tensor<T> extrema_last_selected<T: numeric>(
             if better
                 best = candidate
                 best_index = candidate_index
-        for 0 <= int offset < width
+        for: 0 <= int offset < width
             selected[base + offset] = best_index
     return value.gather(selected, shape)
 
@@ -315,7 +315,7 @@ tensor<T> extrema_all_selected<T: numeric>(
 
     best_index := 0
     best := selector.gather([0], []).item()
-    for 1 <= int index < count
+    for: 1 <= int index < count
         candidate := selector.gather([index], []).item()
         better := candidate > best
         if not maximum
@@ -379,7 +379,7 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
             error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
     rows := 1
-    for 0 <= int axis < a_rank - 1
+    for: 0 <= int axis < a_rank - 1
         dimension := a_shape[axis]
         if dimension <= 0
             error("math.matmul requires positive tensor extents", code = "MATH_SHAPE")
@@ -391,7 +391,7 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     if b_rank == 1
         output_rank = a_rank - 1
     output_shape := array(nat(output_rank), fill = 1)
-    for 0 <= int axis < a_rank - 1
+    for: 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
         output_shape[a_rank - 1] = columns
@@ -401,7 +401,7 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     output_count := rows * columns
 
     expanded_shape := array(nat(a_rank + 1), fill = 1)
-    for 0 <= int axis < a_rank - 1
+    for: 0 <= int axis < a_rank - 1
         expanded_shape[axis] = a_shape[axis]
     expanded_shape[a_rank - 1] = 1
     expanded_shape[a_rank] = inner
@@ -417,7 +417,7 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
     right_shape[a_rank] = inner
     right_count := columns * inner
     right_indices := array(nat(right_count), fill = 0)
-    for 0 <= int output_index < right_count
+    for: 0 <= int output_index < right_count
         column := output_index / inner
         inner_index := output_index % inner
         if b_rank == 1
@@ -428,12 +428,12 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
 
     products := expanded * right_rows
     selected := array(nat(output_count), fill = 0)
-    for 0 <= int index < output_count
+    for: 0 <= int index < output_count
         selected[index] = index * inner
     output := products.gather(selected, output_shape)
 
-    for 1 <= int inner_index < inner
-        for 0 <= int index < output_count
+    for: 1 <= int inner_index < inner
+        for: 0 <= int index < output_count
             selected[index] = index * inner + inner_index
         output = output + products.gather(selected, output_shape)
     return output
@@ -458,7 +458,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
             error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
     rows := 1
-    for 0 <= int axis < a_rank - 1
+    for: 0 <= int axis < a_rank - 1
         dimension := a_shape[axis]
         if dimension <= 0
             error("math.matmul requires positive tensor extents", code = "MATH_SHAPE")
@@ -470,7 +470,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     if b_rank == 1
         output_rank = a_rank - 1
     output_shape := array(nat(output_rank), fill = 1)
-    for 0 <= int axis < a_rank - 1
+    for: 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
         output_shape[a_rank - 1] = columns
@@ -480,7 +480,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     output_count := rows * columns
 
     expanded_shape := array(nat(a_rank + 1), fill = 1)
-    for 0 <= int axis < a_rank - 1
+    for: 0 <= int axis < a_rank - 1
         expanded_shape[axis] = a_shape[axis]
     expanded_shape[a_rank - 1] = 1
     expanded_shape[a_rank] = inner
@@ -491,7 +491,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     elif a.is_tracked()
         input_count := rows * inner
         identity := array(nat(input_count), fill = 0)
-        for 0 <= int index < input_count
+        for: 0 <= int index < input_count
             identity[index] = index
         expanded = a.gather(identity, expanded_shape)
     else
@@ -502,7 +502,7 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     right_shape[a_rank] = inner
     right_count := columns * inner
     right_indices := array(nat(right_count), fill = 0)
-    for 0 <= int output_index < right_count
+    for: 0 <= int output_index < right_count
         column := output_index / inner
         inner_index := output_index % inner
         if b_rank == 1
@@ -513,12 +513,12 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
 
     products := expanded * right_rows
     selected := array(nat(output_count), fill = 0)
-    for 0 <= int index < output_count
+    for: 0 <= int index < output_count
         selected[index] = index * inner
     output := products.gather(selected, output_shape)
 
-    for 1 <= int inner_index < inner
-        for 0 <= int index < output_count
+    for: 1 <= int inner_index < inner
+        for: 0 <= int index < output_count
             selected[index] = index * inner + inner_index
         output = output + products.gather(selected, output_shape)
     return output
@@ -543,7 +543,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
             error("math.matmul requires a positive output width", code = "MATH_SHAPE")
 
     rows := 1
-    for 0 <= int axis < a_rank - 1
+    for: 0 <= int axis < a_rank - 1
         dimension := a_shape[axis]
         if dimension <= 0
             error("math.matmul requires positive tensor extents", code = "MATH_SHAPE")
@@ -555,7 +555,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
     if b_rank == 1
         output_rank = a_rank - 1
     output_shape := array(nat(output_rank), fill = 1)
-    for 0 <= int axis < a_rank - 1
+    for: 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
         output_shape[a_rank - 1] = columns
@@ -565,7 +565,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
     output_count := rows * columns
 
     expanded_shape := array(nat(a_rank + 1), fill = 1)
-    for 0 <= int axis < a_rank - 1
+    for: 0 <= int axis < a_rank - 1
         expanded_shape[axis] = a_shape[axis]
     expanded_shape[a_rank - 1] = 1
     expanded_shape[a_rank] = inner
@@ -576,7 +576,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
     elif a.is_tracked()
         input_count := rows * inner
         identity := array(nat(input_count), fill = 0)
-        for 0 <= int index < input_count
+        for: 0 <= int index < input_count
             identity[index] = index
         expanded = a.gather(identity, expanded_shape)
     else
@@ -587,7 +587,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
     right_shape[a_rank] = inner
     right_count := columns * inner
     right_indices := array(nat(right_count), fill = 0)
-    for 0 <= int output_index < right_count
+    for: 0 <= int output_index < right_count
         column := output_index / inner
         inner_index := output_index % inner
         if b_rank == 1
@@ -598,12 +598,12 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
 
     products := expanded * right_rows
     selected := array(nat(output_count), fill = 0)
-    for 0 <= int index < output_count
+    for: 0 <= int index < output_count
         selected[index] = index * inner
     output := products.gather(selected, output_shape)
 
-    for 1 <= int inner_index < inner
-        for 0 <= int index < output_count
+    for: 1 <= int inner_index < inner
+        for: 0 <= int index < output_count
             selected[index] = index * inner + inner_index
         output = output + products.gather(selected, output_shape)
     return output
@@ -652,7 +652,7 @@ tensor<T> matmul_native<T: floating>(tensor<T> a, tensor<T> b)
     if columns <= 0
         return matmul(a, b)
     rows := 1
-    for 0 <= int axis < a_rank - 1
+    for: 0 <= int axis < a_rank - 1
         dimension := a_shape[axis]
         if dimension <= 0 or rows > 9223372036854775807 / dimension
             return matmul(a, b)
@@ -684,7 +684,7 @@ tensor<T> matmul_native<T: floating>(tensor<T> a, tensor<T> b)
     if b_rank == 1
         output_rank = a_rank - 1
     output_shape := array(nat(output_rank), fill = 1)
-    for 0 <= int axis < a_rank - 1
+    for: 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
         output_shape[a_rank - 1] = columns

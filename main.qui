@@ -262,7 +262,7 @@ private void .array_abs<T: numeric>(T &value)
     value = abs(value)
 
 private void .array_abs<T>(T &value)
-    for 0 <= nat index < len(value)
+    for: 0 <= nat index < len(value)
         .array_abs(&value[index])
 
 private void | error .array_sqrt<T: numeric>(T &value)
@@ -271,7 +271,7 @@ private void | error .array_sqrt<T: numeric>(T &value)
     return
 
 private void | error .array_sqrt<T>(T &value)
-    for 0 <= nat index < len(value)
+    for: 0 <= nat index < len(value)
         try .array_sqrt(&value[index])
     return
 
@@ -281,7 +281,7 @@ private void | error .array_log<T: numeric>(T &value)
     return
 
 private void | error .array_log<T>(T &value)
-    for 0 <= nat index < len(value)
+    for: 0 <= nat index < len(value)
         try .array_log(&value[index])
     return
 
@@ -291,7 +291,7 @@ private void | error .array_exp<T: numeric>(T &value)
     return
 
 private void | error .array_exp<T>(T &value)
-    for 0 <= nat index < len(value)
+    for: 0 <= nat index < len(value)
         try .array_exp(&value[index])
     return
 
@@ -364,7 +364,7 @@ T max_all<T: ordered>(extend T[] value)
     if len(value) == 0
         error("math.max requires at least one element", code = "MATH_SHAPE")
     best := value[0]
-    for 1 <= nat index < len(value)
+    for: 1 <= nat index < len(value)
         candidate := value[index]
         if candidate > best
             best = candidate
@@ -374,7 +374,7 @@ T min_all<T: ordered>(extend T[] value)
     if len(value) == 0
         error("math.min requires at least one element", code = "MATH_SHAPE")
     best := value[0]
-    for 1 <= nat index < len(value)
+    for: 1 <= nat index < len(value)
         candidate := value[index]
         if candidate < best
             best = candidate
@@ -399,7 +399,7 @@ T dot<T: numeric>(extend T[] a, T[] b)
     if len(a) != len(b)
         error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
     total := T(0)
-    for 0 <= nat index < len(a)
+    for: 0 <= nat index < len(a)
         total += a[index] * b[index]
     return total
 
@@ -451,7 +451,7 @@ tensor<real32> matmul(extend tensor<real32> a, tensor<real32> b)
     if b_rank == 1
         output_rank = a_rank - 1
     output_shape := array(nat(output_rank), fill = 1)
-    for 0 <= int axis < a_rank - 1
+    for: 0 <= int axis < a_rank - 1
         output_shape[axis] = a_shape[axis]
     if b_rank == 2
         output_shape[a_rank - 1] = b_shape[1]

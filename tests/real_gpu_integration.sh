@@ -246,8 +246,8 @@ extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int h := (i * 131 + j * 71 + seed * 17) % 97
             real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
@@ -309,8 +309,8 @@ extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int h := (i * 131 + j * 71 + seed * 17) % 97
             real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
@@ -346,8 +346,8 @@ extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int h := (i * 131 + j * 71 + seed * 17) % 97
             real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
@@ -410,8 +410,8 @@ extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int h := (i * 131 + j * 71 + seed * 17) % 97
             real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
@@ -449,8 +449,8 @@ extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int h := (i * 131 + j * 71 + seed * 17) % 97
             real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
@@ -489,8 +489,8 @@ extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int h := (i * 131 + j * 71 + seed * 17) % 97
             real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
@@ -531,8 +531,8 @@ import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int h := (i * 131 + j * 71 + seed * 17) % 97
             real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
@@ -603,7 +603,7 @@ import math
 // 1: very wide whole-tensor extrema (span winners, then a merge) with ties,
 // signed zeros match the sequential scan, gradients included.
 tensor<real32> wide := tensor.zeros<real32>([1, 70001])
-for 0 <= nat i < 70001
+for: 0 <= nat i < 70001
     real32 sample := real32((i * 131) % 9973)
     wide[0, i] = sample / real32(4096) - real32(1)
 real32 zero := real32(0)
@@ -624,7 +624,7 @@ import math
 // 1: very wide whole-tensor extrema (span winners, then a merge) with ties,
 // NaNs and signed zeros match the sequential scan, gradients included.
 tensor<real32> wide := tensor.zeros<real32>([1, 70001])
-for 0 <= nat i < 70001
+for: 0 <= nat i < 70001
     real32 sample := real32((i * 131) % 9973)
     wide[0, i] = sample / real32(4096) - real32(1)
 real32 zero := real32(0)
@@ -714,8 +714,8 @@ bool same_bits32(real32 x, real32 y)
 
 tensor<real32> signed_left32(int rows, int inner)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(inner)])
-    for 0 <= int i < rows
-        for 0 <= int k < inner
+    for: 0 <= int i < rows
+        for: 0 <= int k < inner
             real32 magnitude := real32(1 + (i + k) % 5)
             if i % 3 == 0 or (i % 3 == 2 and k % 2 == 0)
                 magnitude = -magnitude
@@ -725,8 +725,8 @@ tensor<real32> signed_left32(int rows, int inner)
 tensor<real32> signed_right32(int inner, int columns)
     tensor<real32> value := tensor.zeros<real32>([nat(inner), nat(columns)])
     real32 negative_zero := real32(0) * real32(-1)
-    for 0 <= int k < inner
-        for 0 <= int j < columns
+    for: 0 <= int k < inner
+        for: 0 <= int j < columns
             if j % 4 == 1 or (j % 4 == 2 and k % 3 == 0)
                 value[k, j] = negative_zero
             if j % 4 == 3
@@ -743,10 +743,10 @@ bool fold_matches32(int rows, int inner, int columns, bool tracked)
     if tracked
         device_product = device_product.untrack()
     tensor<real32> product := device_product.cpu()
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             real32 total := left[i, 0].item() * right[0, j].item()
-            for 1 <= int k < inner
+            for: 1 <= int k < inner
                 real32 term := left[i, k].item() * right[k, j].item()
                 total = total + term
             if not same_bits32(product[i, j].item(), total)
@@ -801,8 +801,8 @@ import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int h := (i * 131 + j * 71 + seed * 17) % 97
             real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
@@ -918,8 +918,8 @@ extern void execution_policy(int32 policy) = "qcore_execution_policy_set"
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             int h := (i * 131 + j * 71 + seed * 17) % 97
             real32 sample := real32(h)
             value[i, j] = sample / real32(48) - real32(1)
@@ -1004,8 +1004,8 @@ import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             real32 sample := real32((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = sample / real32(48) - real32(1)
     return value
@@ -1037,8 +1037,8 @@ cat > "$TMP/native-dispatch-views-real-gpu.qui" <<QUI
 import math
 
 tensor<real32> base := tensor.zeros<real32>([5, 6])
-for 0 <= nat i < 5
-    for 0 <= nat j < 6
+for: 0 <= nat i < 5
+    for: 0 <= nat j < 6
         real32 sample := real32((i * 7 + j * 3) % 11)
         base[i, j] = sample - real32(5)
 tensor<real32> tracked := base.gpu($GPU_INDEX).track()
@@ -1064,8 +1064,8 @@ import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             real32 sample := real32((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = sample / real32(48) - real32(1)
     return value
@@ -1112,15 +1112,15 @@ import math
 
 tensor<real32> pattern32(int rows, int columns, int seed)
     tensor<real32> value := tensor.zeros<real32>([nat(rows), nat(columns)])
-    for 0 <= int i < rows
-        for 0 <= int j < columns
+    for: 0 <= int i < rows
+        for: 0 <= int j < columns
             real32 sample := real32((i * 131 + j * 71 + seed * 17) % 97)
             value[i, j] = sample / real32(48) - real32(1)
     return value
 
 tensor<real32> x := pattern32(32, 16, 1).gpu($GPU_INDEX)
 tensor<real32> w := pattern32(16, 8, 2).gpu($GPU_INDEX).track()
-for 0 <= nat step < 4
+for: 0 <= nat step < 4
     tensor<real32> h := math.exp(math.matmul(x, w) * 0.01)
     tensor<real32> loss := math.mean(math.sum_last(h)) + math.max_all(h) + math.sum(math.log(h))
     loss.backward(&w)

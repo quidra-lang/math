@@ -3,7 +3,7 @@ import implementation = "../internal.qui"
 
 bool same_order(int count)
     tensor<real32> values := tensor.zeros<real32>([nat(count)])
-    for 0 <= int i < count
+    for: 0 <= int i < count
         real32 sample := real32((i * 131 + count * 17) % 79)
         values[i] = sample / real32(43) - real32(1)
     real32 portable := implementation.sum_all_nonempty<real32>(values, count).item()
