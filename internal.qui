@@ -37,14 +37,14 @@ tensor<T> tensor_unary<T: floating>(tensor<T> value, int32 operation)
     // Core status word, and Core reports the same message with this
     // statement at the device's next synchronization point.
     status := native.tensor_unary<T>(source, &output, operation)
-    if status != int32(0)
-        if operation == int32(2) and status == int32(4)
+    if status != 0
+        if operation == 2 and status == 4
             error("math.sqrt requires nonnegative tensor elements", code = "MATH_DOMAIN")
-        if operation == int32(3) and status == int32(4)
+        if operation == 3 and status == 4
             error("math.log requires nonnegative tensor elements", code = "MATH_DOMAIN")
-        if status == int32(6)
+        if status == 6
             error("math tensor unary is not implemented for this device backend", code = "MATH_DEVICE")
-        if status == int32(7)
+        if status == 7
             error("math tensor unary is not implemented for this device dtype", code = "MATH_DTYPE")
         error("math tensor unary native execution failed", code = "MATH_NATIVE")
     return output
@@ -86,7 +86,7 @@ tensor<T> ones_vector_on<T: numeric>(int length, int device)
 // Metal real32 placements. Other placements (CUDA/HIP) keep the portable
 // composition.
 bool native_linear_ready<T: floating>(tensor<T> value)
-    return native.linear_placement<T>(value) == int32(1)
+    return native.linear_placement<T>(value) == 1
 
 // Value-only contiguous borrow of `value` for a native kernel. It never
 // replaces `value` in the graph: every native node keeps the original tensor as
@@ -152,7 +152,7 @@ tensor<T> sum_all<T: floating>(tensor<T> value)
     if count == 0
         zero := zeros_scalar_on<T>(device)
         if value.is_tracked()
-            if native.attach_empty_sum<T>(value, &zero) != int32(0)
+            if native.attach_empty_sum<T>(value, &zero) != 0
                 error("math.sum failed to attach empty-tensor autograd", code = "MATH_INTERNAL")
         return zero
     // Native whole-tensor sum: the same pairwise tree as the composition below,
@@ -160,7 +160,7 @@ tensor<T> sum_all<T: floating>(tensor<T> value)
     if native_linear_ready<T>(value)
         source := native_linear_data<T>(value)
         total := native_output<T>([], device)
-        if native.reduce<T>(source, value, &total, int32(1)) == int32(0)
+        if native.reduce<T>(source, value, &total, int32(1)) == 0
             return total
     return sum_all_nonempty<T>(value, count)
 
@@ -185,7 +185,7 @@ tensor<T> mean_all<T: floating>(tensor<T> value)
     if native_linear_ready<T>(value)
         source := native_linear_data<T>(value)
         average := native_output<T>([], value.device())
-        if native.reduce<T>(source, value, &average, int32(2)) == int32(0)
+        if native.reduce<T>(source, value, &average, int32(2)) == 0
             return average
     denominator := positive_count_scalar<T>(count, value.device())
     return sum_all<T>(value) / denominator
@@ -202,7 +202,7 @@ tensor<T> sum_last<T: floating>(tensor<T> value)
     if native_linear_ready<T>(value)
         source := native_linear_data<T>(value)
         sums := native_output<T>(shape, value.device())
-        if native.reduce<T>(source, value, &sums, int32(3)) == int32(0)
+        if native.reduce<T>(source, value, &sums, int32(3)) == 0
             return sums
 
     int[] selected := array(nat(count), fill = 0)
@@ -271,7 +271,7 @@ bool extrema_native<T: floating>(
     source := native_linear_data<T>(value)
     output := native_output<T>(output_shape, device)
     winners := native_output<int32>([rows], device)
-    if native.select_extrema<T>(source, value, &output, &winners, operation) != int32(0)
+    if native.select_extrema<T>(source, value, &output, &winners, operation) != 0
         return false
     result = output
     return true
@@ -632,7 +632,7 @@ bool transposed_storage<T: floating>(tensor<T> value, tensor<T> &storage)
 // every diagnostic. Other non-contiguous layouts are read through a value-only
 // contiguous borrow while the original tensor stays the node's parent.
 tensor<T> matmul_native<T: floating>(tensor<T> a, tensor<T> b)
-    if native.linear_placement<T>(a) != int32(1) or native.linear_placement<T>(b) != int32(1)
+    if native.linear_placement<T>(a) != 1 or native.linear_placement<T>(b) != 1
         return matmul(a, b)
     if a.device() != b.device()
         return matmul(a, b)
@@ -665,20 +665,20 @@ tensor<T> matmul_native<T: floating>(tensor<T> a, tensor<T> b)
     left_data := a
     if not a.is_contiguous()
         if transposed_storage<T>(a, &left_data)
-            layout = layout + int32(1)
+            layout = layout + 1
         else
             left_data = native_linear_data<T>(a)
     right := b
     right_data := b
     if not b.is_contiguous()
         if transposed_storage<T>(b, &right_data)
-            layout = layout + int32(2)
+            layout = layout + 2
         else
             right_data = native_linear_data<T>(b)
     if a.is_tracked()
-        layout = layout + int32(4)
+        layout = layout + 4
     if b.is_tracked()
-        layout = layout + int32(8)
+        layout = layout + 8
 
     output_rank := a_rank
     if b_rank == 1
@@ -689,6 +689,6 @@ tensor<T> matmul_native<T: floating>(tensor<T> a, tensor<T> b)
     if b_rank == 2
         output_shape[a_rank - 1] = columns
     output := native_output<T>(output_shape, a.device())
-    if native.matmul<T>(left_data, right_data, left, right, &output, layout) == int32(0)
+    if native.matmul<T>(left_data, right_data, left, right, &output, layout) == 0
         return output
     return matmul(a, b)

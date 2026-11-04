@@ -58,70 +58,70 @@ bool is_finite<T: floating>(T value)
 
 int | error trunc<T: floating>(T value)
     widened := real32(value)
-    if native.round_valid_f32(widened, int32(1)) != int32(1)
+    if native.round_valid_f32(widened, int32(1)) != 1
         return error("math.trunc requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(widened, int32(1)))
 
 int | error round<T: floating>(T value)
     widened := real32(value)
-    if native.round_valid_f32(widened, int32(2)) != int32(1)
+    if native.round_valid_f32(widened, int32(2)) != 1
         return error("math.round requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(widened, int32(2)))
 
 int | error floor<T: floating>(T value)
     widened := real32(value)
-    if native.round_valid_f32(widened, int32(3)) != int32(1)
+    if native.round_valid_f32(widened, int32(3)) != 1
         return error("math.floor requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(widened, int32(3)))
 
 int | error ceil<T: floating>(T value)
     widened := real32(value)
-    if native.round_valid_f32(widened, int32(4)) != int32(1)
+    if native.round_valid_f32(widened, int32(4)) != 1
         return error("math.ceil requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(widened, int32(4)))
 
 int | error trunc(real32 value)
-    if native.round_valid_f32(value, int32(1)) != int32(1)
+    if native.round_valid_f32(value, int32(1)) != 1
         return error("math.trunc requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(value, int32(1)))
 
 int | error trunc(real64 value)
-    if native.round_valid_f64(value, int32(1)) != int32(1)
+    if native.round_valid_f64(value, int32(1)) != 1
         return error("math.trunc requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f64(value, int32(1)))
 
 int | error round(real32 value)
-    if native.round_valid_f32(value, int32(2)) != int32(1)
+    if native.round_valid_f32(value, int32(2)) != 1
         return error("math.round requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(value, int32(2)))
 
 int | error round(real64 value)
-    if native.round_valid_f64(value, int32(2)) != int32(1)
+    if native.round_valid_f64(value, int32(2)) != 1
         return error("math.round requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f64(value, int32(2)))
 
 int | error floor(real32 value)
-    if native.round_valid_f32(value, int32(3)) != int32(1)
+    if native.round_valid_f32(value, int32(3)) != 1
         return error("math.floor requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(value, int32(3)))
 
 int | error floor(real64 value)
-    if native.round_valid_f64(value, int32(3)) != int32(1)
+    if native.round_valid_f64(value, int32(3)) != 1
         return error("math.floor requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f64(value, int32(3)))
 
 int | error ceil(real32 value)
-    if native.round_valid_f32(value, int32(4)) != int32(1)
+    if native.round_valid_f32(value, int32(4)) != 1
         return error("math.ceil requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f32(value, int32(4)))
 
 int | error ceil(real64 value)
-    if native.round_valid_f64(value, int32(4)) != int32(1)
+    if native.round_valid_f64(value, int32(4)) != 1
         return error("math.ceil requires a finite value in int range", code = "MATH_RANGE")
     return int(native.round_value_f64(value, int32(4)))
 
 real | error sqrt(extend real value)
-    if value < real(0)
+    if value < 0
         return error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
     return real.unary("math", 257, value)
 
@@ -135,7 +135,7 @@ real tan(real value)
     return real.unary("math", 260, value)
 
 real | error log(extend real value)
-    if value < real(0)
+    if value < 0
         return error("math.log requires a nonnegative value", code = "MATH_DOMAIN")
     return real.unary("math", 261, value)
 
@@ -143,7 +143,7 @@ real exp(extend real value)
     return real.unary("math", 262, value)
 
 real32 | error sqrt(extend real32 value)
-    if value < real32(0)
+    if value < 0
         return error("math.sqrt requires a nonnegative value", code = "MATH_DOMAIN")
     return native.sqrt_f32(value)
 
@@ -171,7 +171,7 @@ real64 tan(real64 value)
     return native.tan_f64(value)
 
 real32 | error log(extend real32 value)
-    if value < real32(0)
+    if value < 0
         return error("math.log requires a nonnegative value", code = "MATH_DOMAIN")
     return native.log_f32(value)
 
@@ -339,8 +339,8 @@ real mean<T: integer>(extend T[] value)
         error("math.mean requires at least one element", code = "MATH_SHAPE")
     real total := 0.0
     for element := value[]
-        total = total + real(element)
-    return total / real(len(value))
+        total = total + element
+    return total / len(value)
 
 tensor<T> mean<T: floating>(extend tensor<T> value)
     return internal.mean_all<T>(value)
@@ -460,7 +460,7 @@ tensor<real32> matmul(extend tensor<real32> a, tensor<real32> b)
     if not a.is_tracked() and not b.is_tracked()
         left_cuda := native.cuda_device_f32(a)
         right_cuda := native.cuda_device_f32(b)
-        if left_cuda >= int32(0) and right_cuda == left_cuda
+        if left_cuda >= 0 and right_cuda == left_cuda
             left := a
             right := b
             if not left.is_contiguous()
@@ -471,7 +471,7 @@ tensor<real32> matmul(extend tensor<real32> a, tensor<real32> b)
                 nat(output_shape),
                 gpu = nat(left_cuda)
             )
-            if native.matmul_cuda_f32(left, right, &output) == int32(0)
+            if native.matmul_cuda_f32(left, right, &output) == 0
                 return output
 
     // CPU, the fake test GPU, and Metal use Math's backend-neutral native

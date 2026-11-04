@@ -84,7 +84,7 @@ deferred checks at host reads, only at `gpu.sync` and program exit, so there a
 program can read a failed result and keep running until one of those.
 
 For ordinary arrays, `math.dot(a, b)` / `a.dot(b)` requires equal lengths
-and exactly matching numeric element types, returns that element type, and
+and binds both arrays to the specialization's numeric element type, returns that type, and
 returns its zero for two empty arrays. It visits indices from left to right,
 computes each product with the scalar multiplication rules, then adds that
 rounded product to the running total with the scalar addition rules. The
