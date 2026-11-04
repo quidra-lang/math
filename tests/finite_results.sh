@@ -24,7 +24,7 @@ for OP in exp sum matmul; do
 import math
 tensor<real32> value := ($VALUE)$PLACEMENT
 tensor<real32> result := $EXPR
-print.line(result.cpu().shape()[0])
+println(result.cpu().shape()[0])
 QUI
     set +e
     QUIDRA_PACKAGE_PATH="$TMP/packages" "$QUIDRA" run "$TMP/$OP.qui" > "$TMP/$OP.log" 2>&1

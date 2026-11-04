@@ -17,144 +17,144 @@ real64 pi_fast := math.pi
 real pi_exact := math.pi
 real64 e_fast := math.e
 real e_exact := math.e
-print.line(pi_fast > 3.0)
-print.line(pi_exact > real(3))
-print.line(e_fast > 2.0)
-print.line(e_exact > real(2))
-print.line(pi_exact > e_exact)
+println(pi_fast > 3.0)
+println(pi_exact > real(3))
+println(e_fast > 2.0)
+println(e_exact > real(2))
+println(pi_exact > e_exact)
 real exact_sqrt := math.sqrt(real(4))
 real exact_log := math.log(real(1))
-print.line(exact_sqrt.string() == "2.0")
-print.line(math.sin(real(0)).string() == "0.0")
-print.line(math.cos(real(0)).string() == "1.0")
-print.line(math.tan(real(0)).string() == "0.0")
-print.line(exact_log.string() == "0.0")
-print.line(math.exp(real(0)).string() == "1.0")
+println(exact_sqrt.string() == "2.0")
+println(math.sin(real(0)).string() == "0.0")
+println(math.cos(real(0)).string() == "1.0")
+println(math.tan(real(0)).string() == "0.0")
+println(exact_log.string() == "0.0")
+println(math.exp(real(0)).string() == "1.0")
 
 tensor<real32> left := tensor.ones<real32>([2, 3])
 tensor<real32> right := tensor.ones<real32>([3, 2])
 tensor<real32> product := math.matmul(left, right)
-print.line(product.shape()[0] == 2 and product.shape()[1] == 2)
-print.line(product[1, 1].item() == real32(3))
+println(product.shape()[0] == 2 and product.shape()[1] == 2)
+println(product[1, 1].item() == real32(3))
 
 tensor<int32> integer_left := tensor.ones<int32>([1, 2])
 tensor<int32> integer_right := tensor.ones<int32>([2, 1])
 tensor<int32> integer_product := math.matmul(integer_left, integer_right)
-print.line(integer_product[0, 0].item() == int32(2))
+println(integer_product[0, 0].item() == int32(2))
 
 tensor<int32> integer_vector := tensor.ones<int32>([2])
-print.line(math.dot(integer_vector, integer_vector) == int32(2))
+println(math.dot(integer_vector, integer_vector) == int32(2))
 
 tensor<real32> vector := tensor.ones<real32>([3])
-print.line(math.dot(vector, vector) == real32(3))
+println(math.dot(vector, vector) == real32(3))
 
-print.line(math.abs(real64(-5.0)) == real64(5.0))
+println(math.abs(real64(-5.0)) == real64(5.0))
 real64 sqrt64 := math.sqrt(real64(9.0))
 real32 sqrt32 := math.sqrt(real32(9.0))
-print.line(sqrt64 == real64(3.0))
-print.line(sqrt32 == real32(3.0))
-print.line(math.min(real64(2.0), real64(3.0)) == real64(2.0))
-print.line(math.max(real64(2.0), real64(3.0)) == real64(3.0))
-print.line(math.is_finite(real64(1.0)))
+println(sqrt64 == real64(3.0))
+println(sqrt32 == real32(3.0))
+println(math.min(real64(2.0), real64(3.0)) == real64(2.0))
+println(math.max(real64(2.0), real64(3.0)) == real64(3.0))
+println(math.is_finite(real64(1.0)))
 int truncated := math.trunc(real64(-1.75))
 int rounded_positive := math.round(real64(1.5))
 int rounded_negative := math.round(real64(-1.5))
 int floored := math.floor(real64(-1.25))
 int ceiled := math.ceil(real64(-1.25))
-print.line(truncated == int(-1))
-print.line(rounded_positive == int(2))
-print.line(rounded_negative == int(-2))
-print.line(floored == int(-2))
-print.line(ceiled == int(-1))
-print.line(math.pow(real64(2.0), real64(3.0)) == real64(8.0))
+println(truncated == int(-1))
+println(rounded_positive == int(2))
+println(rounded_negative == int(-2))
+println(floored == int(-2))
+println(ceiled == int(-1))
+println(math.pow(real64(2.0), real64(3.0)) == real64(8.0))
 
 tensor<real32> unary_values := tensor.zeros<real32>([4])
 unary_values[0] = real32(2)
 unary_values[1] = real32(4)
 unary_values[2] = real32(1)
 unary_values[3] = real32(0)
-print.line(math.abs(unary_values)[0].item() == real32(2))
-print.line(math.sqrt(unary_values)[1].item() == real32(2))
+println(math.abs(unary_values)[0].item() == real32(2))
+println(math.sqrt(unary_values)[1].item() == real32(2))
 tensor<real32> log_values := tensor.ones<real32>([3])
 log_values[0] = real32(2)
 log_values[1] = real32(4)
-print.line(math.log(log_values)[2].item() == real32(0))
-print.line(math.exp(unary_values)[3].item() == real32(1))
+println(math.log(log_values)[2].item() == real32(0))
+println(math.exp(unary_values)[3].item() == real32(1))
 
 tensor<real32> abs_source := tensor.zeros<real32>([1])
 abs_source[0] = real32(-2)
 tensor<real32> abs_tracked := abs_source.track()
 math.sum(math.abs(abs_tracked)).backward(&abs_tracked)
-print.line(abs_tracked.grad[0].item() == real32(-1))
+println(abs_tracked.grad[0].item() == real32(-1))
 
 tensor<real32> sqrt_source := tensor.zeros<real32>([1])
 sqrt_source[0] = real32(4)
 tensor<real32> sqrt_tracked := sqrt_source.track()
 math.sum(math.sqrt(sqrt_tracked)).backward(&sqrt_tracked)
-print.line(sqrt_tracked.grad[0].item() == real32(0.25))
+println(sqrt_tracked.grad[0].item() == real32(0.25))
 
 tensor<real32> log_source := tensor.zeros<real32>([1])
 log_source[0] = real32(2)
 tensor<real32> log_tracked := log_source.track()
 math.sum(math.log(log_tracked)).backward(&log_tracked)
-print.line(log_tracked.grad[0].item() == real32(0.5))
+println(log_tracked.grad[0].item() == real32(0.5))
 
 tensor<real32> exp_source := tensor.zeros<real32>([1]).track()
 math.sum(math.exp(exp_source)).backward(&exp_source)
-print.line(exp_source.grad[0].item() == real32(1))
+println(exp_source.grad[0].item() == real32(1))
 
 tensor<real32> higher_unary := tensor.ones<real32>([]).track()
 math.log(higher_unary).backward(&higher_unary, track = true)
 tensor<real32> higher_unary_first := higher_unary.grad
-print.line(higher_unary_first.is_tracked())
-print.line(higher_unary_first.untrack().item() == real32(1))
+println(higher_unary_first.is_tracked())
+println(higher_unary_first.untrack().item() == real32(1))
 .higher_unary.clear_grad()
 higher_unary_first.backward(&higher_unary)
-print.line(higher_unary.grad.untrack().item() == real32(-1))
+println(higher_unary.grad.untrack().item() == real32(-1))
 
 tensor<real32> higher_exp := tensor.zeros<real32>([]).track()
 math.exp(higher_exp).backward(&higher_exp, track = true)
 tensor<real32> higher_exp_first := higher_exp.grad
-print.line(higher_exp_first.is_tracked())
-print.line(higher_exp_first.untrack().item() == real32(1))
+println(higher_exp_first.is_tracked())
+println(higher_exp_first.untrack().item() == real32(1))
 .higher_exp.clear_grad()
 higher_exp_first.backward(&higher_exp)
-print.line(higher_exp.grad.untrack().item() == real32(1))
+println(higher_exp.grad.untrack().item() == real32(1))
 
 tensor<real32> higher_sqrt := (tensor.ones<real32>([]) * real32(4)).track()
 math.sqrt(higher_sqrt).backward(&higher_sqrt, track = true)
 tensor<real32> higher_sqrt_first := higher_sqrt.grad
-print.line(higher_sqrt_first.is_tracked())
-print.line(higher_sqrt_first.untrack().item() == real32(0.25))
+println(higher_sqrt_first.is_tracked())
+println(higher_sqrt_first.untrack().item() == real32(0.25))
 .higher_sqrt.clear_grad()
 higher_sqrt_first.backward(&higher_sqrt)
-print.line(higher_sqrt.grad.untrack().item() == real32(-0.03125))
+println(higher_sqrt.grad.untrack().item() == real32(-0.03125))
 
 tensor<real32> higher_abs := (tensor.ones<real32>([]) * real32(-2)).track()
 math.abs(higher_abs).backward(&higher_abs, track = true)
 tensor<real32> higher_abs_first := higher_abs.grad
-print.line(higher_abs_first.is_tracked())
-print.line(higher_abs_first.untrack().item() == real32(-1))
+println(higher_abs_first.is_tracked())
+println(higher_abs_first.untrack().item() == real32(-1))
 .higher_abs.clear_grad()
 higher_abs_first.backward(&higher_abs)
-print.line(higher_abs.grad.untrack().item() == real32(0))
+println(higher_abs.grad.untrack().item() == real32(0))
 
 tensor<real32> reduction_values := tensor.ones<real32>([2, 3])
-print.line(math.sum(reduction_values).item() == real32(6))
-print.line(math.mean(reduction_values).item() == real32(1))
-print.line(math.sum_last(reduction_values)[0, 0].item() == real32(3))
+println(math.sum(reduction_values).item() == real32(6))
+println(math.mean(reduction_values).item() == real32(1))
+println(math.sum_last(reduction_values)[0, 0].item() == real32(3))
 
 tensor<int32> integer_sum_values := tensor.ones<int32>([2, 3])
-print.line(math.sum(integer_sum_values).item() == int32(6))
+println(math.sum(integer_sum_values).item() == int32(6))
 
 tensor<real32> empty_sum_values := tensor.zeros<real32>([0])
-print.line(math.sum(empty_sum_values).item() == real32(0))
+println(math.sum(empty_sum_values).item() == real32(0))
 
 tensor<real32> empty_tracked := tensor.zeros<real32>([0]).track()
 tensor<real32> empty_total := math.sum(empty_tracked)
 empty_total.backward(&empty_tracked, track = true)
-print.line(empty_tracked.grad.is_tracked())
-print.line(empty_tracked.grad.shape()[0] == 0)
+println(empty_tracked.grad.is_tracked())
+println(empty_tracked.grad.shape()[0] == 0)
 
 tensor<real32> tracked_whole := tensor.ones<real32>([2, 3]).track()
 (math.sum(tracked_whole) * math.sum(tracked_whole)).backward(
@@ -162,15 +162,15 @@ tensor<real32> tracked_whole := tensor.ones<real32>([2, 3]).track()
     track = true
 )
 tensor<real32> tracked_whole_first := tracked_whole.grad
-print.line(tracked_whole_first.is_tracked())
-print.line(tracked_whole_first.untrack()[1, 2].item() == real32(12))
+println(tracked_whole_first.is_tracked())
+println(tracked_whole_first.untrack()[1, 2].item() == real32(12))
 .tracked_whole.clear_grad()
 math.mean(tracked_whole_first).backward(&tracked_whole)
-print.line(tracked_whole.grad.untrack()[0, 0].item() == real32(2))
+println(tracked_whole.grad.untrack()[0, 0].item() == real32(2))
 
 tensor<int32> integer_reduction := tensor.ones<int32>([2, 2])
-print.line(math.max_last(integer_reduction)[1, 1].item() == int32(1))
-print.line(math.min_last(integer_reduction)[0, 0].item() == int32(1))
+println(math.max_last(integer_reduction)[1, 1].item() == int32(1))
+println(math.min_last(integer_reduction)[0, 0].item() == int32(1))
 
 tensor<real32> tie_values := tensor.zeros<real32>([1, 3])
 tie_values[0, 0] = real32(2)
@@ -178,13 +178,13 @@ tie_values[0, 1] = real32(2)
 tie_values[0, 2] = real32(1)
 tensor<real32> tie_tracked := tie_values.track()
 math.mean(math.max_last(tie_tracked)).backward(&tie_tracked)
-print.line(tie_tracked.grad[0, 0].item() == real32(1))
-print.line(tie_tracked.grad[0, 1].item() == real32(0))
+println(tie_tracked.grad[0, 0].item() == real32(1))
+println(tie_tracked.grad[0, 1].item() == real32(0))
 
 tensor<real32> sum_tracked := tensor.ones<real32>([1, 3]).track()
 math.mean(math.sum_last(sum_tracked)).backward(&sum_tracked)
 tensor<real32> sum_last_grad := sum_tracked.grad.untrack()
-print.line(sum_last_grad[0, 2].item() == real32(1))
+println(sum_last_grad[0, 2].item() == real32(1))
 
 tensor<real32> higher_extrema_values := tensor.zeros<real32>([2])
 higher_extrema_values[0] = real32(2)
@@ -193,24 +193,24 @@ tensor<real32> higher_extrema := higher_extrema_values.track()
 tensor<real32> higher_max := math.max_last(higher_extrema)
 math.mean((higher_max * higher_max)).backward(&higher_extrema, track = true)
 tensor<real32> higher_max_first := higher_extrema.grad
-print.line(higher_max_first.is_tracked())
-print.line(higher_max_first.untrack()[0].item() == real32(4))
-print.line(higher_max_first.untrack()[1].item() == real32(0))
+println(higher_max_first.is_tracked())
+println(higher_max_first.untrack()[0].item() == real32(4))
+println(higher_max_first.untrack()[1].item() == real32(0))
 math.mean(higher_max_first).backward(&higher_extrema)
 tensor<real32> higher_max_accumulated := higher_extrema.grad.untrack()
-print.line(higher_max_accumulated[0].item() == real32(5))
-print.line(higher_max_accumulated[1].item() == real32(0))
+println(higher_max_accumulated[0].item() == real32(5))
+println(higher_max_accumulated[1].item() == real32(0))
 
 tensor<real32> scalar_product := math.matmul(vector, vector)
-print.line(len(scalar_product.shape()) == 0)
-print.line(scalar_product.item() == real32(3))
+println(len(scalar_product.shape()) == 0)
+println(scalar_product.item() == real32(3))
 
 tensor<real32> tracked_left := tensor.ones<real32>([2, 3]).track()
 tensor<real32> tracked_right := tensor.ones<real32>([3, 2]).track()
 tensor<real32> tracked_product := math.matmul(tracked_left, tracked_right)
 math.mean(tracked_product).backward(&tracked_left, &tracked_right)
-print.line(tracked_left.grad[0, 0].item() == real32(0.5))
-print.line(tracked_right.grad[0, 0].item() == real32(0.5))
+println(tracked_left.grad[0, 0].item() == real32(0.5))
+println(tracked_right.grad[0, 0].item() == real32(0.5))
 
 tensor<real32> fc_input := tensor.ones<real32>([1, 3]).track()
 tensor<real32> fc_weight := tensor.ones<real32>([2, 3]).track()
@@ -219,25 +219,25 @@ tensor<real32> fc_product := math.matmul(
     fc_weight.transpose(0, 1)
 )
 math.mean(fc_product).backward(&fc_input, &fc_weight)
-print.line(fc_input.grad[0, 0].item() == real32(1))
-print.line(fc_weight.grad[0, 0].item() == real32(0.5))
+println(fc_input.grad[0, 0].item() == real32(1))
+println(fc_weight.grad[0, 0].item() == real32(0.5))
 
 tensor<real32> batched_left := tensor.ones<real32>([2, 2, 3]).track()
 tensor<real32> batched_right := tensor.ones<real32>([3, 4]).track()
 tensor<real32> batched := math.matmul(batched_left, batched_right)
 math.mean(batched).backward(&batched_left, &batched_right)
-print.line(batched.shape()[0] == 2 and batched.shape()[1] == 2 and batched.shape()[2] == 4)
-print.line(batched_left.grad[1, 1, 2].item() == real32(0.25))
-print.line(batched_right.grad[2, 3].item() == real32(0.25))
+println(batched.shape()[0] == 2 and batched.shape()[1] == 2 and batched.shape()[2] == 4)
+println(batched_left.grad[1, 1, 2].item() == real32(0.25))
+println(batched_right.grad[2, 3].item() == real32(0.25))
 
 tensor<real32> higher_left := tensor.ones<real32>([1, 2]).track()
 tensor<real32> higher_right := tensor.ones<real32>([2, 1]).track()
 tensor<real32> higher := math.matmul(higher_left, higher_right)
 math.mean((higher * higher)).backward(&higher_left, &higher_right, track = true)
-print.line(higher_left.grad.is_tracked())
+println(higher_left.grad.is_tracked())
 .higher_right.clear_grad()
 math.mean(higher_left.grad).backward(&higher_right)
-print.line(higher_right.grad[0, 0].item() == real32(4))
+println(higher_right.grad[0, 0].item() == real32(4))
 
 
 QUI
@@ -272,7 +272,7 @@ fi
 cat > "$TMP/round-range.qui" <<'QUI'
 import math
 int value := math.trunc(real64(1.0e30))
-print.line(value)
+println(value)
 QUI
 set +e
 QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" "$TMP/round-range.qui" >"$TMP/round-range.out" 2>&1
@@ -288,7 +288,7 @@ cat > "$TMP/integer-transcendental.qui" <<'QUI'
 import math
 int value := 1
 result := math.sin(value)
-print.line(result)
+println(result)
 QUI
 set +e
 QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" check "$TMP/integer-transcendental.qui" \
@@ -308,8 +308,8 @@ tensor<int32> integer_values := tensor.zeros<int32>([3])
 integer_values[0] = int32(5)
 integer_values[1] = int32(-2)
 integer_values[2] = int32(4)
-print.line(math.max_all(integer_values).item() == int32(5))
-print.line(math.min_all(integer_values).item() == int32(-2))
+println(math.max_all(integer_values).item() == int32(5))
+println(math.min_all(integer_values).item() == int32(-2))
 
 tensor<real32> tie_values := tensor.zeros<real32>([3])
 tie_values[0] = real32(2)
@@ -317,12 +317,12 @@ tie_values[1] = real32(2)
 tie_values[2] = real32(1)
 tensor<real32> tracked := tie_values.track()
 tensor<real32> maximum := math.max_all(tracked)
-print.line(maximum.untrack().item() == real32(2))
+println(maximum.untrack().item() == real32(2))
 maximum.backward(&tracked, track = true)
 tensor<real32> first := tracked.grad
-print.line(first.is_tracked())
-print.line(first.untrack()[0].item() == real32(1))
-print.line(first.untrack()[1].item() == real32(0))
+println(first.is_tracked())
+println(first.untrack()[0].item() == real32(1))
+println(first.untrack()[1].item() == real32(0))
 
 tensor<real32> minimum_values := tensor.zeros<real32>([3])
 minimum_values[0] = real32(1)
@@ -330,8 +330,8 @@ minimum_values[1] = real32(-3)
 minimum_values[2] = real32(-3)
 tensor<real32> tracked_min := minimum_values.track()
 math.min_all(tracked_min).backward(&tracked_min)
-print.line(tracked_min.grad[1].item() == real32(1))
-print.line(tracked_min.grad[2].item() == real32(0))
+println(tracked_min.grad[1].item() == real32(1))
+println(tracked_min.grad[2].item() == real32(0))
 QUI
 
 set +e
@@ -375,7 +375,7 @@ for operation in max min; do
 import math
 tensor<real32> empty := tensor.zeros<real32>([0])
 tensor<real32> value := math.${operation}_all(empty)
-print.line(value.item())
+println(value.item())
 QUI
     set +e
     QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" "$TMP/empty-extrema.qui" \
@@ -417,7 +417,7 @@ import numerical = math
 tensor<real32> left := tensor.ones<real32>([1, 2])
 tensor<real32> right := tensor.ones<real32>([2, 1])
 tensor<real32> product := numerical.matmul(left, right)
-print.line(product[0, 0].item())
+println(product[0, 0].item())
 QUI
 set +e
 alias_ir="$(QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" ir "$TMP/compiler-alias.qui" 2>&1)"
@@ -524,17 +524,17 @@ tensor<real64> w64 := pattern64(3, 5, 3)
 tensor<real64> ta := a64.track()
 tensor<real64> tb := b64.track()
 math.sum(math.matmul(ta, tb) * w64).backward(&ta, &tb)
-print.line(max_abs64(ta.grad - numeric_gradient(a64, b64, w64, true)) < 0.000001)
-print.line(max_abs64(tb.grad - numeric_gradient(a64, b64, w64, false)) < 0.000001)
-print.line(math.matmul(ta, tb).is_tracked())
+println(max_abs64(ta.grad - numeric_gradient(a64, b64, w64, true)) < 0.000001)
+println(max_abs64(tb.grad - numeric_gradient(a64, b64, w64, false)) < 0.000001)
+println(math.matmul(ta, tb).is_tracked())
 
 // 4-5: one side tracked.
 tensor<real64> only_a := a64.track()
 math.sum(math.matmul(only_a, b64) * w64).backward(&only_a)
-print.line(max_abs64(only_a.grad - numeric_gradient(a64, b64, w64, true)) < 0.000001)
+println(max_abs64(only_a.grad - numeric_gradient(a64, b64, w64, true)) < 0.000001)
 tensor<real64> only_b := b64.track()
 math.sum(math.matmul(a64, only_b) * w64).backward(&only_b)
-print.line(max_abs64(only_b.grad - numeric_gradient(a64, b64, w64, false)) < 0.000001)
+println(max_abs64(only_b.grad - numeric_gradient(a64, b64, w64, false)) < 0.000001)
 
 // 6-7: FC/Conv pattern -- tracked right operand is a transposed view.
 tensor<real64> weight64 := pattern64(5, 4, 4)
@@ -542,14 +542,14 @@ tensor<real64> tw := weight64.track()
 tensor<real64> tx := a64.track()
 math.sum(math.matmul(tx, tw.transpose(0, 1)) * w64).backward(&tx, &tw)
 tensor<real64> weight_numeric := numeric_gradient(a64, weight64.transpose(0, 1).contiguous(), w64, false)
-print.line(max_abs64(tw.grad - weight_numeric.transpose(0, 1)) < 0.000001)
-print.line(max_abs64(tx.grad - numeric_gradient(a64, weight64.transpose(0, 1).contiguous(), w64, true)) < 0.000001)
+println(max_abs64(tw.grad - weight_numeric.transpose(0, 1)) < 0.000001)
+println(max_abs64(tx.grad - numeric_gradient(a64, weight64.transpose(0, 1).contiguous(), w64, true)) < 0.000001)
 
 // 8: tracked transposed left operand.
 tensor<real64> left_storage := pattern64(4, 3, 5).track()
 math.sum(math.matmul(left_storage.transpose(0, 1), b64) * w64).backward(&left_storage)
 tensor<real64> left_numeric := numeric_gradient(left_storage.untrack().transpose(0, 1).contiguous(), b64, w64, true)
-print.line(max_abs64(left_storage.grad - left_numeric.transpose(0, 1)) < 0.000001)
+println(max_abs64(left_storage.grad - left_numeric.transpose(0, 1)) < 0.000001)
 
 // 9: a tracked rank-3 view (not a rank-2 transpose) is read natively through
 // a value-only contiguous copy while the view stays the autograd parent, so
@@ -558,7 +558,7 @@ tensor<real64> cube := tensor.ones<real64>([2, 3, 4]).track()
 tensor<real64> cube_view := cube.transpose(0, 2)
 tensor<real64> cube_right := pattern64(2, 3, 6)
 math.sum(math.matmul(cube_view, cube_right)).backward(&cube)
-print.line(cube.grad[1, 2, 3].item() == cube_right[1, 0].item() + cube_right[1, 1].item() + cube_right[1, 2].item())
+println(cube.grad[1, 2, 3].item() == cube_right[1, 0].item() + cube_right[1, 1].item() + cube_right[1, 2].item())
 
 // 10-11: backward(track = true) second derivatives (Hessian-vector product,
 // including the cross terms) match finite differences of the first gradient.
@@ -584,8 +584,8 @@ tensor<real64> mp := math.matmul(ma, mb)
 math.sum(mp * mp * w64).backward(&ma, &mb)
 tensor<real64> hessian_a := (pa.grad - ma.grad) / (2.0 * eps)
 tensor<real64> hessian_b := (pb.grad - mb.grad) / (2.0 * eps)
-print.line(max_abs64(ha.grad.untrack() - hessian_a) < 0.00001)
-print.line(max_abs64(hb.grad.untrack() - hessian_b) < 0.00001)
+println(max_abs64(ha.grad.untrack() - hessian_a) < 0.00001)
+println(max_abs64(hb.grad.untrack() - hessian_b) < 0.00001)
 
 // 12: third order stays available (tracked second gradient).
 tensor<real64> cubic := tensor.ones<real64>([1, 1]).track()
@@ -598,18 +598,18 @@ math.sum(first_cubic).backward(&cubic, track = true)
 tensor<real64> second_cubic := cubic.grad
 .cubic.clear_grad()
 math.sum(second_cubic).backward(&cubic)
-print.line(first_cubic.untrack()[0, 0].item() == 9.0 and second_cubic.untrack()[0, 0].item() == 18.0 and cubic.grad[0, 0].item() == 18.0)
+println(first_cubic.untrack()[0, 0].item() == 9.0 and second_cubic.untrack()[0, 0].item() == 18.0 and cubic.grad[0, 0].item() == 18.0)
 
 // 13-16: rank rules.
 tensor<real32> vector3 := tensor.ones<real32>([3])
-print.line(len(math.matmul(vector3, vector3).shape()) == 0)
+println(len(math.matmul(vector3, vector3).shape()) == 0)
 tensor<real32> matrix23 := pattern32(2, 3, 1)
 tensor<real32> mv := math.matmul(matrix23, vector3)
-print.line(len(mv.shape()) == 1 and mv.shape()[0] == 2)
+println(len(mv.shape()) == 1 and mv.shape()[0] == 2)
 tensor<real32> batched := math.matmul(tensor.ones<real32>([2, 5, 3]), pattern32(3, 4, 2))
-print.line(len(batched.shape()) == 3 and batched.shape()[0] == 2 and batched.shape()[1] == 5 and batched.shape()[2] == 4)
+println(len(batched.shape()) == 3 and batched.shape()[0] == 2 and batched.shape()[1] == 5 and batched.shape()[2] == 4)
 tensor<real32> batched_vector := math.matmul(tensor.ones<real32>([2, 5, 3]), vector3)
-print.line(len(batched_vector.shape()) == 2 and batched_vector.shape()[1] == 5)
+println(len(batched_vector.shape()) == 2 and batched_vector.shape()[1] == 5)
 
 // 17: CPU products equal the portable "round each product, add k in order"
 // semantics bit for bit.
@@ -625,14 +625,14 @@ for 0 <= nat i < 7
             total = total + product
         if exact_product[i, j].item() != total
             exact_ok = false
-print.line(exact_ok)
+println(exact_ok)
 
 // 18-19: untracked non-contiguous operands are read in place / materialized.
 tensor<real32> transposed_input := pattern32(3, 7, 5).transpose(0, 1)
 tensor<real32> via_view := math.matmul(transposed_input, pattern32(3, 2, 6))
 tensor<real32> via_copy := math.matmul(transposed_input.contiguous(), pattern32(3, 2, 6))
-print.line(math.max_all(math.abs(via_view - via_copy)).item() == real32(0))
-print.line(math.dot(pattern32(1, 4, 1).reshape([4]), pattern32(4, 1, 2).reshape([4])) == math.matmul(pattern32(1, 4, 1), pattern32(4, 1, 2))[0, 0].item())
+println(math.max_all(math.abs(via_view - via_copy)).item() == real32(0))
+println(math.dot(pattern32(1, 4, 1).reshape([4]), pattern32(4, 1, 2).reshape([4])) == math.matmul(pattern32(1, 4, 1), pattern32(4, 1, 2))[0, 0].item())
 QUI
 expect_true_lines "Math native matmul" "$TMP/native-matmul.qui" 19
 
@@ -669,15 +669,15 @@ pairwise[0] = real32(100000000)
 pairwise[1] = real32(1)
 pairwise[2] = real32(-100000000)
 pairwise[3] = real32(1)
-print.line(math.sum(pairwise).item() == real32(0))
-print.line(math.mean(pairwise).item() == real32(0))
+println(math.sum(pairwise).item() == real32(0))
+println(math.mean(pairwise).item() == real32(0))
 tensor<real32> odd := tensor.ones<real32>([7]) * real32(0.1)
-print.line(math.sum(odd).item() == ((real32(0.1) + real32(0.1)) + (real32(0.1) + real32(0.1))) + ((real32(0.1) + real32(0.1)) + real32(0.1)))
+println(math.sum(odd).item() == ((real32(0.1) + real32(0.1)) + (real32(0.1) + real32(0.1))) + ((real32(0.1) + real32(0.1)) + real32(0.1)))
 
 // 4: mean backward is upstream / N as one node.
 tensor<real64> mean_input := pattern64(3, 5, 9).track()
 math.mean(mean_input).backward(&mean_input)
-print.line(max_abs64(mean_input.grad - tensor.ones<real64>([3, 5]) / 15.0) == 0.0)
+println(max_abs64(mean_input.grad - tensor.ones<real64>([3, 5]) / 15.0) == 0.0)
 QUI
 expect_true_lines "Math native sum/mean" "$TMP/native-sum-mean.qui" 4
 
@@ -727,9 +727,9 @@ tensor<real32> pattern32(int rows, int columns, int seed)
 // 1-2: sum_last keeps the input shape and adds each row left to right.
 tensor<real32> row_values := pattern32(3, 4, 2)
 tensor<real32> row_sums := math.sum_last(row_values)
-print.line(len(row_sums.shape()) == 2 and row_sums.shape()[0] == 3 and row_sums.shape()[1] == 4)
+println(len(row_sums.shape()) == 2 and row_sums.shape()[0] == 3 and row_sums.shape()[1] == 4)
 real32 row1 := ((row_values[1, 0].item() + row_values[1, 1].item()) + row_values[1, 2].item()) + row_values[1, 3].item()
-print.line(row_sums[1, 0].item() == row1 and row_sums[1, 3].item() == row1)
+println(row_sums[1, 0].item() == row1 and row_sums[1, 3].item() == row1)
 
 // 3-5: first-occurrence ties with strict comparison and winner gradients.
 tensor<real32> ties := tensor.zeros<real32>([2, 4])
@@ -745,21 +745,21 @@ tensor<real32> tied := ties.track()
 math.sum(math.max_last(tied) * pattern32(2, 4, 1)).backward(&tied)
 tensor<real32> upstream := pattern32(2, 4, 1)
 real32 row0_upstream := ((upstream[0, 0].item() + upstream[0, 1].item()) + upstream[0, 2].item()) + upstream[0, 3].item()
-print.line(tied.grad[0, 1].item() == row0_upstream and tied.grad[0, 2].item() == real32(0) and tied.grad[0, 0].item() == real32(0))
+println(tied.grad[0, 1].item() == row0_upstream and tied.grad[0, 2].item() == real32(0) and tied.grad[0, 0].item() == real32(0))
 tensor<real32> tied_min := ties.track()
 math.sum(math.min_last(tied_min)).backward(&tied_min)
-print.line(tied_min.grad[1, 0].item() == real32(4) and tied_min.grad[1, 1].item() == real32(0) and tied_min.grad[1, 3].item() == real32(0))
+println(tied_min.grad[1, 0].item() == real32(4) and tied_min.grad[1, 1].item() == real32(0) and tied_min.grad[1, 3].item() == real32(0))
 tensor<real32> whole := pattern32(4, 6, 3)
 tensor<real32> whole_tracked := whole.track()
 math.min_all(whole_tracked).backward(&whole_tracked)
-print.line(math.sum(whole_tracked.grad).item() == real32(1) and whole_tracked.grad[0, 0].item() + real32(1) == real32(1) + whole_tracked.grad[0, 0].item())
+println(math.sum(whole_tracked.grad).item() == real32(1) and whole_tracked.grad[0, 0].item() + real32(1) == real32(1) + whole_tracked.grad[0, 0].item())
 
 // 6: float64 last-axis sums add left to right.
 tensor<real64> doubles := pattern64(5, 8, 2)
 real64 double_row := doubles[2, 0].item()
 for 1 <= nat k < 8
     double_row = double_row + doubles[2, k].item()
-print.line(math.sum_last(doubles)[2, 5].item() == double_row)
+println(math.sum_last(doubles)[2, 5].item() == double_row)
 QUI
 expect_true_lines "Math native last-axis reductions" "$TMP/native-last-axis.qui" 6
 
@@ -806,14 +806,14 @@ math.sum(hs * hs).backward(&hx, track = true)
 tensor<real64> hx_first := hx.grad
 .hx.clear_grad()
 math.sum(hx_first).backward(&hx)
-print.line(hx_first.is_tracked() and hx.grad[0, 0].item() == 18.0)
+println(hx_first.is_tracked() and hx.grad[0, 0].item() == 18.0)
 tensor<real64> mx := pattern64(2, 3, 4).track()
 tensor<real64> mm := math.max_last(mx)
 math.sum(mm * mm).backward(&mx, track = true)
 tensor<real64> mx_first := mx.grad
 .mx.clear_grad()
 math.sum(mx_first).backward(&mx)
-print.line(mx_first.is_tracked() and math.sum(mx.grad).item() == 12.0)
+println(mx_first.is_tracked() and math.sum(mx.grad).item() == 12.0)
 
 // 3: whole-tensor extrema: second derivative of min_all(x)^2 through the
 // scatter/select adjoint pair.
@@ -823,7 +823,7 @@ tensor<real64> smallest := math.min_all(ex)
 tensor<real64> ex_first := ex.grad
 .ex.clear_grad()
 math.sum(ex_first).backward(&ex)
-print.line(ex_first.is_tracked() and math.sum(ex.grad).item() == 2.0 and math.max_all(ex.grad).item() == 2.0)
+println(ex_first.is_tracked() and math.sum(ex.grad).item() == 2.0 and math.max_all(ex.grad).item() == 2.0)
 QUI
 expect_true_lines "Math native reduction higher-order" "$TMP/native-reduction-higher-order.qui" 3
 
@@ -875,8 +875,8 @@ tensor<real32> xr := x_data.transpose(0, 2).contiguous().track()
 tensor<real32> wr := w_data.track()
 tensor<real32> yr := math.matmul(xr, wr)
 math.sum(yr * up).backward(&xr, &wr)
-print.line(y.is_tracked() and same32(y.untrack(), yr.untrack()) and same32(w.grad, wr.grad))
-print.line(same32(x.grad.transpose(0, 2), xr.grad))
+println(y.is_tracked() and same32(y.untrack(), yr.untrack()) and same32(w.grad, wr.grad))
+println(same32(x.grad.transpose(0, 2), xr.grad))
 
 // 3: backward(track = true) through the non-contiguous operand: the
 // Hessian-vector product equals the contiguous reference.
@@ -896,7 +896,7 @@ math.sum(ry * ry).backward(&rx, &rw, track = true)
 tensor<real64> rw_first := rw.grad
 .rx.clear_grad()
 math.sum(rw_first * rw_first).backward(&rx)
-print.line(hw_first.is_tracked() and same64(hw_first.untrack(), rw_first.untrack()) and same64(hx.grad.transpose(0, 2), rx.grad))
+println(hw_first.is_tracked() and same64(hw_first.untrack(), rw_first.untrack()) and same64(hx.grad.transpose(0, 2), rx.grad))
 
 // 4-5: every reduction of a tracked transposed input equals the contiguous
 // reference, values and gradients.
@@ -905,12 +905,12 @@ tensor<real32> weights := pattern32(5, 6, 5)
 tensor<real32> r := r_data.track()
 tensor<real32> rv := r.transpose(0, 1)
 tensor<real32> rc := r_data.transpose(0, 1).contiguous().track()
-print.line(same32(math.sum_last(rv).untrack(), math.sum_last(rc).untrack()) and same32(math.max_last(rv).untrack(), math.max_last(rc).untrack()) and same32(math.min_last(rv).untrack(), math.min_last(rc).untrack()) and math.sum(rv).untrack().item() == math.sum(rc).untrack().item() and math.mean(rv).untrack().item() == math.mean(rc).untrack().item() and math.max_all(rv).untrack().item() == math.max_all(rc).untrack().item() and math.min_all(rv).untrack().item() == math.min_all(rc).untrack().item())
+println(same32(math.sum_last(rv).untrack(), math.sum_last(rc).untrack()) and same32(math.max_last(rv).untrack(), math.max_last(rc).untrack()) and same32(math.min_last(rv).untrack(), math.min_last(rc).untrack()) and math.sum(rv).untrack().item() == math.sum(rc).untrack().item() and math.mean(rv).untrack().item() == math.mean(rc).untrack().item() and math.max_all(rv).untrack().item() == math.max_all(rc).untrack().item() and math.min_all(rv).untrack().item() == math.min_all(rc).untrack().item())
 tensor<real32> view_loss := math.sum(math.sum_last(rv) * weights) + math.sum(math.max_last(rv) * weights) - math.sum(math.min_last(rv) * weights) + math.mean(rv) + math.sum(rv) + math.min_all(rv) * real32(3) + math.max_all(rv)
 view_loss.backward(&r)
 tensor<real32> copy_loss := math.sum(math.sum_last(rc) * weights) + math.sum(math.max_last(rc) * weights) - math.sum(math.min_last(rc) * weights) + math.mean(rc) + math.sum(rc) + math.min_all(rc) * real32(3) + math.max_all(rc)
 copy_loss.backward(&rc)
-print.line(same32(r.grad.transpose(0, 1), rc.grad))
+println(same32(r.grad.transpose(0, 1), rc.grad))
 
 // 6: results consumed through transposed views send the right gradients.
 tensor<real32> q_data := pattern32(4, 7, 6)
@@ -922,7 +922,7 @@ view_sum.backward(&q)
 tensor<real32> qr := q_data.track()
 tensor<real32> plain_sum := math.sum(math.max_last(qr) * across.transpose(0, 1)) + math.sum(math.sum_last(qr) * across.transpose(0, 1)) + math.sum(math.matmul(qr, qr.transpose(0, 1)) * square.transpose(0, 1))
 plain_sum.backward(&qr)
-print.line(same32(q.grad, qr.grad))
+println(same32(q.grad, qr.grad))
 QUI
 expect_true_lines "Math native views" "$TMP/native-views.qui" 6
 
@@ -1002,16 +1002,16 @@ tensor<real32> rows_empty := tensor.ones<real32>([0, 3])
 tensor<real32> s := math.sum_last(rows_empty)
 tensor<real32> m := math.max_last(rows_empty)
 tensor<real32> n := math.min_last(rows_empty)
-print.line(s.shape()[0] == 0 and s.shape()[1] == 3 and m.shape()[1] == 3 and n.shape()[1] == 3)
+println(s.shape()[0] == 0 and s.shape()[1] == 3 and m.shape()[1] == 3 and n.shape()[1] == 3)
 tensor<real32> tracked_empty := tensor.ones<real32>([0, 3]).track()
-print.line(math.sum_last(tracked_empty).is_tracked() and math.max_last(tracked_empty).is_tracked())
+println(math.sum_last(tracked_empty).is_tracked() and math.max_last(tracked_empty).is_tracked())
 tensor<real32> width_empty := tensor.ones<real32>([3, 0])
 tensor<real32> ws := math.sum_last(width_empty)
 tensor<real32> wm := math.max_last(width_empty)
-print.line(ws.shape()[0] == 3 and ws.shape()[1] == 0 and wm.shape()[0] == 3 and wm.shape()[1] == 0)
+println(ws.shape()[0] == 3 and ws.shape()[1] == 0 and wm.shape()[0] == 3 and wm.shape()[1] == 0)
 tensor<real32> total := math.sum(tracked_empty)
 total.backward(&tracked_empty)
-print.line(total.untrack().item() == real32(0) and tracked_empty.grad.shape()[0] == 0 and tracked_empty.grad.shape()[1] == 3)
+println(total.untrack().item() == real32(0) and tracked_empty.grad.shape()[0] == 0 and tracked_empty.grad.shape()[1] == 3)
 QUI
 expect_true_lines "Math native empty reductions" "$TMP/native-empty.qui" 4
 
@@ -1104,28 +1104,28 @@ bool fold_matches64(tensor<real64> left, tensor<real64> right, tensor<real64> pr
 // 1-2: untracked and tracked real32, short inner axis.
 tensor<real32> l3 := signed_left32(6, 3)
 tensor<real32> r3 := signed_right32(3, 8)
-print.line(fold_matches32(l3, r3, math.matmul(l3, r3)))
-print.line(fold_matches32(l3, r3, math.matmul(l3.track(), r3).untrack()))
+println(fold_matches32(l3, r3, math.matmul(l3, r3)))
+println(fold_matches32(l3, r3, math.matmul(l3.track(), r3).untrack()))
 
 // 3-4: an inner axis longer than one depth block, tracked right operand read
 // through its transposed storage.
 tensor<real32> l300 := signed_left32(6, 300)
 tensor<real32> r300 := signed_right32(300, 8)
-print.line(fold_matches32(l300, r300, math.matmul(l300, r300.track()).untrack()))
+println(fold_matches32(l300, r300, math.matmul(l300, r300.track()).untrack()))
 tensor<real32> r300_storage := r300.transpose(0, 1).contiguous().track()
-print.line(fold_matches32(l300, r300, math.matmul(l300, r300_storage.transpose(0, 1)).untrack()))
+println(fold_matches32(l300, r300, math.matmul(l300, r300_storage.transpose(0, 1)).untrack()))
 
 // 5: float64, tracked and untracked.
 tensor<real64> l64 := widen(l300)
 tensor<real64> r64 := widen(r300)
-print.line(fold_matches64(l64, r64, math.matmul(l64, r64)) and fold_matches64(l64, r64, math.matmul(l64.track(), r64.track()).untrack()))
+println(fold_matches64(l64, r64, math.matmul(l64, r64)) and fold_matches64(l64, r64, math.matmul(l64.track(), r64.track()).untrack()))
 
 // 6: matrix x vector and dot keep -0 for all -0 products.
 tensor<real32> negative_zeros := r3.transpose(0, 1).contiguous().gather([3, 4, 5], [3])
 tensor<real32> mv := math.matmul(l3, negative_zeros)
 tensor<real32> negative_row := l3.gather([0, 1, 2], [3])
 tensor<real32> plus_zeros := tensor.zeros<real32>([3])
-print.line(negative_zero32(mv[1].item()) and not negative_zero32(mv[0].item()) and not negative_zero32(mv[2].item()) and negative_zero32(math.dot(negative_row, plus_zeros)) and negative_zero32(math.matmul(l3.track(), plus_zeros).untrack()[0].item()))
+println(negative_zero32(mv[1].item()) and not negative_zero32(mv[0].item()) and not negative_zero32(mv[2].item()) and negative_zero32(math.dot(negative_row, plus_zeros)) and negative_zero32(math.matmul(l3.track(), plus_zeros).untrack()[0].item()))
 QUI
 expect_true_lines "Math native signed zeros" "$TMP/native-signed-zero.qui" 6
 
@@ -1191,7 +1191,7 @@ tensor<real32> x := pattern32(6, 5, 1).track()
 tensor<real32> w := pattern32(4, 5, 2).track()
 tensor<real32> y := math.matmul(x, w.transpose(0, 1))
 (math.sum(math.max_last(y)) + math.sum(math.min_last(y)) + math.max_all(y) - math.min_all(y) + math.mean(math.sum_last(y))).backward(&x, &w)
-print.line(x.grad.shape()[0] == 6 and w.grad.shape()[0] == 4)
+println(x.grad.shape()[0] == 6 and w.grad.shape()[0] == 4)
 
 // 2: float64 second order: tracked backward of every node family, then the
 // backward of the nodes it attached.
@@ -1203,7 +1203,7 @@ tensor<real64> ga := a.grad
 .a.clear_grad()
 .b.clear_grad()
 math.sum(ga * ga).backward(&a, &b)
-print.line(a.grad.shape()[0] == 3 and b.grad.shape()[1] == 2)
+println(a.grad.shape()[0] == 3 and b.grad.shape()[1] == 2)
 QUI
 expect_native_events "Math native CPU dispatch" "$TMP/native-dispatch.qui" 2 \
     "matmul cpu float32" "sum cpu float32" "mean cpu float32" \
@@ -1233,7 +1233,7 @@ tensor<real32> cube := tensor.ones<real32>([2, 3, 4]).track()
 tensor<real32> right := tensor.ones<real32>([2, 3])
 tensor<real32> loss := math.sum(view) + math.mean(view) + math.sum_last(view).gather([7], []) + math.max_last(view).gather([3], []) + math.min_last(view).gather([11], []) + math.max_all(view) + math.min_all(view) + math.matmul(cube.transpose(0, 2), right).gather([5], [])
 loss.backward(&tracked, &cube)
-print.line(tracked.grad.shape()[0] == 5 and cube.grad[0, 0, 0].item() == real32(0))
+println(tracked.grad.shape()[0] == 5 and cube.grad[0, 0, 0].item() == real32(0))
 QUI
 expect_native_events "Math native CPU view dispatch" "$TMP/native-dispatch-views.qui" 1 \
     "sum cpu float32=1" "mean cpu float32=1" "sum_last cpu float32=1" \
@@ -1261,7 +1261,7 @@ t[0, 2] = real32(3)
 t[1, 0] = real32(4)
 t[1, 1] = real32(5)
 tensor<real32> result := $operation
-print.line("unexpected success")
+println("unexpected success")
 QUI
     set +e
     uninitialized_output="$(QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" "$TMP/uninitialized-$uninitialized_case.qui" 2>&1)"
@@ -1285,7 +1285,7 @@ match root
         print(false)
     error problem
         print(problem.code == "MATH_DOMAIN")
-print.line()
+println()
 
 int | error rounded := math.round(real64(1.0e40))
 match rounded
@@ -1293,7 +1293,7 @@ match rounded
         print(false)
     error problem
         print(problem.code == "MATH_RANGE")
-print.line()
+println()
 
 QUI
 codes_output="$(QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" "$TMP/math-error-codes.qui")"
@@ -1336,7 +1336,7 @@ void sample32(string label, tensor<real32> value)
         count = count * int(extent)
     flat = flat.reshape([nat(count)])
     for 0 <= int index < count step 29
-        print.line("{label} {index} {flat[index].item()}")
+        println("{label} {index} {flat[index].item()}")
 
 void sample64(string label, tensor<real64> value)
     tensor<real64> flat := value.untrack().cpu().contiguous()
@@ -1345,7 +1345,7 @@ void sample64(string label, tensor<real64> value)
         count = count * int(extent)
     flat = flat.reshape([nat(count)])
     for 0 <= int index < count step 29
-        print.line("{label} {index} {flat[index].item()}")
+        println("{label} {index} {flat[index].item()}")
 
 // Products, last-axis reductions and unary kernels large enough to split
 // into several parallel chunks, with their gradients.

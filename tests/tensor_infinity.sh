@@ -28,11 +28,11 @@ tensor<real32> paired := paired_host${placement}
 tensor<real32> leading := leading_host${placement}
 tensor<real32> zero_input := tensor.zeros<real32>([1, 2])${placement}
 tensor<real32> logs := math.log(zero_input).cpu()
-print.line(logs[0, 0].item() == -infinity and logs[0, 1].item() == -infinity)
-print.line(math.sum(paired).cpu().item() == infinity and math.mean(paired).cpu().item() == infinity)
-print.line(math.sum(leading).cpu().item() == infinity and math.mean(leading).cpu().item() == infinity)
-print.line(math.sum(paired.track().transpose(0, 1)).untrack().cpu().item() == infinity and math.mean(paired.track().transpose(0, 1)).untrack().cpu().item() == infinity)
-print.line(math.sum(leading.track().transpose(0, 1)).untrack().cpu().item() == infinity and math.mean(leading.track().transpose(0, 1)).untrack().cpu().item() == infinity)
+println(logs[0, 0].item() == -infinity and logs[0, 1].item() == -infinity)
+println(math.sum(paired).cpu().item() == infinity and math.mean(paired).cpu().item() == infinity)
+println(math.sum(leading).cpu().item() == infinity and math.mean(leading).cpu().item() == infinity)
+println(math.sum(paired.track().transpose(0, 1)).untrack().cpu().item() == infinity and math.mean(paired.track().transpose(0, 1)).untrack().cpu().item() == infinity)
+println(math.sum(leading.track().transpose(0, 1)).untrack().cpu().item() == infinity and math.mean(leading.track().transpose(0, 1)).untrack().cpu().item() == infinity)
 QUI
 QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" check "$TMP/paired.qui"
 QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" "$TMP/paired.qui" > "$TMP/paired.out"
@@ -60,7 +60,7 @@ tensor<real32> host := tensor.ones<real32>([1, 3])
 host[0, 2] = infinity
 tensor<real32> carried := host${placement}${view}
 tensor<real32> result := math.${operation}(carried)
-print.line(result${untrack}.cpu().item() == infinity)
+println(result${untrack}.cpu().item() == infinity)
 QUI
         QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" check "$TMP/carried.qui"
         QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" "$TMP/carried.qui" > "$TMP/carried.out"
@@ -79,7 +79,7 @@ tensor<real32> host := tensor.ones<real32>([1, 2])
 host[0, 0] = infinity
 host[0, 1] = -infinity
 tensor<real32> opposed := host${placement}
-print.line("before")
+println("before")
 tensor<real32> result := math.${operation}(opposed)
 print("after")
 QUI
