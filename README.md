@@ -195,6 +195,32 @@ configuration, needs no API, ABI, or compiler descriptor change, and behaves
 the same under `quidra run`, the REPL, and AOT binaries. Core has no
 per-package option mechanism.
 
+## Integer digit decomposition
+
+> Specified for `develop`. Math implementation is pending.
+
+After `import math`, the zero-argument method `value.digits()` and the
+function `math.digits(value)` both return an `int[]`. The input is an
+integer scalar (`int`, `nat`, or any of their fixed-width forms).
+
+- The result contains the base-10 digits of the magnitude in order from
+  most significant to least significant. Each element is in `0` through
+  `9`. The result has no leading zeros, and all other zeros are preserved.
+- Zero returns `[0]`. Negative values produce the same digits as their
+  mathematical absolute value, including the minimum of a fixed-width
+  signed type.
+- Decomposition is exact for arbitrary-precision integers.
+
+```quidra
+import math
+
+value := 98000
+digits := value.digits()                // [9, 8, 0, 0, 0]
+digit_sum := digits.sum()               // 17
+zero_digits := math.digits(0)           // [0]
+negative_digits := math.digits(-50301)  // [5, 0, 3, 0, 1]
+```
+
 ## Reduction specification
 
 > Specified for `develop`. The current package provides whole-value `sum()`
