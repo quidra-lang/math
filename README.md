@@ -28,6 +28,9 @@ d := math.dot(
 `matmul` supports a left tensor with rank >= 1 and a right vector or matrix.
 A right vector removes the contracted axis; a right matrix replaces it with
 the matrix output width. Two vectors therefore produce a rank-0 tensor.
+The [Core specification for `a @ b`](https://github.com/quidra-lang/quidra/blob/develop/docs/spec/language.md#matrix-multiplication-operator)
+maps that syntax to Math's `a.matmul(b)` with the same type, shape, device, and
+autograd rules. The operator awaits Core compiler support.
 
 `math.sum(value)`, `math.mean(value)`, `math.max_all(value)`, and `math.min_all(value)` also accept numeric arrays. Array `sum` adds left to right from a zero of the element type and returns that type, including for an empty array. It supports every integer, real, and complex type, preserving the scalar addition's checked overflow and rounding. Array `mean` returns an exact `real` for integer arrays, accumulating exactly before division; real and complex arrays keep their element type and divide their left-to-right sum by the length converted to that type. Array `min_all`/`max_all` accept ordered numeric elements (integers and reals), return the element type, and keep the first occurrence of ties. Empty array `mean`, `min_all`, and `max_all` report `MATH_SHAPE`, as their tensor counterparts do. Array comprehensions work directly:
 
@@ -44,10 +47,8 @@ The former Core tensor methods `sum_last()`, `max_last()`, and
 `math.max_last(value)`, and `math.min_last(value)`. They keep the input shape:
 each row's sum (added left to right) or first-occurrence extremum is broadcast
 across the last axis, so `weights / math.sum_last(weights)` normalizes rows.
-A future general axis-aware reduction API can supersede these convenience
-names without moving the numerical semantics back into Core. Core exposes no
-public numerical reduction methods; whole-tensor and axis-shaped reduction
-semantics live here.
+See the [reduction specification](#reduction-specification) for general
+reductions that remove a selected dimension. Math owns both forms.
 
 For floating tensors on the CPU, the fake test GPU, and Metal (`real32`),
 these reductions run as Math-native kernels with one Math-owned
@@ -193,6 +194,45 @@ on behind its caller. It follows Math's existing `QUIDRA_MATH_*` native
 configuration, needs no API, ABI, or compiler descriptor change, and behaves
 the same under `quidra run`, the REPL, and AOT binaries. Core has no
 per-package option mechanism.
+
+## Reduction specification
+
+> Specified for `develop`. The current package provides whole-value `sum()`
+> and `mean()` and spells whole-value extrema `max_all()` and `min_all()`.
+> The `max()` and `min()` names and the `dim` overloads await implementation.
+
+After `import math`, the receiver forms `values.sum()`, `values.mean()`,
+`values.max()`, and `values.min()` aggregate all elements when called with no
+arguments. The corresponding function forms are `math.sum(values)`,
+`math.mean(values)`, `math.max(values)`, and `math.min(values)`.
+
+| Operation | Array result | Tensor result |
+| --- | --- | --- |
+| `sum()` | Element-type scalar | Rank-0 tensor of the input integer or floating type |
+| `mean()` | Exact `real` for integer arrays. Element-type scalar for real or complex arrays. | Rank-0 tensor of the input floating type |
+| `max()` / `min()` | Scalar of the ordered element type | Rank-0 tensor of the input integer or floating type |
+
+The names `max` and `min` replace `max_all` and `min_all` in the public API
+specification. The no-argument forms use the whole-value arithmetic, tie
+selection, device placement, and autograd rules described in [API](#api).
+An empty input gives a typed zero for `sum()` and raises `MATH_SHAPE` for
+`mean()`, `max()`, or `min()`.
+
+Tensor overloads of `sum`, `mean`, `max`, and `min` also accept a zero-based
+`nat dim` parameter. For example, `t.max(dim = 1)` and
+`math.max(t, dim = 1)` both reduce the second dimension of `t`. The result
+removes that dimension and keeps the other dimensions in their original
+order. A tensor shaped `[2, 3, 4]` therefore produces `[2, 4]` in this
+example. A rank-1 tensor reduced along `dim = 0` produces a rank-0 tensor.
+
+Each slice along the selected dimension uses the same arithmetic and tie
+selection as a whole-tensor reduction in logical element order. The output
+keeps the input's element type and device. Floating reductions preserve
+autograd with the whole-tensor derivative rules applied per slice. A dimension
+index at or above the rank raises `MATH_SHAPE`. If the selected dimension
+has extent zero, `sum` produces zero for each output element and `mean`,
+`max`, and `min` raise `MATH_SHAPE`. The `*_last` helpers above broadcast
+their result to the input shape, which supports row normalization.
 
 ## Errors
 
