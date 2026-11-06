@@ -48,4 +48,4 @@ println(positive == expected_positive and doubled == extremes and
 real[] exact_large := [1.0e308, 1.0e308, -1.0e308]
 real exact_sum := exact_large.sum()
 println(exact_sum == real(1.0e308) and exact_sum < real(inf) and
-      logs_exact[0].string() == "-∞" and logs_exact[2].string() == "∞")
+      string(logs_exact[0]) == "-∞" and string(logs_exact[2]) == "∞")

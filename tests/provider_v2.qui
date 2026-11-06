@@ -4,9 +4,9 @@ real checked_real(real | error result)
     real value := result
     return value
 
-println(real(math.pi).string() == "π")
-println(real(math.e).string() == "e")
-println(checked_real(math.sqrt(real(8))).string() == "2√2")
+println(string(real(math.pi)) == "π")
+println(string(real(math.e)) == "e")
+println(string(checked_real(math.sqrt(real(8)))) == "2√2")
 println(checked_real(math.sqrt(real(144))) == real(12))
 println(math.sin(real(0)) == real(0) and math.cos(real(0)) == real(1))
 println(math.tan(real(0)) == real(0) and checked_real(math.log(real(1))) == real(0))

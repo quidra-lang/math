@@ -97,10 +97,10 @@ println(math.sum([for x := values[] if x > 0 then x * x]) == 14)
 println(math.sum([for x := values[] if x > 10 then x * x]) == 0)
 
 real32[] zeros := [-0.0]
-println(math.sum(zeros).string() == "0.0")
+println(string(math.sum(zeros)) == "0.0")
 real32[] tied := [-0.0, 0.0]
 real32[] singleton := [2.0]
-println(math.min_all(tied).string() == "-0.0" and math.max_all(tied).string() == "-0.0" and math.min_all(singleton) == real32(2) and math.max_all(singleton) == real32(2))
+println(string(math.min_all(tied)) == "-0.0" and string(math.max_all(tied)) == "-0.0" and math.min_all(singleton) == real32(2) and math.max_all(singleton) == real32(2))
 
 // Array dispatch must leave existing tensor reduction and autograd intact.
 tensor<int32> integers := tensor.ones<int32>([3])

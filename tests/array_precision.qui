@@ -23,9 +23,9 @@ real[] exact_inputs := [2.0]
 real[] exact_logs := exact_inputs.log()
 real[] exact_exps := exact_inputs.exp()
 real[] exact_roots := exact_inputs.sqrt()
-println(exact_logs[0].string() == math.log(exact_inputs[0]).string() and
-      exact_exps[0].string() == math.exp(exact_inputs[0]).string() and
-      exact_roots[0].string() == math.sqrt(exact_inputs[0]).string())
+println(string(exact_logs[0]) == string(math.log(exact_inputs[0])) and
+      string(exact_exps[0]) == string(math.exp(exact_inputs[0])) and
+      string(exact_roots[0]) == string(math.sqrt(exact_inputs[0])))
 
 // Independent products round before addition; contracting into an FMA
 // would produce -2^-54 instead of zero in the second iteration.

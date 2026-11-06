@@ -709,7 +709,7 @@ bool same_bits32(real32 x, real32 y)
     if x != x
         return y != y
     if x == real32(0)
-        return y == real32(0) and x.string() == y.string()
+        return y == real32(0) and string(x) == string(y)
     return x == y
 
 tensor<real32> signed_left32(int rows, int inner)
@@ -752,7 +752,7 @@ bool fold_matches32(int rows, int inner, int columns, bool tracked)
             if not same_bits32(product[i, j].item(), total)
                 return false
     real32 first_value := product[0, 0].item()
-    return first_value == real32(0) and first_value.string() == "-0.0"
+    return first_value == real32(0) and string(first_value) == "-0.0"
 
 execution_policy(int32(1))
 // 1: per-output kernel, 2: tiled kernel, 3: split-inner kernel.

@@ -514,14 +514,14 @@ bool same_bits32(real32 x, real32 y)
     if x != x
         return y != y
     if x == real32(0)
-        return y == real32(0) and x.string() == y.string()
+        return y == real32(0) and string(x) == string(y)
     return x == y
 
 bool same_bits64(real64 x, real64 y)
     if x != x
         return y != y
     if x == 0.0
-        return y == 0.0 and x.string() == y.string()
+        return y == 0.0 and string(x) == string(y)
     return x == y
 
 // Row i: all negative (i % 3 == 0), all positive (1), or alternating (2).
@@ -558,7 +558,7 @@ bool fold_matches32(tensor<real32> left, tensor<real32> right, tensor<real32> de
                 total = total + term
             if not same_bits32(product[i, j].item(), total)
                 return false
-    return device_product.device() == 0 and product[0, 0].item().string() == "-0.0"
+    return device_product.device() == 0 and string(product[0, 0].item()) == "-0.0"
 
 tensor<real64> widen(tensor<real32> value)
     tensor<real64> result := tensor.zeros<real64>(value.shape())
@@ -578,7 +578,7 @@ bool fold_matches64(tensor<real64> left, tensor<real64> right, tensor<real64> de
                 total = total + term
             if not same_bits64(product[i, j].item(), total)
                 return false
-    return product[0, 0].item().string() == "-0.0"
+    return string(product[0, 0].item()) == "-0.0"
 
 // 1-2: untracked and tracked real32, short and depth-blocked inner axes.
 tensor<real32> l3 := signed_left32(6, 3)

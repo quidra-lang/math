@@ -262,7 +262,7 @@ private void .array_abs<T: numeric>(T &value)
     value = abs(value)
 
 private void .array_abs<T>(T &value)
-    for: 0 <= nat index < len(value)
+    for: 0 <= nat index < value.len()
         .array_abs(&value[index])
 
 private void | error .array_sqrt<T: numeric>(T &value)
@@ -271,7 +271,7 @@ private void | error .array_sqrt<T: numeric>(T &value)
     return
 
 private void | error .array_sqrt<T>(T &value)
-    for: 0 <= nat index < len(value)
+    for: 0 <= nat index < value.len()
         try .array_sqrt(&value[index])
     return
 
@@ -281,7 +281,7 @@ private void | error .array_log<T: numeric>(T &value)
     return
 
 private void | error .array_log<T>(T &value)
-    for: 0 <= nat index < len(value)
+    for: 0 <= nat index < value.len()
         try .array_log(&value[index])
     return
 
@@ -291,7 +291,7 @@ private void | error .array_exp<T: numeric>(T &value)
     return
 
 private void | error .array_exp<T>(T &value)
-    for: 0 <= nat index < len(value)
+    for: 0 <= nat index < value.len()
         try .array_exp(&value[index])
     return
 
@@ -371,17 +371,17 @@ tensor<T> min_all<T: floating>(extend tensor<T> value)
 // In particular, fixed-width intermediate multiplication and addition cannot
  // silently widen or reorder, and an empty pair returns the additive identity.
 T dot<T: numeric>(extend T[] a, T[] b)
-    if len(a) != len(b)
+    if a.len() != b.len()
         error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
     total := T(0)
-    for: 0 <= nat index < len(a)
+    for: 0 <= nat index < a.len()
         total += a[index] * b[index]
     return total
 
 real32 dot(extend tensor<real32> a, tensor<real32> b)
     a_shape := int(a.shape())
     b_shape := int(b.shape())
-    if len(a_shape) != 1 or len(b_shape) != 1
+    if a_shape.len() != 1 or b_shape.len() != 1
         error("math.dot requires two rank-1 tensors", code = "MATH_SHAPE")
     if a_shape[0] != b_shape[0]
         error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
@@ -390,7 +390,7 @@ real32 dot(extend tensor<real32> a, tensor<real32> b)
 real64 dot(extend tensor<real64> a, tensor<real64> b)
     a_shape := int(a.shape())
     b_shape := int(b.shape())
-    if len(a_shape) != 1 or len(b_shape) != 1
+    if a_shape.len() != 1 or b_shape.len() != 1
         error("math.dot requires two rank-1 tensors", code = "MATH_SHAPE")
     if a_shape[0] != b_shape[0]
         error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
@@ -399,7 +399,7 @@ real64 dot(extend tensor<real64> a, tensor<real64> b)
 T dot<T: integer>(extend tensor<T> a, tensor<T> b)
     a_shape := int(a.shape())
     b_shape := int(b.shape())
-    if len(a_shape) != 1 or len(b_shape) != 1
+    if a_shape.len() != 1 or b_shape.len() != 1
         error("math.dot requires two rank-1 tensors", code = "MATH_SHAPE")
     if a_shape[0] != b_shape[0]
         error("math.dot requires equal vector lengths", code = "MATH_SHAPE")
@@ -411,8 +411,8 @@ tensor<T> matmul<T: integer>(extend tensor<T> a, tensor<T> b)
 tensor<real32> matmul(extend tensor<real32> a, tensor<real32> b)
     a_shape := int(a.shape())
     b_shape := int(b.shape())
-    a_rank := int(len(a_shape))
-    b_rank := int(len(b_shape))
+    a_rank := int(a_shape.len())
+    b_rank := int(b_shape.len())
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
         error("math.matmul requires left rank >= 1 and right rank 1 or 2", code = "MATH_SHAPE")

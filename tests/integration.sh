@@ -24,12 +24,12 @@ println(e_exact > real(2))
 println(pi_exact > e_exact)
 real exact_sqrt := math.sqrt(real(4))
 real exact_log := math.log(real(1))
-println(exact_sqrt.string() == "2.0")
-println(math.sin(real(0)).string() == "0.0")
-println(math.cos(real(0)).string() == "1.0")
-println(math.tan(real(0)).string() == "0.0")
-println(exact_log.string() == "0.0")
-println(math.exp(real(0)).string() == "1.0")
+println(string(exact_sqrt) == "2.0")
+println(string(math.sin(real(0))) == "0.0")
+println(string(math.cos(real(0))) == "1.0")
+println(string(math.tan(real(0))) == "0.0")
+println(string(exact_log) == "0.0")
+println(string(math.exp(real(0))) == "1.0")
 
 tensor<real32> left := tensor.ones<real32>([2, 3])
 tensor<real32> right := tensor.ones<real32>([3, 2])
@@ -202,7 +202,7 @@ println(higher_max_accumulated[0].item() == real32(5))
 println(higher_max_accumulated[1].item() == real32(0))
 
 tensor<real32> scalar_product := math.matmul(vector, vector)
-println(len(scalar_product.shape()) == 0)
+println(scalar_product.shape().len() == 0)
 println(scalar_product.item() == real32(3))
 
 tensor<real32> tracked_left := tensor.ones<real32>([2, 3]).track()
@@ -602,14 +602,14 @@ println(first_cubic.untrack()[0, 0].item() == 9.0 and second_cubic.untrack()[0, 
 
 // 13-16: rank rules.
 tensor<real32> vector3 := tensor.ones<real32>([3])
-println(len(math.matmul(vector3, vector3).shape()) == 0)
+println(math.matmul(vector3, vector3).shape().len() == 0)
 tensor<real32> matrix23 := pattern32(2, 3, 1)
 tensor<real32> mv := math.matmul(matrix23, vector3)
-println(len(mv.shape()) == 1 and mv.shape()[0] == 2)
+println(mv.shape().len() == 1 and mv.shape()[0] == 2)
 tensor<real32> batched := math.matmul(tensor.ones<real32>([2, 5, 3]), pattern32(3, 4, 2))
-println(len(batched.shape()) == 3 and batched.shape()[0] == 2 and batched.shape()[1] == 5 and batched.shape()[2] == 4)
+println(batched.shape().len() == 3 and batched.shape()[0] == 2 and batched.shape()[1] == 5 and batched.shape()[2] == 4)
 tensor<real32> batched_vector := math.matmul(tensor.ones<real32>([2, 5, 3]), vector3)
-println(len(batched_vector.shape()) == 2 and batched_vector.shape()[1] == 5)
+println(batched_vector.shape().len() == 2 and batched_vector.shape()[1] == 5)
 
 // 17: CPU products equal the portable "round each product, add k in order"
 // semantics bit for bit.
@@ -727,7 +727,7 @@ tensor<real32> pattern32(int rows, int columns, int seed)
 // 1-2: sum_last keeps the input shape and adds each row left to right.
 tensor<real32> row_values := pattern32(3, 4, 2)
 tensor<real32> row_sums := math.sum_last(row_values)
-println(len(row_sums.shape()) == 2 and row_sums.shape()[0] == 3 and row_sums.shape()[1] == 4)
+println(row_sums.shape().len() == 2 and row_sums.shape()[0] == 3 and row_sums.shape()[1] == 4)
 real32 row1 := ((row_values[1, 0].item() + row_values[1, 1].item()) + row_values[1, 2].item()) + row_values[1, 3].item()
 println(row_sums[1, 0].item() == row1 and row_sums[1, 3].item() == row1)
 
@@ -1028,18 +1028,18 @@ bool same_bits32(real32 x, real32 y)
     if x != x
         return y != y
     if x == real32(0)
-        return y == real32(0) and x.string() == y.string()
+        return y == real32(0) and string(x) == string(y)
     return x == y
 
 bool same_bits64(real64 x, real64 y)
     if x != x
         return y != y
     if x == 0.0
-        return y == 0.0 and x.string() == y.string()
+        return y == 0.0 and string(x) == string(y)
     return x == y
 
 bool negative_zero32(real32 x)
-    return x == real32(0) and x.string() == "-0.0"
+    return x == real32(0) and string(x) == "-0.0"
 
 // Row i: all negative (i % 3 == 0), all positive (1), or alternating (2).
 // Column j: all +0 (j % 4 == 0), all -0 (1), mixed signed zeros (2), or
@@ -1100,7 +1100,7 @@ bool fold_matches64(tensor<real64> left, tensor<real64> right, tensor<real64> pr
                 total = total + term
             if not same_bits64(product[i, j].item(), total)
                 return false
-    return product[0, 0].item().string() == "-0.0"
+    return string(product[0, 0].item()) == "-0.0"
 
 // 1-2: untracked and tracked real32, short inner axis.
 tensor<real32> l3 := signed_left32(6, 3)
