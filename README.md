@@ -2,7 +2,7 @@
 
 Generic numerical computing for Quidra.
 
-**Core provides mechanisms. Math owns generic numerical semantics.**
+**Core provides basic reductions. Math provides mathematical functions, linear algebra, and numerical algorithms.**
 
 Math contains reusable numerical operations that are not required to make
 the Quidra language, tensor storage, autograd graph, or device substrate exist.
@@ -40,15 +40,15 @@ squares := math.sum([for x := values[] if x > 0 then x * x])
 average := math.mean(values)
 ```
 
-The tensor forms own whole-tensor numerical reduction semantics. Integer `sum` is untracked; floating reductions preserve the original differentiable path. Whole-tensor `sum`/`mean` add elements with a level-by-level pairwise tree (adjacent pairs; an odd trailing element is carried without masked multiplication, preserving signed infinity and the same parenthesization on native and portable backends), and `mean` divides by the element count accumulated in the tensor's dtype from powers of two. Whole-tensor `max_all`/`min_all` use strict comparison, so ties are first-occurrence. Empty floating `sum` keeps differentiability through a Math-owned zero-Jacobian custom operation; empty `mean`, `max_all`, and `min_all` are domain errors.
+The qualified tensor compatibility functions preserve their whole-tensor behavior. Integer `sum` is untracked; floating reductions preserve the original differentiable path. Whole-tensor `sum`/`mean` add elements with a level-by-level pairwise tree (adjacent pairs; an odd trailing element is carried without masked multiplication, preserving signed infinity and the same parenthesization on native and portable backends), and `mean` divides by the element count accumulated in the tensor's dtype from powers of two. Whole-tensor `max_all`/`min_all` use strict comparison, so ties are first-occurrence. Empty floating `sum` keeps differentiability through a Math-owned zero-Jacobian custom operation; empty `mean`, `max_all`, and `min_all` are domain errors.
 
 The former Core tensor methods `sum_last()`, `max_last()`, and
 `min_last()` are package-owned here as `math.sum_last(value)`,
 `math.max_last(value)`, and `math.min_last(value)`. They keep the input shape:
 each row's sum (added left to right) or first-occurrence extremum is broadcast
 across the last axis, so `weights / math.sum_last(weights)` normalizes rows.
-See the [reduction specification](#reduction-specification) for general
-reductions that remove a selected dimension. Math owns both forms.
+See the [reduction specification](#reduction-specification) for Core reductions
+that remove a selected dimension.
 
 For floating tensors on the CPU, the fake test GPU, and Metal (`real32`),
 these reductions run as Math-native kernels with one Math-owned
@@ -223,42 +223,17 @@ negative_digits := math.digits(-50301)  // [5, 0, 3, 0, 1]
 
 ## Reduction specification
 
-> Specified for `develop`. The current package provides whole-value `sum()`
-> and `mean()` and spells whole-value extrema `max_all()` and `min_all()`.
-> The `max()` and `min()` names and the `dim` overloads await implementation.
+Use the [Core reduction methods](https://github.com/quidra-lang/quidra/blob/develop/docs/spec/language.md#numerical-reductions)
+`sum()`, `mean()`, `var()`, `std()`, `min()`, and `max()` directly on arrays or tensors.
+A tensor reduction accepts a zero-based `dim` that removes the selected dimension.
+Variance and standard deviation accept `ddof`, with `0` as the default.
 
-After `import math`, the receiver forms `values.sum()`, `values.mean()`,
-`values.max()`, and `values.min()` aggregate all elements when called with no
-arguments. The corresponding function forms are `math.sum(values)`,
-`math.mean(values)`, `math.max(values)`, and `math.min(values)`.
-
-| Operation | Array result | Tensor result |
-| --- | --- | --- |
-| `sum()` | Element-type scalar | Rank-0 tensor of the input integer or floating type |
-| `mean()` | Exact `real` for integer arrays. Element-type scalar for real or complex arrays. | Rank-0 tensor of the input floating type |
-| `max()` / `min()` | Scalar of the ordered element type | Rank-0 tensor of the input integer or floating type |
-
-The names `max` and `min` replace `max_all` and `min_all` in the public API
-specification. The no-argument forms use the whole-value arithmetic, tie
-selection, device placement, and autograd rules described in [API](#api).
-An empty input gives a typed zero for `sum()` and raises `MATH_SHAPE` for
-`mean()`, `max()`, or `min()`.
-
-Tensor overloads of `sum`, `mean`, `max`, and `min` also accept a zero-based
-`nat dim` parameter. For example, `t.max(dim = 1)` and
-`math.max(t, dim = 1)` both reduce the second dimension of `t`. The result
-removes that dimension and keeps the other dimensions in their original
-order. A tensor shaped `[2, 3, 4]` therefore produces `[2, 4]` in this
-example. A rank-1 tensor reduced along `dim = 0` produces a rank-0 tensor.
-
-Each slice along the selected dimension uses the same arithmetic and tie
-selection as a whole-tensor reduction in logical element order. The output
-keeps the input's element type and device. Floating reductions preserve
-autograd with the whole-tensor derivative rules applied per slice. A dimension
-index at or above the rank raises `MATH_SHAPE`. If the selected dimension
-has extent zero, `sum` produces zero for each output element and `mean`,
-`max`, and `min` raise `MATH_SHAPE`. The `*_last` helpers above broadcast
-their result to the input shape, which supports row normalization.
+Math retains `math.sum(value)`, `math.mean(value)`, `math.max_all(value)`,
+and `math.min_all(value)` for existing whole-value callers. The array
+compatibility functions delegate to Core. The qualified tensor compatibility
+functions use the existing native and portable paths described in [API](#api).
+Use Math's `sum_last()`, `min_last()`, and `max_last()` to broadcast a
+last-axis reduction back to the input shape.
 
 ## Errors
 
@@ -280,9 +255,10 @@ retain their originating codes.
 ## Ownership boundary
 
 Quidra Core owns tensor representation, shape/stride/storage, CPU/GPU placement,
-transfers, autograd graph mechanics, primitive tensor arithmetic, and generic
-extension hooks. Math owns public numerical reductions and linear-algebra
-semantics plus their autograd/native/backend/compiler implementations.
+transfers, autograd graph mechanics, primitive tensor arithmetic, basic
+reductions, and generic extension hooks. Math owns mathematical functions,
+linear algebra, and broadcast row reductions, including their backend and
+autograd implementations.
 Domain packages such as NN, Vision, Video, and DNN may depend on Math but keep
 their own domain-specific operations.
 
@@ -346,7 +322,7 @@ import math
 real64[] values := [1.0, 4.0, 9.0]
 roots := values.sqrt()      // math.sqrt(values)
 a := [1, 2, 3]
-result := a.sum()                // math.sum(a)
+result := a.sum()                // Core reduction
 product := a.dot(a)             // math.dot(a, a)
 ```
 

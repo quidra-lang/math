@@ -315,34 +315,23 @@ T[] | error exp<T>(extend T[] value)
     try .array_exp(&result)
     return result
 
-T sum<T: numeric>(extend T[] value)
-    total := T(0)
-    for element := value[]
-        total = total + element
-    return total
+// Keep the qualified names for callers of earlier Math versions.
+T sum<T: numeric>(T[] value)
+    return value.sum()
 
-tensor<T> sum<T: integer>(extend tensor<T> value)
+tensor<T> sum<T: integer>(tensor<T> value)
     return internal.sum_all<T>(value)
 
-tensor<T> sum<T: floating>(extend tensor<T> value)
+tensor<T> sum<T: floating>(tensor<T> value)
     return internal.sum_all<T>(value)
 
-T mean<T: numeric>(extend T[] value)
-    if len(value) == 0
-        error("math.mean requires at least one element", code = "MATH_SHAPE")
-    total := sum<T>(value)
-    count := T(len(value))
-    return total / count
+T mean<T: numeric>(T[] value)
+    return value.mean()
 
-real mean<T: integer>(extend T[] value)
-    if len(value) == 0
-        error("math.mean requires at least one element", code = "MATH_SHAPE")
-    total := 0.0
-    for element := value[]
-        total = total + element
-    return total / len(value)
+real mean<T: integer>(T[] value)
+    return value.mean()
 
-tensor<T> mean<T: floating>(extend tensor<T> value)
+tensor<T> mean<T: floating>(tensor<T> value)
     return internal.mean_all<T>(value)
 
 tensor<T> sum_last<T: floating>(extend tensor<T> value)
@@ -361,24 +350,10 @@ tensor<T> min_last<T: floating>(extend tensor<T> value)
     return internal.min_last<T>(value)
 
 T max_all<T: ordered>(extend T[] value)
-    if len(value) == 0
-        error("math.max requires at least one element", code = "MATH_SHAPE")
-    best := value[0]
-    for: 1 <= nat index < len(value)
-        candidate := value[index]
-        if candidate > best
-            best = candidate
-    return best
+    return value.max()
 
 T min_all<T: ordered>(extend T[] value)
-    if len(value) == 0
-        error("math.min requires at least one element", code = "MATH_SHAPE")
-    best := value[0]
-    for: 1 <= nat index < len(value)
-        candidate := value[index]
-        if candidate < best
-            best = candidate
-    return best
+    return value.min()
 
 tensor<T> max_all<T: integer>(extend tensor<T> value)
     return internal.max_all<T>(value)
