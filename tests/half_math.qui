@@ -39,14 +39,14 @@ println(same_shape(math.sum_last(empty3).shape(), empty3.shape()) and same_shape
 // Empty whole-tensor sums retain their source dtype and zero Jacobian.
 tensor<real16> tracked_empty16 := tensor.zeros<real16>([0]).track()
 tensor<real16> total_empty16 := math.sum(tracked_empty16)
-println(total_empty16.is_tracked() and total_empty16.item() == real16(0) and total_empty16.shape().len() == 0)
+println(total_empty16.is_tracked() and total_empty16.item() == real16(0) and #total_empty16.shape() == 0)
 total_empty16.backward(&tracked_empty16)
 tensor<real16> gradient_empty16 := tracked_empty16.grad
 println(gradient_empty16.shape() == tracked_empty16.shape())
 
 tensor<real16b> tracked_empty16b := tensor.zeros<real16b>([0]).track()
 tensor<real16b> total_empty16b := math.sum(tracked_empty16b)
-println(total_empty16b.is_tracked() and total_empty16b.item() == real16b(0) and total_empty16b.shape().len() == 0)
+println(total_empty16b.is_tracked() and total_empty16b.item() == real16b(0) and #total_empty16b.shape() == 0)
 total_empty16b.backward(&tracked_empty16b)
 tensor<real16b> gradient_empty16b := tracked_empty16b.grad
 println(gradient_empty16b.shape() == tracked_empty16b.shape())

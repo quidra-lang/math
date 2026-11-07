@@ -8,6 +8,8 @@ Math contains reusable numerical operations that are not required to make
 the Quidra language, tensor storage, autograd graph, or device substrate exist.
 The first boundary moved here is matrix multiplication.
 
+On `develop`, `#value` is the ordinary zero-argument `value.len()` call. It also works automatically for custom classes and visible extensions that provide `len`; return types, errors and access/effect checks are unchanged. Standard array, string and binary lengths remain `nat`.
+
 ## API
 
 ```quidra

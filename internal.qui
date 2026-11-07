@@ -50,9 +50,9 @@ tensor<T> tensor_unary<T: floating>(tensor<T> value, int32 operation)
     return output
 
 int last_axis_width(int[] shape, string operation)
-    if shape.len() == 0
+    if #shape == 0
         error("math." + operation + " requires rank >= 1", code = "MATH_SHAPE")
-    width := shape[shape.len() - 1]
+    width := shape[#shape - 1]
     if width <= 0
         error("math." + operation + " requires a non-empty last axis", code = "MATH_SHAPE")
     return width
@@ -132,9 +132,9 @@ tensor<T> sum_all_nonempty<T: numeric>(
         length = pairs
 
     result := current.gather([0], [])
-    if tails.len() > 0
+    if #tails > 0
         remaining := tails[0]
-        for: 1 <= int index < int(tails.len())
+        for: 1 <= int index < int(#tails)
             remaining = tails[index] + remaining
         result = result + remaining
     return result
@@ -362,8 +362,8 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
 
     a_shape := int(a.shape())
     b_shape := int(b.shape())
-    a_rank := int(a_shape.len())
-    b_rank := int(b_shape.len())
+    a_rank := int(#a_shape)
+    b_rank := int(#b_shape)
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
         error("math.matmul requires left rank >= 1 and right rank 1 or 2", code = "MATH_SHAPE")
@@ -441,8 +441,8 @@ tensor<T> matmul<T: integer>(tensor<T> a, tensor<T> b)
 tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
     a_shape := int(a.shape())
     b_shape := int(b.shape())
-    a_rank := int(a_shape.len())
-    b_rank := int(b_shape.len())
+    a_rank := int(#a_shape)
+    b_rank := int(#b_shape)
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
         error("math.matmul requires left rank >= 1 and right rank 1 or 2", code = "MATH_SHAPE")
@@ -526,8 +526,8 @@ tensor<real32> matmul(tensor<real32> a, tensor<real32> b)
 tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
     a_shape := int(a.shape())
     b_shape := int(b.shape())
-    a_rank := int(a_shape.len())
-    b_rank := int(b_shape.len())
+    a_rank := int(#a_shape)
+    b_rank := int(#b_shape)
 
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
         error("math.matmul requires left rank >= 1 and right rank 1 or 2", code = "MATH_SHAPE")
@@ -613,7 +613,7 @@ tensor<real64> matmul(tensor<real64> a, tensor<real64> b)
 // value-only: the original tensor stays the differentiable input, so autograd
 // still flows through its graph.
 bool transposed_storage<T: floating>(tensor<T> value, tensor<T> &storage)
-    if value.shape().len() != 2
+    if #value.shape() != 2
         return false
     alias := value
     if alias.is_tracked()
@@ -639,8 +639,8 @@ tensor<T> matmul_native<T: floating>(tensor<T> a, tensor<T> b)
 
     a_shape := int(a.shape())
     b_shape := int(b.shape())
-    a_rank := int(a_shape.len())
-    b_rank := int(b_shape.len())
+    a_rank := int(#a_shape)
+    b_rank := int(#b_shape)
     if a_rank < 1 or (b_rank != 1 and b_rank != 2)
         return matmul(a, b)
     inner := a_shape[a_rank - 1]
