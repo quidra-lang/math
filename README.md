@@ -32,7 +32,7 @@ A right vector removes the contracted axis; a right matrix replaces it with
 the matrix output width. Two vectors therefore produce a rank-0 tensor.
 The [Core specification for `a @ b`](https://github.com/quidra-lang/quidra/blob/develop/docs/spec/language.md#matrix-multiplication-operator)
 maps that syntax to Math's `a.matmul(b)` with the same type, shape, device, and
-autograd rules. The operator awaits Core compiler support.
+autograd rules.
 
 `math.sum(value)`, `math.mean(value)`, `math.max_all(value)`, and `math.min_all(value)` also accept numeric arrays. Array `sum` adds left to right from a zero of the element type and returns that type, including for an empty array. It supports every integer, real, and complex type, preserving the scalar addition's checked overflow and rounding. Array `mean` returns an exact `real` for integer arrays, accumulating exactly before division; real and complex arrays keep their element type and divide their left-to-right sum by the length converted to that type. Array `min_all`/`max_all` accept ordered numeric elements (integers and reals), return the element type, and keep the first occurrence of ties. Empty array `mean`, `min_all`, and `max_all` report `MATH_SHAPE`, as their tensor counterparts do. Array comprehensions work directly:
 
@@ -198,8 +198,6 @@ the same under `quidra run`, the REPL, and AOT binaries. Core has no
 per-package option mechanism.
 
 ## Integer digit decomposition
-
-> Specified for `develop`. Math implementation is pending.
 
 After `import math`, the zero-argument method `value.digits()` and the
 function `math.digits(value)` both return an `int[]`. The input is an

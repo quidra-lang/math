@@ -1,0 +1,60 @@
+import math
+
+void check_digits<T: integer>(T value, int[] expected)
+    original := value
+    int[] qualified := math.digits(value)
+    int[] method := value.digits()
+    if qualified != expected or method != expected or value != original
+        error("integer digit decomposition mismatch")
+
+// All ten integer types accept both call forms and return int[].
+check_digits(int(98000), [9, 8, 0, 0, 0])
+check_digits(nat(98000), [9, 8, 0, 0, 0])
+check_digits(int8(101), [1, 0, 1])
+check_digits(int16(101), [1, 0, 1])
+check_digits(int32(101), [1, 0, 1])
+check_digits(int64(101), [1, 0, 1])
+check_digits(nat8(101), [1, 0, 1])
+check_digits(nat16(101), [1, 0, 1])
+check_digits(nat32(101), [1, 0, 1])
+check_digits(nat64(101), [1, 0, 1])
+
+check_digits(int(0), [0])
+check_digits(nat(0), [0])
+check_digits(int8(0), [0])
+check_digits(int16(0), [0])
+check_digits(int32(0), [0])
+check_digits(int64(0), [0])
+check_digits(nat8(0), [0])
+check_digits(nat16(0), [0])
+check_digits(nat32(0), [0])
+check_digits(nat64(0), [0])
+
+check_digits(int(-50301), [5, 0, 3, 0, 1])
+check_digits(int(-1), [1])
+check_digits(int8(-128), [1, 2, 8])
+check_digits(int16(-32768), [3, 2, 7, 6, 8])
+check_digits(int32(-2147483648), [2, 1, 4, 7, 4, 8, 3, 6, 4, 8])
+check_digits(int64(-9223372036854775808), [9, 2, 2, 3, 3, 7, 2, 0, 3, 6, 8, 5, 4, 7, 7, 5, 8, 0, 8])
+check_digits(nat8(255), [2, 5, 5])
+check_digits(nat16(65535), [6, 5, 5, 3, 5])
+check_digits(nat32(4294967295), [4, 2, 9, 4, 9, 6, 7, 2, 9, 5])
+check_digits(nat64(18446744073709551615), [1, 8, 4, 4, 6, 7, 4, 4, 0, 7, 3, 7, 0, 9, 5, 5, 1, 6, 1, 5])
+
+// Values exceed every fixed-width integer and retain interior/trailing zeros.
+int huge := 123456789012345678901234567890123456789012345678901234567890
+int[] huge_expected := [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0,
+                       1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0,
+                       1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
+check_digits(huge, huge_expected)
+check_digits(-huge, huge_expected)
+check_digits(nat(huge), huge_expected)
+int[] power_expected := array(nat(101), fill = 0)
+power_expected[0] = 1
+check_digits(int(10) ^ 100, power_expected)
+
+int[] first := math.digits(98000)
+first[0] = 0
+if math.digits(98000).sum() != 17 or (-50301).digits().sum() != 9
+    error("integer digits must compose with Core array reductions")
+println("Math integer digit tests passed")

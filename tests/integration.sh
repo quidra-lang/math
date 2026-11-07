@@ -8,6 +8,7 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 export QUIDRA_CACHE_DIR="$TMP/run-cache"
 
+bash "$REPOSITORY_ROOT/tests/digits.sh" "$QUIDRA"
 bash "$REPOSITORY_ROOT/tests/array_reductions.sh" "$QUIDRA"
 
 cat > "$TMP/math.qui" <<'QUI'
@@ -36,6 +37,11 @@ tensor<real32> right := tensor.ones<real32>([3, 2])
 tensor<real32> product := math.matmul(left, right)
 println(product.shape()[0] == 2 and product.shape()[1] == 2)
 println(product[1, 1].item() == real32(3))
+tensor<real32> operator_product := left @ right
+tensor<real32> method_product := left.matmul(right)
+println(operator_product.shape() == product.shape() and
+        operator_product[1, 1].item() == product[1, 1].item() and
+        operator_product[0, 1].item() == method_product[0, 1].item())
 
 tensor<int32> integer_left := tensor.ones<int32>([1, 2])
 tensor<int32> integer_right := tensor.ones<int32>([2, 1])
@@ -214,10 +220,7 @@ println(tracked_right.grad[0, 0].item() == real32(0.5))
 
 tensor<real32> fc_input := tensor.ones<real32>([1, 3]).track()
 tensor<real32> fc_weight := tensor.ones<real32>([2, 3]).track()
-tensor<real32> fc_product := math.matmul(
-    fc_input,
-    fc_weight.transpose(0, 1)
-)
+tensor<real32> fc_product := fc_input @ fc_weight.transpose(0, 1)
 math.mean(fc_product).backward(&fc_input, &fc_weight)
 println(fc_input.grad[0, 0].item() == real32(1))
 println(fc_weight.grad[0, 0].item() == real32(0.5))
@@ -242,7 +245,7 @@ println(higher_right.grad[0, 0].item() == real32(4))
 
 QUI
 
-expected="$(printf 'true\n%.0s' {1..79})"
+expected="$(printf 'true\n%.0s' {1..80})"
 set +e
 actual="$(QUIDRA_PACKAGE_PATH="$PACKAGE_ROOT" "$QUIDRA" "$TMP/math.qui" 2>&1)"
 math_status=$?

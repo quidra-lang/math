@@ -16,6 +16,29 @@ T abs<T: numeric>(extend T value)
         return zero - value
     return value
 
+int[] digits<T: integer>(extend T value)
+    // Widen before taking the magnitude: negating a fixed-width minimum in
+    // its own type would overflow. Exact int also preserves arbitrary nat.
+    magnitude := int(value)
+    if magnitude < 0
+        magnitude = -magnitude
+    count := nat(1)
+    remaining := magnitude / 10
+    while remaining > 0
+        count += 1
+        remaining /= 10
+
+    // Allocate once and fill from the least significant digit. The single
+    // iteration for zero produces [0], with no special empty-array path.
+    result := array(count, fill = 0)
+    index := count
+    remaining = magnitude
+    while index > 0
+        index -= 1
+        result[index] = remaining % 10
+        remaining /= 10
+    return result
+
 T min<T: numeric>(T left, T right)
     if left < right
         return left

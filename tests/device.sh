@@ -20,7 +20,7 @@ println(product[0, 0].item() == real32(3))
 println(product[1, 1].item() == real32(3))
 
 tensor<real32> weight := tensor.ones<real32>([2, 3], gpu = 0)
-tensor<real32> transposed_product := math.matmul(left, weight.transpose(0, 1))
+tensor<real32> transposed_product := left @ weight.transpose(0, 1)
 tensor<real32> device_preserved := transposed_product + tensor.zeros<real32>([2, 2], gpu = 0)
 println(device_preserved.cpu()[0, 0].item() == real32(3))
 
@@ -37,7 +37,7 @@ println(math.dot(vector, vector) == real32(3))
 
 tensor<real32> tracked_left := tensor.ones<real32>([1, 2], gpu = 0).track()
 tensor<real32> tracked_right := tensor.ones<real32>([2, 1], gpu = 0).track()
-tensor<real32> tracked_product := math.matmul(tracked_left, tracked_right)
+tensor<real32> tracked_product := tracked_left @ tracked_right
 math.mean(tracked_product).backward(&tracked_left, &tracked_right)
 tensor<real32> left_grad := tracked_left.grad.cpu()
 tensor<real32> right_grad := tracked_right.grad.cpu()
